@@ -1,5 +1,6 @@
-package com.philosophy.rag.Service;
+package com.philosophy.rag.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -16,8 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 public class IngestionService implements CommandLineRunner {
-    private static final Logger log = LoggerFactory.getLogger(IngestionService.class);
+//    private static final Logger log = LoggerFactory.getLogger(IngestionService.class);
     private final VectorStore vectorStore;
 
     //Tim PDF de load vao variable
@@ -30,19 +32,6 @@ public class IngestionService implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        List<Document> allDocuments = new ArrayList<>();
-
-        log.info("Reading PDF file");
-        var pdfReader = new ParagraphPdfDocumentReader(testPDF);
-        allDocuments.addAll(pdfReader.read());
-        // 800: Maximum do dai 1 doan
-        // 400: Minimum do dai 1 doan
-        // 5: Cut ky tu
-        // 10000: Cut maximum de tranh full RAM
-        TextSplitter textSplitter = new TokenTextSplitter(800,
-                400, 5, 10000, true);
-        log.info("Cutting documents and embeddings into database");
-        vectorStore.accept(textSplitter.apply(allDocuments));
-        log.info("VectorStore loaded with data");
+        log.info("IngestionService: Skipping automatic load because RagController now handles dynamic uploads.");
     }
 }
