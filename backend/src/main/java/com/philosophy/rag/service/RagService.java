@@ -49,7 +49,7 @@ public class RagService {
         ParagraphPdfDocumentReader pdfReader = new ParagraphPdfDocumentReader(new UrlResource("file:" + filePath.toAbsolutePath().toString()));
 
         List<Document> documents = pdfReader.read();
-        
+
         // CRITICAL: Manually add source metadata to each document fragment
         // Because ParagraphPdfDocumentReader might not add it automatically
         documents.forEach(doc -> doc.getMetadata().put("source", file.getOriginalFilename()));
@@ -85,9 +85,9 @@ public class RagService {
         // Query both metadata (source) and the content of the documents
         // In pgvector, the content is usually in the 'content' column (or similar depending on Spring AI version)
         String sql = "SELECT metadata->>'source' as source, content FROM vector_store";
-        
-        return jdbcTemplate.query(sql, (rs, rowNum) -> 
-            new DocumentContent(rs.getString("source"), rs.getString("content"))
+
+        return jdbcTemplate.query(sql, (rs, rowNum) ->
+                new DocumentContent(rs.getString("source"), rs.getString("content"))
         );
     }
 }

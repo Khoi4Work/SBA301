@@ -17,6 +17,7 @@ backend/target/
 *.ear
 hs_err_pid*
 replay_pid*
+backend/.env.local
 
 # --- Frontend (Node / React / Vite) ---
 frontend/node_modules/
