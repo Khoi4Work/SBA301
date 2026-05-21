@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DocumentContent {
     private String source;
+    private String content;
     private String uploadDate;
     private String contentType;
     private String contentLength;

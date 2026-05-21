@@ -44,7 +44,7 @@ public class RagService implements RagServiceImpl {
     public String uploadDocument(MultipartFile file) throws Exception {
         Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
         Path filePath = tempDir.resolve(Objects.requireNonNull(file.getOriginalFilename()));
-        
+
         try {
             // Sử dụng StandardCopyOption.REPLACE_EXISTING để tránh lỗi file đã tồn tại
             Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -110,18 +110,20 @@ public class RagService implements RagServiceImpl {
     public List<DocumentContent> listDocuments() {
         // Sử dụng GROUP BY để tính toán số lượng chunk và độ dài trung bình cho mỗi file
         String sql = "SELECT " +
-                     "metadata->>'source' as source, " +
-                     "MAX(metadata->>'upload_date') as upload_date, " +
-                     "MAX(metadata->>'contentType') as content_type, " +
-                     "MAX(metadata->>'contentLength') as content_length, " +
-                     "COUNT(*) as chunk_count, " +
-                     "AVG(LENGTH(content)) as avg_chunk_length " +
-                     "FROM vector_store " +
-                     "GROUP BY metadata->>'source'";
+                "metadata->>'source' as source, " +
+                "STRING_AGG(content, ' ') as content, " +
+                "MAX(metadata->>'upload_date') as upload_date, " +
+                "MAX(metadata->>'contentType') as content_type, " +
+                "MAX(metadata->>'contentLength') as content_length, " +
+                "COUNT(*) as chunk_count, " +
+                "AVG(LENGTH(content)) as avg_chunk_length " +
+                "FROM vector_store " +
+                "GROUP BY metadata->>'source'";
 
         return jdbcTemplate.query(sql, (rs, rowNum) ->
                 new DocumentContent(
                         rs.getString("source"),
+                        rs.getString("content"),
                         rs.getString("upload_date"),
                         rs.getString("content_type"),
                         rs.getString("content_length"),
