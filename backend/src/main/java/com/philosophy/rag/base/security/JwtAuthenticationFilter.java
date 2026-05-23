@@ -1,4 +1,4 @@
-package com.philosophy.rag.security;
+package com.philosophy.rag.base.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

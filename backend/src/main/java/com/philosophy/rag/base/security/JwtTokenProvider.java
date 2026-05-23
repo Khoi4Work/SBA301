@@ -1,4 +1,4 @@
-package com.philosophy.rag.security;
+package com.philosophy.rag.base.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
