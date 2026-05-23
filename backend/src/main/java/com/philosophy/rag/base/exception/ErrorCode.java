@@ -54,7 +54,8 @@ public enum ErrorCode {
 
     // Server errors
     UNEXPECTED_ERROR(5000, "Unexpected error", HttpStatus.INTERNAL_SERVER_ERROR),
-    EMAIL_SEND_FAILED(5001, "Failed to send OTP email", HttpStatus.INTERNAL_SERVER_ERROR);
+    EMAIL_SEND_FAILED(5001, "Failed to send OTP email", HttpStatus.INTERNAL_SERVER_ERROR),
+    RAG_SERVICE_ERROR(5002, "RAG service error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;
     private final String defaultMessage;
