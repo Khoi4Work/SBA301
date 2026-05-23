@@ -32,7 +32,7 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/rag/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 .anyRequest().authenticated()
             )
@@ -62,14 +62,5 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> {
-            if ("admin".equals(username)) {
-                return new User("admin", "{bcrypt}$2a$10$ExampleHash...", 
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
-            }
-            throw new UsernameNotFoundException("User not found");
-        };
-    }
+
 }
