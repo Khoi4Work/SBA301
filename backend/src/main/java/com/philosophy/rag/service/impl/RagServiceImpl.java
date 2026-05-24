@@ -52,7 +52,19 @@ public class RagServiceImpl implements RagService {
 
             List<Document> documents = pdfReader.read();
 
-            documents.forEach(doc -> {
+            List<Document> cleanedDocuments = documents.stream()
+                    .map(doc -> {
+                        String cleaned = doc.getContent()
+                                .replaceAll("-\\s+\\n", "")
+                                .replaceAll("\\n", " ")
+                                .replaceAll("\\s+", " ")
+                                .trim();
+
+                        return new Document(cleaned, doc.getMetadata());
+                    })
+                    .toList();
+
+            cleanedDocuments.forEach(doc -> {
                 String uploadDate = LocalDate.now().toString();
                 doc.getMetadata().putAll(
                         Map.of("upload_date", uploadDate,
@@ -64,7 +76,7 @@ public class RagServiceImpl implements RagService {
             });
 
             log.info("Uploaded document: {}", file.getOriginalFilename());
-            vectorStore.accept(textSplitter.apply(documents));
+            vectorStore.accept(textSplitter.apply(cleanedDocuments));
 
             return "Document uploaded and indexed successfully: " + file.getOriginalFilename();
         } finally {
