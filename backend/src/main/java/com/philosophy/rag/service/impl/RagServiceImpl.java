@@ -44,20 +44,33 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public String uploadDocument(MultipartFile file) {
+        String filename = file.getOriginalFilename();
+        if (filename == null || (!filename.toLowerCase().endsWith(".pdf") && !filename.toLowerCase().endsWith(".md"))) {
+            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Unsupported file format. Only PDF and MD files are allowed.");
+        }
+
         Path tempFile = saveMultipartFile(file);
         try {
-            String rawText = extractTextFromPdf(tempFile);
+            String rawText = "";
+
+            // Phân loại luồng đọc text theo đuôi file
+            if (filename.toLowerCase().endsWith(".pdf")) {
+                rawText = extractTextFromPdf(tempFile);
+            } else if (filename.toLowerCase().endsWith(".md")) {
+                rawText = extractTextFromMarkdown(tempFile);
+            }
+
             String cleanedText = cleanText(rawText);
 
             Document document = createDocument(cleanedText, file);
             List<Document> chunks = textSplitter.apply(List.of(document));
 
-            log.info("Indexing {} chunks for file: {}", chunks.size(), file.getOriginalFilename());
+            log.info("Indexing {} chunks for file: {}", chunks.size(), filename);
             vectorStore.accept(chunks);
 
-            return "Document uploaded and indexed successfully: " + file.getOriginalFilename();
+            return "Document uploaded and indexed successfully: " + filename;
         } catch (Exception e) {
-            log.error("Error uploading document {}: {}", file.getOriginalFilename(), e.getMessage());
+            log.error("Error uploading document {}: {}", filename, e.getMessage());
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to process document: " + e.getMessage());
         } finally {
             deleteTempFile(tempFile);
@@ -103,6 +116,15 @@ public class RagServiceImpl implements RagService {
             return filePath;
         } catch (Exception e) {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to save temporary file");
+        }
+    }
+
+    private String extractTextFromMarkdown(Path path) {
+        try {
+            // Đọc toàn bộ nội dung file text/markdown bằng UTF-8
+            return Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Error extracting text from Markdown");
         }
     }
 
