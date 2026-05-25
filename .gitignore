@@ -39,3 +39,4 @@ pnpm-debug.log*
 *.tar.gz
 *.rar
 *.env
+AGENTS.md
