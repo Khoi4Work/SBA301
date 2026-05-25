@@ -21,7 +21,7 @@ public class VectorStoreRepository {
                 "metadata->>'upload_date' as upload_date, " +
                 "metadata->>'contentType' as content_type, " +
                 "metadata->>'contentLength' as content_length, " +
-                "1 as chunk_count, " +
+                "ROW_NUMBER() OVER (PARTITION BY metadata->>'source' ORDER BY content) as chunk_count, " +
                 "CAST(LENGTH(content) AS double precision) as avg_chunk_length " +
                 "FROM vector_store";
 

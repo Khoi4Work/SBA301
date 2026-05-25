@@ -46,13 +46,13 @@ public class RagServiceImpl implements RagService {
         try {
             String rawText = extractTextFromPdf(tempFile);
             String cleanedText = cleanText(rawText);
-            
+
             Document document = createDocument(cleanedText, file);
             List<Document> chunks = textSplitter.apply(List.of(document));
-            
+
             log.info("Indexing {} chunks for file: {}", chunks.size(), file.getOriginalFilename());
             vectorStore.accept(chunks);
-            
+
             return "Document uploaded and indexed successfully: " + file.getOriginalFilename();
         } catch (Exception e) {
             log.error("Error uploading document {}: {}", file.getOriginalFilename(), e.getMessage());
@@ -65,10 +65,10 @@ public class RagServiceImpl implements RagService {
     @Override
     public String ask(String query) {
         log.info("[RAG DEBUG] Incoming Query: {}", query);
-        
+
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
-        
+
         String context = buildContext(prioritizedDocs);
         String prompt = buildPrompt(query, context);
 
@@ -116,20 +116,20 @@ public class RagServiceImpl implements RagService {
 
     private String cleanText(String text) {
         if (text == null) return "";
-        
+
         // 1. Remove all control characters except newline
         // \p{Cc} matches any control character. [^\n] ensures we don't remove newlines yet.
         String cleaned = text.replaceAll("[\\p{Cc}&&[^\n]]", " ");
-        
+
         // 2. Handle hyphenated line breaks
         cleaned = cleaned.replaceAll("-\s*\n", " ");
-        
+
         // 3. Replace single newlines (not paragraphs) with space
         cleaned = cleaned.replaceAll("(?<!\n)\n(?!\n)", " ");
-        
+
         // 4. Standardize all whitespace to a single space
         cleaned = cleaned.replaceAll("\s{2,}", " ").trim();
-        
+
         return cleaned;
     }
 
@@ -145,10 +145,10 @@ public class RagServiceImpl implements RagService {
 
     private List<Document> retrieveCandidates(String query) {
         String keywordQuery = query.replaceAll("(?i)c?\s+kh?ng|c?\s+ph?i\s+l?|l?\s+g?|t?i\s+sao", " ").trim();
-        
-        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.query(query).withTopK(40));
-        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.query(keywordQuery).withTopK(40));
-        
+
+        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.query(query).withTopK(500));
+        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.query(keywordQuery).withTopK(500));
+
         return Stream.concat(queryDocs.stream(), keywordDocs.stream())
                 .distinct()
                 .collect(Collectors.toList());
@@ -158,7 +158,7 @@ public class RagServiceImpl implements RagService {
         String[] keywords = query.split("\s+");
         List<Document> highPriority = new java.util.ArrayList<>();
         List<Document> lowPriority = new java.util.ArrayList<>();
-        
+
         for (Document doc : candidates) {
             boolean isMatch = false;
             String text = doc.getContent().toLowerCase();
@@ -170,18 +170,18 @@ public class RagServiceImpl implements RagService {
             }
             if (isMatch) highPriority.add(doc); else lowPriority.add(doc);
         }
-        
+
         List<Document> result = new java.util.ArrayList<>();
-        int highLimit = 10;
+        int highLimit = 95;
         for (int i = 0; i < Math.min(highPriority.size(), highLimit); i++) {
             result.add(highPriority.get(i));
         }
-        
-        int totalLimit = 15;
+
+        int totalLimit = 100;
         for (int i = 0; i < Math.min(lowPriority.size(), totalLimit - result.size()); i++) {
             result.add(lowPriority.get(i));
         }
-        
+
         return result;
     }
 
