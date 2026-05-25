@@ -6,23 +6,25 @@ import com.philosophy.rag.dto.DocumentContent;
 import com.philosophy.rag.repository.custom.VectorStoreRepository;
 import com.philosophy.rag.service.RagService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.document.Document;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.core.io.UrlResource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,20 +44,33 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public String uploadDocument(MultipartFile file) {
+        String filename = file.getOriginalFilename();
+        if (filename == null || (!filename.toLowerCase().endsWith(".pdf") && !filename.toLowerCase().endsWith(".md"))) {
+            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Unsupported file format. Only PDF and MD files are allowed.");
+        }
+
         Path tempFile = saveMultipartFile(file);
         try {
-            String rawText = extractTextFromPdf(tempFile);
+            String rawText = "";
+
+            // Phân loại luồng đọc text theo đuôi file
+            if (filename.toLowerCase().endsWith(".pdf")) {
+                rawText = extractTextFromPdf(tempFile);
+            } else if (filename.toLowerCase().endsWith(".md")) {
+                rawText = extractTextFromMarkdown(tempFile);
+            }
+
             String cleanedText = cleanText(rawText);
-            
+
             Document document = createDocument(cleanedText, file);
             List<Document> chunks = textSplitter.apply(List.of(document));
-            
-            log.info("Indexing {} chunks for file: {}", chunks.size(), file.getOriginalFilename());
+
+            log.info("Indexing {} chunks for file: {}", chunks.size(), filename);
             vectorStore.accept(chunks);
-            
-            return "Document uploaded and indexed successfully: " + file.getOriginalFilename();
+
+            return "Document uploaded and indexed successfully: " + filename;
         } catch (Exception e) {
-            log.error("Error uploading document {}: {}", file.getOriginalFilename(), e.getMessage());
+            log.error("Error uploading document {}: {}", filename, e.getMessage());
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to process document: " + e.getMessage());
         } finally {
             deleteTempFile(tempFile);
@@ -65,10 +80,10 @@ public class RagServiceImpl implements RagService {
     @Override
     public String ask(String query) {
         log.info("[RAG DEBUG] Incoming Query: {}", query);
-        
+
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
-        
+
         String context = buildContext(prioritizedDocs);
         String prompt = buildPrompt(query, context);
 
@@ -104,6 +119,15 @@ public class RagServiceImpl implements RagService {
         }
     }
 
+    private String extractTextFromMarkdown(Path path) {
+        try {
+            // Đọc toàn bộ nội dung file text/markdown bằng UTF-8
+            return Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Error extracting text from Markdown");
+        }
+    }
+
     private String extractTextFromPdf(Path path) {
         try (PDDocument document = PDDocument.load(path.toFile())) {
             PDFTextStripper stripper = new PDFTextStripper();
@@ -116,20 +140,20 @@ public class RagServiceImpl implements RagService {
 
     private String cleanText(String text) {
         if (text == null) return "";
-        
+
         // 1. Remove all control characters except newline
         // \p{Cc} matches any control character. [^\n] ensures we don't remove newlines yet.
         String cleaned = text.replaceAll("[\\p{Cc}&&[^\n]]", " ");
-        
+
         // 2. Handle hyphenated line breaks
         cleaned = cleaned.replaceAll("-\s*\n", " ");
-        
+
         // 3. Replace single newlines (not paragraphs) with space
         cleaned = cleaned.replaceAll("(?<!\n)\n(?!\n)", " ");
-        
+
         // 4. Standardize all whitespace to a single space
         cleaned = cleaned.replaceAll("\s{2,}", " ").trim();
-        
+
         return cleaned;
     }
 
@@ -145,10 +169,10 @@ public class RagServiceImpl implements RagService {
 
     private List<Document> retrieveCandidates(String query) {
         String keywordQuery = query.replaceAll("(?i)c?\s+kh?ng|c?\s+ph?i\s+l?|l?\s+g?|t?i\s+sao", " ").trim();
-        
-        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.query(query).withTopK(40));
-        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.query(keywordQuery).withTopK(40));
-        
+
+        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.query(query).withTopK(500));
+        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.query(keywordQuery).withTopK(500));
+
         return Stream.concat(queryDocs.stream(), keywordDocs.stream())
                 .distinct()
                 .collect(Collectors.toList());
@@ -158,7 +182,7 @@ public class RagServiceImpl implements RagService {
         String[] keywords = query.split("\s+");
         List<Document> highPriority = new java.util.ArrayList<>();
         List<Document> lowPriority = new java.util.ArrayList<>();
-        
+
         for (Document doc : candidates) {
             boolean isMatch = false;
             String text = doc.getContent().toLowerCase();
@@ -170,18 +194,18 @@ public class RagServiceImpl implements RagService {
             }
             if (isMatch) highPriority.add(doc); else lowPriority.add(doc);
         }
-        
+
         List<Document> result = new java.util.ArrayList<>();
-        int highLimit = 10;
+        int highLimit = 295;
         for (int i = 0; i < Math.min(highPriority.size(), highLimit); i++) {
             result.add(highPriority.get(i));
         }
-        
-        int totalLimit = 15;
+
+        int totalLimit = 300;
         for (int i = 0; i < Math.min(lowPriority.size(), totalLimit - result.size()); i++) {
             result.add(lowPriority.get(i));
         }
-        
+
         return result;
     }
 
