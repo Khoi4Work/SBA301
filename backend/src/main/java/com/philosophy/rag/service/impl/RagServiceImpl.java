@@ -6,23 +6,25 @@ import com.philosophy.rag.dto.DocumentContent;
 import com.philosophy.rag.repository.custom.VectorStoreRepository;
 import com.philosophy.rag.service.RagService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.document.Document;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.core.io.UrlResource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -172,12 +174,12 @@ public class RagServiceImpl implements RagService {
         }
 
         List<Document> result = new java.util.ArrayList<>();
-        int highLimit = 95;
+        int highLimit = 295;
         for (int i = 0; i < Math.min(highPriority.size(), highLimit); i++) {
             result.add(highPriority.get(i));
         }
 
-        int totalLimit = 100;
+        int totalLimit = 300;
         for (int i = 0; i < Math.min(lowPriority.size(), totalLimit - result.size()); i++) {
             result.add(lowPriority.get(i));
         }
