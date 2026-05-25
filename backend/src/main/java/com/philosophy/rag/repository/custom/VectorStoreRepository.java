@@ -17,14 +17,13 @@ public class VectorStoreRepository {
     public List<DocumentContent> getDocumentContent() {
         String sql = "SELECT " +
                 "metadata->>'source' as source, " +
-                "STRING_AGG(content, ' ') as content, " +
-                "MAX(metadata->>'upload_date') as upload_date, " +
-                "MAX(metadata->>'contentType') as content_type, " +
-                "MAX(metadata->>'contentLength') as content_length, " +
-                "COUNT(*) as chunk_count, " +
-                "AVG(LENGTH(content)) as avg_chunk_length " +
-                "FROM vector_store " +
-                "GROUP BY metadata->>'source'";
+                "content, " +
+                "metadata->>'upload_date' as upload_date, " +
+                "metadata->>'contentType' as content_type, " +
+                "metadata->>'contentLength' as content_length, " +
+                "1 as chunk_count, " +
+                "CAST(LENGTH(content) AS double precision) as avg_chunk_length " +
+                "FROM vector_store";
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new DocumentContent(
                 rs.getString("source"),
