@@ -2,7 +2,7 @@ package com.philosophy.rag.service.impl;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
-import com.philosophy.rag.dto.DocumentContent;
+import com.philosophy.rag.dto.response.DocumentContent;
 import com.philosophy.rag.repository.custom.VectorStoreRepository;
 import com.philosophy.rag.service.RagService;
 import lombok.extern.slf4j.Slf4j;
