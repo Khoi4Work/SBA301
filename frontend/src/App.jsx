@@ -3,7 +3,7 @@ import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Header from './components/Header';
 import Home from './pages/Home';
-import EdgeTTS from "./pages/EdgeTTS.jsx";
+import VoiceTest from "./pages/VoiceTest.jsx";
 
 function App() {
     return (
@@ -11,7 +11,7 @@ function App() {
             <Header/>
             <Routes>
                 <Route path="/" element={<Home/>}/>
-                <Route path="/edge" element={<EdgeTTS/>}/>
+                <Route path="/edge" element={<VoiceTest/>}/>
             </Routes>
         </Router>
     );
