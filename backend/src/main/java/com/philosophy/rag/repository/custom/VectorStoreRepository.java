@@ -1,6 +1,6 @@
 package com.philosophy.rag.repository.custom;
 
-import com.philosophy.rag.dto.DocumentContent;
+import com.philosophy.rag.dto.response.DocumentContent;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 

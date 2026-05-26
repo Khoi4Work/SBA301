@@ -1,6 +1,6 @@
 package com.philosophy.rag.service;
 
-import com.philosophy.rag.dto.DocumentContent;
+import com.philosophy.rag.dto.response.DocumentContent;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
