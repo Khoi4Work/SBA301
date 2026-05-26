@@ -2,7 +2,7 @@ package com.philosophy.rag.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.response.ApiResponse;
-import com.philosophy.rag.dto.DocumentUploadResponse;
+import com.philosophy.rag.dto.response.DocumentUploadResponse;
 import com.philosophy.rag.service.S3StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

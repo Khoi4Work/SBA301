@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/rag/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/api/voice/**").permitAll()
                         .requestMatchers("/api/documents/**").permitAll()
                         .anyRequest().authenticated()
                 )
