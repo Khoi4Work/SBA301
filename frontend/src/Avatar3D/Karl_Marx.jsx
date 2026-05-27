@@ -1,10 +1,19 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { useGLTF, useAnimations, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 
-function Model({ url }) {
-    const { scene } = useGLTF(url);
-    return <primitive object={scene} scale={2} position={[0, -1.8, 0]} />;
+function Model({ url, position }) {
+    const { scene, animations } = useGLTF(url);
+    const { actions, names } = useAnimations(animations, scene);
+
+    useEffect(() => {
+        if (names.length > 0) {
+            const animationName = names[0];
+            actions[animationName].reset().fadeIn(0.5).play();
+        }
+    }, [actions, names]);
+
+    return <primitive object={scene} scale={2} position={position} />;
 }
 
 export default function Karl_Marx() {
@@ -16,7 +25,7 @@ export default function Karl_Marx() {
                 <Environment preset="city" />
 
                 <Suspense fallback={null}>
-                    <Model url="/model/Karl-Marx.glb" />
+                    <Model url="/model/Karl-Marx-Animation.glb" position={[0, -1.8, 0]} />
                 </Suspense>
 
                 <ContactShadows position={[0, -1.8, 0]} opacity={0.6} scale={5} blur={2.5} far={4} />
