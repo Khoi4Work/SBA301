@@ -1,11 +1,13 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 import java.util.UUID;
+
 
 /**
  * Thực thể: Tin nhắn hội thoại (ChatMessage)
@@ -26,9 +28,15 @@ public class ChatMessage extends BaseEntity {
 
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "message_id")
+    @Column(name = "message_id", nullable = false, updatable = false)
     private UUID messageId;
+
+    @PrePersist
+    public void generateId() {
+        if (messageId == null) {
+            messageId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     /**
      * Người dùng gửi / nhận tin nhắn — Khóa ngoại.

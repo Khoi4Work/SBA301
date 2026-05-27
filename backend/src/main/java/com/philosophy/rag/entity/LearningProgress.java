@@ -1,5 +1,6 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -36,9 +37,15 @@ public class LearningProgress extends BaseEntity {
 
     /** Mã tiến trình — Khóa chính, tự tăng */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "progress_id")
+    @Column(name = "progress_id", nullable = false, updatable = false)
     private UUID progressId;
+
+    @PrePersist
+    public void generateId() {
+        if (progressId == null) {
+            progressId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     /**
      * Người dùng — Khóa ngoại.

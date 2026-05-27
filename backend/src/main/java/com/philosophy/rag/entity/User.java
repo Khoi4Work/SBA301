@@ -1,5 +1,6 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -25,9 +26,15 @@ public class User extends BaseEntity {
 
     /** Mã người dùng — Khóa chính, tự tăng */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
+
+    @PrePersist
+    public void generateId() {
+        if (userId == null) {
+            userId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     /** Tên đăng nhập — duy nhất, không null */
     @Column(name = "username", nullable = false, unique = true, length = 100)

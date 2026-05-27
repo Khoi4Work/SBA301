@@ -1,5 +1,6 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -26,9 +27,15 @@ public class GeneratedContent extends BaseEntity {
 
     /** Mã nội dung — Khóa chính, tự tăng */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "content_id")
+    @Column(name = "content_id", nullable = false, updatable = false)
     private UUID contentId;
+
+    @PrePersist
+    public void generateId() {
+        if (contentId == null) {
+            contentId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     /**
      * Người dùng tạo nội dung — Khóa ngoại.

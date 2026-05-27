@@ -1,5 +1,6 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -31,9 +32,15 @@ public class UserQuizResult extends BaseEntity {
 
     /** Mã kết quả — Khóa chính, tự tăng */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "result_id")
+    @Column(name = "result_id", nullable = false, updatable = false)
     private UUID resultId;
+
+    @PrePersist
+    public void generateId() {
+        if (resultId == null) {
+            resultId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     /**
      * Người dùng thực hiện bài kiểm tra — Khóa ngoại.

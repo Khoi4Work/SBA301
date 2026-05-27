@@ -1,5 +1,6 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,9 +29,15 @@ public class Document extends BaseEntity {
 
     /** Mã tài liệu — Khóa chính, tự tăng */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "document_id")
+    @Column(name = "document_id", nullable = false, updatable = false)
     private UUID documentId;
+
+    @PrePersist
+    public void generateId() {
+        if (documentId == null) {
+            documentId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     /** Tiêu đề tài liệu */
     @Column(name = "title", nullable = false, length = 500)
