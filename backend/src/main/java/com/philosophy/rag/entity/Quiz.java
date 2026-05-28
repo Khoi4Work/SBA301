@@ -1,5 +1,6 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,9 +28,15 @@ public class Quiz extends BaseEntity {
 
     /** Mã câu hỏi — Khóa chính, tự tăng */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "quiz_id")
+    @Column(name = "quiz_id", nullable = false, updatable = false)
     private UUID quizId;
+
+    @PrePersist
+    public void generateId() {
+        if (quizId == null) {
+            quizId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     /**
      * Tài liệu liên quan — Khóa ngoại.

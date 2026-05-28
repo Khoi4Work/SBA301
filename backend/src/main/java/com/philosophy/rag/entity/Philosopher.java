@@ -1,5 +1,6 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,9 +24,15 @@ public class Philosopher extends BaseEntity {
 
     /** Mã triết gia — Khóa chính, tự tăng */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "philosopher_id")
+    @Column(name = "philosopher_id", nullable = false, updatable = false)
     private UUID philosopherId;
+
+    @PrePersist
+    public void generateId() {
+        if (philosopherId == null) {
+            philosopherId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     /** Tên triết gia */
     @Column(name = "name", nullable = false, length = 200)
