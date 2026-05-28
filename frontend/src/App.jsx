@@ -12,7 +12,7 @@ function App() {
             <Header/>
             <Routes>
                 <Route path="/" element={<Home/>}/>
-                <Route path="/edge" element={<VoiceTest/>}/>
+                <Route path="/voice" element={<VoiceTest/>}/>
                 <Route path="/model" element={<Karl_Marx/>}/>
             </Routes>
         </Router>

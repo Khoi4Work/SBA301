@@ -1,6 +1,7 @@
 package com.philosophy.rag.entity;
 
 import com.github.f4b6a3.uuid.UuidCreator;
+import com.philosophy.rag.base.persistence.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

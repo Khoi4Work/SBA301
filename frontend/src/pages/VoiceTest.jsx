@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { apiVoice } from "../services/apiVoice.js";
+import Karl_Marx from "../Avatar3D/Karl_Marx.jsx";
 
 const VoiceTest = () => {
   // Đã gộp text mặc định vào thẳng formData cho đồng bộ
@@ -100,7 +101,7 @@ const VoiceTest = () => {
   return (
       <div style={{ padding: '20px', maxWidth: '600px' }}>
         <h3>Trải nghiệm STT & TTS (Web API + Edge)</h3>
-
+        <Karl_Marx/>
         {/* Khung nút điều khiển Mic */}
         <div style={{ marginBottom: '10px' }}>
           <button

@@ -1,11 +1,10 @@
 package com.philosophy.rag.entity;
 
 import com.github.f4b6a3.uuid.UuidCreator;
+import com.philosophy.rag.base.persistence.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
