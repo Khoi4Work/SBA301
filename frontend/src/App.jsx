@@ -7,6 +7,7 @@ import VoiceTest from "./pages/VoiceTest.jsx";
 import Karl_Marx from "./Avatar3D/Karl_Marx.jsx";
 import ChatAI from "@/pages/ChatAI.jsx";
 import {TestPage} from "@/pages/TestPage.jsx";
+import PhiloVerse from "@/pages/PhiloVerse.jsx";
 
 function AppLayout() {
     const location = useLocation();
@@ -25,6 +26,7 @@ function AppLayout() {
                 <Route path="/model" element={<Karl_Marx/>}/>
                 <Route path={"/chat"} element={<ChatAI/>}/>
                 <Route path={"/test"} element={<TestPage/>}/>
+                <Route path="/dashboard" element={<PhiloVerse />} />
             </Routes>
         </>
     );

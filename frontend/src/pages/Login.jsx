@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import '../assets/styles/philoverse.css';
 
 export default function Login() {
   const canvasRef = useRef(null);
