@@ -28,10 +28,26 @@ export default function Home() {
         <div className="flex items-center gap-12">
           <span className="font-display-lg text-display-lg text-[#e9c176] tracking-tighter">PhiloVerse</span>
           <div className="hidden md:flex gap-8">
-            <a className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap" href="#">Học viện</a>
-            <a className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap" href="#">Thư viện</a>
-            <a className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap" href="#">Xưởng sáng tạo</a>
-            <a className="font-body-md text-body-md uppercase tracking-wider text-secondary border-b-2 border-secondary pb-1 cursor-pointer active:scale-95 whitespace-nowrap" href="#">Luận đàm</a>
+            <Link
+                to="/study"
+                className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap"
+            >
+              Học viện
+            </Link>
+
+            <Link
+                to="/"
+                className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap"
+            >
+              Xưởng sáng tạo
+            </Link>
+
+            <Link
+                to="/chat"
+                className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap"
+            >
+              Luận đàm
+            </Link>
           </div>
         </div>
         <div className="flex items-center gap-6">
@@ -46,9 +62,6 @@ export default function Home() {
             <span className="material-symbols-outlined text-on-surface-variant hover:text-secondary cursor-pointer transition-colors">notifications</span>
             <span className="material-symbols-outlined text-on-surface-variant hover:text-secondary cursor-pointer transition-colors">settings</span>
             <Link to="/login" className="hidden md:block font-label-md text-label-md uppercase tracking-widest text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 px-2">Đăng nhập</Link>
-            <div className="w-10 h-10 rounded-full border border-secondary/50 p-0.5 overflow-hidden">
-              <img alt="User Scholar Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTVoWG-BNHXo48VsepbGda9OV_Sbmeqksk1abv2h4top-UH9GdqPKhzVaNrqgRxP7wLInEWs8y00t3kicv_-dK1SKdyb7Y5-BCvx4f3_GXyvRGWKycI9EbKFMGC2AxU30_J_nZmZAmb6r3vP3priwgEEnggTBq-sZQqfM8L7BomrFGG2dlJV4tp-HhSySdyP67cNfrRV2FQ_XVf33d-Oj71vtT6g6ugXqZF6cPxrbpWLjhbmNL3cv81RiWrqOuI9T-_5BnKG2uals" />
-            </div>
           </div>
         </div>
       </nav>
