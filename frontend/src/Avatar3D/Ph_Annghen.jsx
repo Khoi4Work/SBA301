@@ -1,76 +1,56 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, useAnimations, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 
-function Model({ isTalking }) {
-    // 1. Load file gốc (chứa ngoại hình + hoạt ảnh Khoanh tay)
-    const { scene, animations: idleAnimations } = useGLTF('/model/Ph-Annghen-Standing.glb');
+function Model({ isTalking, isThinking }) {
+    // 1. Load 3 file Model
+    const { scene, animations: idleAnims } = useGLTF('/model/Ph-Annghen-Standing.glb');
+    const { animations: talkAnims } = useGLTF('/model/Ph-Annghen-Animation.glb');
+    const { animations: thinkAnims } = useGLTF('/model/Ph-Annghen-Thinking.glb'); // Load file Thinking
 
-    // 2. Load THÊM file thứ 2 (Chỉ lấy hoạt ảnh Nói chuyện của nó)
-    const { animations: talkAnimations } = useGLTF('/model/Ph-Annghen-Animation.glb');
+    // 2. Đổi tên
+    idleAnims[0].name = 'Idle';
+    talkAnims[0].name = 'Talking';
+    thinkAnims[0].name = 'Thinking';
 
-    // 3. Đổi tên 2 hoạt ảnh này cho dễ gọi
-    idleAnimations[0].name = 'Idle';
-    talkAnimations[0].name = 'Talking';
+    // 3. Gộp 3 Animation
+    const { actions } = useAnimations([idleAnims[0], talkAnims[0], thinkAnims[0]], scene);
 
-    // 4. Gộp 2 hoạt ảnh vào chung 1 mảng và bơm vào nhân vật gốc
-    const { actions } = useAnimations([idleAnimations[0], talkAnimations[0]], scene);
+    // 4. Dùng useRef để ghi nhớ xem Avatar "ĐANG" làm hành động gì
+    const currentAction = useRef('Idle');
 
     useEffect(() => {
-        // Kiểm tra xem hành động nào cần chạy, hành động nào cần dừng
-        const actionToPlay = isTalking ? actions['Talking'] : actions['Idle'];
-        const actionToStop = isTalking ? actions['Idle'] : actions['Talking'];
+        // Xác định hành động TIẾP THEO dựa trên thứ tự ưu tiên
+        let nextAction = 'Idle';
+        if (isTalking) nextAction = 'Talking';       // Đang nói là ưu tiên số 1
+        else if (isThinking) nextAction = 'Thinking';// Nếu không nói mà đang suy nghĩ -> Số 2
 
-        // Dừng hành động cũ từ từ trong 0.5 giây (để tay hạ xuống từ từ)
-        if (actionToStop) {
-            actionToStop.fadeOut(0.5);
+        // Nếu hành động tiếp theo khác với hành động hiện tại thì mới bắt đầu chuyển đổi
+        if (currentAction.current !== nextAction) {
+            const actionToPlay = actions[nextAction];
+            const actionToStop = actions[currentAction.current];
+
+            if (actionToStop) actionToStop.fadeOut(0.5);
+            if (actionToPlay) actionToPlay.reset().fadeIn(0.5).play();
+
+            // Cập nhật lại hành động hiện tại
+            currentAction.current = nextAction;
         }
-
-        // Bắt đầu hành động mới từ từ trong 0.5 giây
-        if (actionToPlay) {
-            actionToPlay.reset().fadeIn(0.5).play();
-        }
-
-    }, [isTalking, actions]); // Mỗi khi bấm nút đổi isTalking, useEffect này sẽ chạy lại
+    }, [isTalking, isThinking, actions]);
 
     return <primitive object={scene} scale={2} position={[0, -1.8, 0]} />;
 }
 
-export default function Ph_Annghen() {
-    const [isTalking, setIsTalking] = useState(false);
-
+export default function Ph_Annghen({ isTalking, isThinking }) {
     return (
-        <div style={{ height: '100vh', width: '100vw', backgroundColor: '#e0e0e0', position: 'relative' }}>
-
-            {/* Nút bấm điều khiển */}
-            <button
-                onClick={() => setIsTalking(!isTalking)}
-                style={{
-                    position: 'absolute',
-                    top: '30px',
-                    left: '30px',
-                    zIndex: 10,
-                    padding: '12px 24px',
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    backgroundColor: isTalking ? '#ef4444' : '#10b981', // Đỏ khi nói, Xanh lá khi khoanh tay
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                }}
-            >
-                {isTalking ? 'Dừng nói (Trở về khoanh tay)' : 'Bắt đầu thuyết trình'}
-            </button>
-
+        <div style={{ height: '100%', width: '100%', backgroundColor: '#e0e0e0' }}>
             <Canvas camera={{ position: [0, 0, 4], fov: 50 }} shadows>
                 <ambientLight intensity={0.6} />
                 <directionalLight position={[5, 5, 5]} intensity={1.5} castShadow />
                 <Environment preset="city" />
 
                 <Suspense fallback={null}>
-                    <Model isTalking={isTalking} />
+                    <Model isTalking={isTalking} isThinking={isThinking} />
                 </Suspense>
 
                 <ContactShadows position={[0, -1.8, 0]} opacity={0.6} scale={5} blur={2.5} far={4} />
@@ -80,5 +60,7 @@ export default function Ph_Annghen() {
     );
 }
 
+// Báo trình duyệt tải trước cả 3 file
 useGLTF.preload('/model/Ph-Annghen-Standing.glb');
 useGLTF.preload('/model/Ph-Annghen-Animation.glb');
+useGLTF.preload('/model/Ph-Annghen-Thinking.glb');

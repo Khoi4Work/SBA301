@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { apiVoice } from "../../services/apiVoice.js";
 
-const ChatAI = () => {
+// 1. Nhan 2 Function dieu khien tu VirtualAssistant)
+const ChatAI = ({ setAiTalking, setAiThinking }) => {
     const [messages, setMessages] = useState([
         { role: 'ai', type: 'text', content: 'Chào bạn, tôi là trợ lý AI. Bạn muốn hỏi gì nào?' }
     ]);
@@ -12,7 +13,9 @@ const ChatAI = () => {
     const messagesEndRef = useRef(null);
     const recognitionRef = useRef(null);
 
-    // Tự động cuộn xuống tin nhắn mới nhất
+    // 2. Thêm Ref này để quản lý luồng âm thanh
+    const currentAudioRef = useRef(null);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -65,10 +68,8 @@ const ChatAI = () => {
     const handleSendMessage = async () => {
         if (!inputValue.trim()) return;
 
-        // Dừng mic nếu đang bật
         if (isListening) toggleListening();
 
-        // Thêm tin nhắn của User vào giao diện
         const userMessage = { role: 'user', type: 'text', content: inputValue };
         setMessages(prev => [...prev, userMessage]);
 
@@ -77,30 +78,50 @@ const ChatAI = () => {
             voice: 'vi-VN-HoaiMyNeural'
         };
 
-        setInputValue(''); // Xóa ô input
+        setInputValue('');
+
+        // --- BẮT ĐẦU GỌI API ---
         setIsLoading(true);
+        if (setAiThinking) setAiThinking(true); // Ra lệnh: Thinking
 
         try {
             const response = await apiVoice.chat(requestData);
-            const data = response.data; // Dựa theo cấu trúc axios của bạn
+            const data = response.data;
 
-            // Assuming data.result chứa base64 theo chuẩn ApiResponse của bạn
+            // --- API TRẢ VỀ KẾT QUẢ ---
+            if (setAiThinking) setAiThinking(false); // Ra lệnh: Stop Thinking
+
             if (data.code === 1000 && data.result) {
                 const base64Audio = data.result.audioBase64;
-
-                // Gắn audio vào chat
                 const aiMessage = { role: 'ai', type: 'audio', audioData: base64Audio };
                 setMessages(prev => [...prev, aiMessage]);
 
-                // Tự động phát âm thanh
                 const audioSrc = `data:audio/mpeg;base64,${base64Audio}`;
                 const audio = new Audio(audioSrc);
+
+                // Nếu đang có câu nói nào phát dở thì tắt đi để phát câu mới
+                if (currentAudioRef.current) {
+                    currentAudioRef.current.pause();
+                }
+                currentAudioRef.current = audio;
+
+                // Ra lệnh: Talking
+                audio.onplay = () => {
+                    if (setAiTalking) setAiTalking(true);
+                };
+
+                // Ra lệnh: End talking
+                audio.onended = () => {
+                    if (setAiTalking) setAiTalking(false);
+                };
+
                 await audio.play();
             } else {
                 setMessages(prev => [...prev, { role: 'ai', type: 'text', content: `Lỗi: ${data.message}` }]);
             }
         } catch (error) {
             console.error("Lỗi gọi API Chat:", error);
+            if (setAiThinking) setAiThinking(false); // Lỗi cũng phải tắt suy nghĩ đi
             setMessages(prev => [...prev, { role: 'ai', type: 'text', content: "Không thể kết nối đến máy chủ." }]);
         } finally {
             setIsLoading(false);
@@ -119,25 +140,18 @@ const ChatAI = () => {
     // ==========================================
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '80vh', maxWidth: '600px', margin: '0 auto', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#f9f9f9' }}>
-
-            {/* Header */}
             <div style={{ padding: '15px', backgroundColor: '#007bff', color: 'white', borderTopLeftRadius: '10px', borderTopRightRadius: '10px', textAlign: 'center', fontWeight: 'bold' }}>
                 Trợ Lý Ảo RAG (Voice & Text)
             </div>
 
-            {/* Chat History */}
             <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {messages.map((msg, index) => (
                     <div key={index} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
-
-                        {/* Nếu là chữ */}
                         {msg.type === 'text' && (
                             <div style={{ padding: '10px', borderRadius: '10px', backgroundColor: msg.role === 'user' ? '#007bff' : '#e9ecef', color: msg.role === 'user' ? 'white' : 'black' }}>
                                 {msg.content}
                             </div>
                         )}
-
-                        {/* Nếu là Audio (AI trả về) */}
                         {msg.type === 'audio' && (
                             <div style={{ padding: '10px', borderRadius: '10px', backgroundColor: '#e9ecef', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <span>🎙️ AI đang nói...</span>
@@ -154,9 +168,7 @@ const ChatAI = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
             <div style={{ padding: '10px', borderTop: '1px solid #ccc', display: 'flex', gap: '10px', backgroundColor: 'white', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px' }}>
-
                 <button
                     onClick={toggleListening}
                     style={{ padding: '10px', borderRadius: '50%', border: 'none', backgroundColor: isListening ? '#dc3545' : '#6c757d', color: 'white', cursor: 'pointer', width: '45px', height: '45px' }}
