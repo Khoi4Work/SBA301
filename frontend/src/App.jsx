@@ -9,6 +9,8 @@ import {TestPage} from "@/pages/TestPage.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
 import Chat from "@/pages/Chat.jsx";
 import Study from "@/pages/Study.jsx";
+import {AuthProvider} from "@/contexts/AuthContext.jsx";
+import Register from "@/pages/Register.jsx";
 
 function AppLayout() {
     const location = useLocation();
@@ -29,6 +31,7 @@ function AppLayout() {
                 <Route path={"/test"} element={<TestPage/>}/>
                 <Route path="/dashboard" element={<PhiloVerse />} />
                 <Route path="/Study" element={<Study/>}/>
+                <Route path="/register" element={<Register/>}/>
             </Routes>
         </>
     );
@@ -37,7 +40,9 @@ function AppLayout() {
 function App() {
     return (
         <Router>
-            <AppLayout/>
+            <AuthProvider>
+                <AppLayout/>
+            </AuthProvider>
         </Router>
     );
 }
