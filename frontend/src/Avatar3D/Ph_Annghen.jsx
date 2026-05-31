@@ -8,24 +8,24 @@ function Model({ isTalking, isThinking }) {
     const { animations: talkAnims } = useGLTF('/model/Ph-Annghen-Animation.glb');
     const { animations: thinkAnims } = useGLTF('/model/Ph-Annghen-Thinking.glb'); // Load file Thinking
 
-    // 2. Đổi tên
+    // 2. Change name to easy call
     idleAnims[0].name = 'Idle';
     talkAnims[0].name = 'Talking';
     thinkAnims[0].name = 'Thinking';
 
-    // 3. Gộp 3 Animation
+    // 3. Combine 3 animation
     const { actions } = useAnimations([idleAnims[0], talkAnims[0], thinkAnims[0]], scene);
 
-    // 4. Dùng useRef để ghi nhớ xem Avatar "ĐANG" làm hành động gì
-    const currentAction = useRef('Idle');
+    // 4. Use useRef de default animation
+    const currentAction = useRef('');
 
     useEffect(() => {
-        // Xác định hành động TIẾP THEO dựa trên thứ tự ưu tiên
+        // Define next animation
         let nextAction = 'Idle';
-        if (isTalking) nextAction = 'Talking';       // Đang nói là ưu tiên số 1
-        else if (isThinking) nextAction = 'Thinking';// Nếu không nói mà đang suy nghĩ -> Số 2
+        if (isTalking) nextAction = 'Talking';
+        else if (isThinking) nextAction = 'Thinking'
 
-        // Nếu hành động tiếp theo khác với hành động hiện tại thì mới bắt đầu chuyển đổi
+        // Statement check
         if (currentAction.current !== nextAction) {
             const actionToPlay = actions[nextAction];
             const actionToStop = actions[currentAction.current];
@@ -60,7 +60,7 @@ export default function Ph_Annghen({ isTalking, isThinking }) {
     );
 }
 
-// Báo trình duyệt tải trước cả 3 file
+// Khai bao truoc 3 file
 useGLTF.preload('/model/Ph-Annghen-Standing.glb');
 useGLTF.preload('/model/Ph-Annghen-Animation.glb');
 useGLTF.preload('/model/Ph-Annghen-Thinking.glb');
