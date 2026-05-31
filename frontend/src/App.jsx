@@ -3,10 +3,10 @@ import {BrowserRouter as Router, Routes, Route, useLocation} from 'react-router-
 import Header from './components/Header';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import VoiceTest from "./pages/VoiceTest.jsx";
+import VoiceTest from "./pages/test/VoiceTest.jsx";
 import Karl_Marx from "./Avatar3D/Karl_Marx.jsx";
-import ChatAI from "@/pages/ChatAI.jsx";
-import {TestPage} from "@/pages/TestPage.jsx";
+import ChatAI from "@/pages/test/ChatAI.jsx";
+import {TestPage} from "@/pages/test/TestPage.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
 
 function AppLayout() {

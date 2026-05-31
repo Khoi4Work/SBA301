@@ -1,18 +1,19 @@
-import React, {useState, useRef, useEffect, useCallback} from 'react';
-import {apiVoice} from "../services/apiVoice.js"; // File API của bạn
-import {useSpeechToText} from '../services/hooks/useSpeechToText'; // Custom Hook đã tạo ở bài trước
-import MicButton from './MicButton';                 // UI Component đã tạo ở bài trước
-import AudioPlayer from '../components/AudioPlayer.jsx';             // UI Component đã tạo ở bài trước
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { apiVoice } from "@/services/apiVoice.js";
+import { useSpeechToText } from '@/services/hooks/useSpeechToText.js';
+import MicButton from './MicButton.jsx';
+import AudioPlayer from './AudioPlayer.jsx';
 
 const SmartChatAI = ({
-                         // === CÁC PROPS TÙY CHỈNH (CUSTOMIZATION) ===
                          title = "Trợ Lý Ảo Thông Minh",
                          voiceId = "vi-VN-HoaiMyNeural",
-                         enableAutoSend = true,       // Bật/tắt tính năng tự động gửi khi im lặng
-                         autoSendDelay = 2000,        // Thời gian im lặng (ms) trước khi tự gửi (2000ms = 2s)
-                         autoPlayAudio = true,        // Tự động phát giọng AI khi có phản hồi
-                         height = "80vh",             // Chiều cao khung chat
-                         welcomeMessage = "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?"
+                         enableAutoSend = true,
+                         autoSendDelay = 2000,
+                         autoPlayAudio = true,
+                         height = "80vh",
+                         welcomeMessage = "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?",
+                         // MỚI: Prop này sẽ gọi ra ngoài component cha để báo cho Model 3D biết
+                         onSpeakingChange = () => {}
                      }) => {
 
     const [messages, setMessages] = useState([
@@ -21,15 +22,19 @@ const SmartChatAI = ({
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // MỚI: State cờ đánh dấu AI đang nói
+    const [isAISpeaking, setIsAISpeaking] = useState(false);
+
     const messagesEndRef = useRef(null);
     const autoSendTimerRef = useRef(null);
-
-    // 1. THÊM REF ĐỂ LƯU GIỮ TRẠNG THÁI "ĐANG GỬI" (Tránh Stale State của isLoading)
     const isSendingRef = useRef(false);
-    // 2. THÊM REF ĐỂ LƯU INPUT VALUE MỚI NHẤT DÀNH CHO TIMER
     const latestInputRef = useRef(inputValue);
 
-    // Luôn cập nhật latestInputRef khi inputValue thay đổi
+    // MỚI: Báo cho component bên ngoài (nơi chứa 3D model) mỗi khi trạng thái nói thay đổi
+    useEffect(() => {
+        onSpeakingChange(isAISpeaking);
+    }, [isAISpeaking, onSpeakingChange]);
+
     useEffect(() => {
         latestInputRef.current = inputValue;
     }, [inputValue]);
@@ -113,7 +118,6 @@ const SmartChatAI = ({
         }
     });
 
-    // Dọn dẹp timer khi unmount
     useEffect(() => {
         return () => {
             if (autoSendTimerRef.current) clearTimeout(autoSendTimerRef.current);
@@ -127,7 +131,6 @@ const SmartChatAI = ({
         }
     };
 
-    // === GIAO DIỆN ===
     return (
         <div style={{
             display: 'flex',
@@ -191,11 +194,15 @@ const SmartChatAI = ({
                                 color: '#1e293b'
                             }}>
                                 <div style={{marginBottom: '10px', lineHeight: '1.5'}}>{msg.content}</div>
-                                {/* Tái sử dụng AudioPlayer.jsx */}
+
+                                {/* MỚI: Truyền các sự kiện của thẻ audio lên để bắt trạng thái */}
                                 <AudioPlayer
                                     base64Data={msg.audioData}
                                     autoPlay={autoPlayAudio}
                                     label="Nghe trả lời:"
+                                    onPlay={() => setIsAISpeaking(true)}
+                                    onPause={() => setIsAISpeaking(false)}
+                                    onEnded={() => setIsAISpeaking(false)}
                                 />
                             </div>
                         )}

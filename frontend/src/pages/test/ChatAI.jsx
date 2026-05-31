@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { apiVoice } from "../services/apiVoice.js";
+import { apiVoice } from "../../services/apiVoice.js";
 
 const ChatAI = () => {
     const [messages, setMessages] = useState([
