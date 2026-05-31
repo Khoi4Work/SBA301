@@ -12,8 +12,9 @@ const SmartChatAI = ({
                          autoPlayAudio = true,
                          height = "80vh",
                          welcomeMessage = "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?",
-                         // MỚI: Prop này sẽ gọi ra ngoài component cha để báo cho Model 3D biết
-                         onSpeakingChange = () => {}
+                         // CẬP NHẬT: Nhận 2 hàm cập nhật trạng thái từ VirtualAssistant
+                         setAiTalking = () => {},
+                         setAiThinking = () => {}
                      }) => {
 
     const [messages, setMessages] = useState([
@@ -22,7 +23,7 @@ const SmartChatAI = ({
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // MỚI: State cờ đánh dấu AI đang nói
+    // State cờ đánh dấu AI đang nói
     const [isAISpeaking, setIsAISpeaking] = useState(false);
 
     const messagesEndRef = useRef(null);
@@ -30,10 +31,15 @@ const SmartChatAI = ({
     const isSendingRef = useRef(false);
     const latestInputRef = useRef(inputValue);
 
-    // MỚI: Báo cho component bên ngoài (nơi chứa 3D model) mỗi khi trạng thái nói thay đổi
+    // CẬP NHẬT: Báo cho component bên ngoài mỗi khi trạng thái nói thay đổi
     useEffect(() => {
-        onSpeakingChange(isAISpeaking);
-    }, [isAISpeaking, onSpeakingChange]);
+        setAiTalking(isAISpeaking);
+    }, [isAISpeaking, setAiTalking]);
+
+    // MỚI: Báo cho component bên ngoài mỗi khi trạng thái suy nghĩ (loading) thay đổi
+    useEffect(() => {
+        setAiThinking(isLoading);
+    }, [isLoading, setAiThinking]);
 
     useEffect(() => {
         latestInputRef.current = inputValue;
@@ -43,12 +49,12 @@ const SmartChatAI = ({
         messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
     }, [messages]);
 
-    // === HÀM GỬI TIN NHẮN (ĐÃ CẬP NHẬT CHỐNG ĐÚP) ===
+    // === HÀM GỬI TIN NHẮN (CHỐNG ĐÚP) ===
     const handleSendMessage = useCallback(async (textToSubmit = latestInputRef.current) => {
         // CHẶN GỬI ĐÚP: Nếu đang gửi, hoặc không có chữ, thì return luôn
         if (isSendingRef.current || !textToSubmit || !textToSubmit.trim()) return;
 
-        // Đánh dấu là đang gửi (Khóa cửa)
+        // Đánh dấu là đang gửi (Khóa cửa / Bắt đầu suy nghĩ)
         isSendingRef.current = true;
         setIsLoading(true);
 
@@ -89,11 +95,11 @@ const SmartChatAI = ({
             console.error("Lỗi gửi tin nhắn:", error);
             setMessages(prev => [...prev, {role: 'ai', type: 'text', content: "Mất kết nối đến máy chủ."}]);
         } finally {
-            // Mở khóa sau khi hoàn tất
+            // Mở khóa sau khi hoàn tất (Ngừng suy nghĩ)
             isSendingRef.current = false;
             setIsLoading(false);
         }
-    }, [voiceId]); // Xóa dependencies không cần thiết để tránh tái tạo hàm liên tục
+    }, [voiceId]);
 
     // === HOOK XỬ LÝ NHẬN DIỆN GIỌNG NÓI ===
     const {isListening, toggleListening, stopListening, error: micError} = useSpeechToText({
@@ -195,7 +201,7 @@ const SmartChatAI = ({
                             }}>
                                 <div style={{marginBottom: '10px', lineHeight: '1.5'}}>{msg.content}</div>
 
-                                {/* MỚI: Truyền các sự kiện của thẻ audio lên để bắt trạng thái */}
+                                {/* Bắt sự kiện thẻ audio để báo AI đang nói */}
                                 <AudioPlayer
                                     base64Data={msg.audioData}
                                     autoPlay={autoPlayAudio}
