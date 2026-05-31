@@ -1,7 +1,7 @@
 package com.philosophy.rag.service;
 
 import com.philosophy.rag.base.exception.ApiException;
-import com.philosophy.rag.dto.DocumentDistributionResponse;
+import com.philosophy.rag.dto.response.DocumentDistributionResponse;
 import com.philosophy.rag.dto.response.DocumentUploadResponse;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.multipart.MultipartFile;

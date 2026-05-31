@@ -2,7 +2,7 @@ package com.philosophy.rag.service.impl;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
-import com.philosophy.rag.dto.DocumentDistributionResponse;
+import com.philosophy.rag.dto.response.DocumentDistributionResponse;
 import com.philosophy.rag.dto.response.DocumentUploadResponse;
 import com.philosophy.rag.service.S3StorageService;
 import lombok.RequiredArgsConstructor;

@@ -8,6 +8,8 @@ import Karl_Marx from "./Avatar3D/Karl_Marx.jsx";
 import ChatAI from "@/pages/test/ChatAI.jsx";
 import {TestPage} from "@/pages/test/TestPage.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
+import {AuthProvider} from "@/contexts/AuthContext.jsx";
+import Register from "@/pages/Register.jsx";
 
 function AppLayout() {
     const location = useLocation();
@@ -24,9 +26,10 @@ function AppLayout() {
                 <Route path="/login" element={<Login/>}/>
                 <Route path="/voice" element={<VoiceTest/>}/>
                 <Route path="/model" element={<Karl_Marx/>}/>
-                <Route path={"/chat"} element={<ChatAI/>}/>
+                <Route path={"/chat"} element={<TestPage/>}/>
                 <Route path={"/test"} element={<TestPage/>}/>
-                <Route path="/dashboard" element={<PhiloVerse />} />
+                <Route path="/dashboard" element={<PhiloVerse/>}/>
+                <Route path="/register" element={<Register/>}/>
             </Routes>
         </>
     );
@@ -35,7 +38,9 @@ function AppLayout() {
 function App() {
     return (
         <Router>
-            <AppLayout/>
+            <AuthProvider>
+                <AppLayout/>
+            </AuthProvider>
         </Router>
     );
 }
