@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import { Sidebar } from "@/components/Sidebar.jsx";
 import { TopBar } from "@/components/TopBar.jsx";
@@ -7,12 +8,13 @@ import { DialogueView } from "@/components/DialogueView.jsx";
 import "@/assets/styles/philoverse-chat.css";
 
 export default function  Chat() {
+    const navigate = useNavigate();
     const [view, setView] = useState("selection");
     const [selectedPhilosopher, setSelectedPhilosopher] = useState(null);
 
     const handleSelect = (philosopher) => {
         setSelectedPhilosopher(philosopher);
-        setView("dialogue");
+        navigate("/test", { state: { philosopher } });
     };
 
     const navigateTo = (newView) => {

@@ -10,7 +10,6 @@ import PhiloVerse from "@/pages/PhiloVerse.jsx";
 import {AuthProvider} from "@/contexts/AuthContext.jsx";
 import Register from "@/pages/Register.jsx";
 import VirtualAssistant from "@/pages/test/VirtualAssistant.jsx";
-import VirtualAssistant from "@/components/VirtualAssistant.jsx";
 import Chat from "@/pages/Chat.jsx";
 
 function AppLayout() {

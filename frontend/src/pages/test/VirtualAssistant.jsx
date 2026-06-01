@@ -1,25 +1,121 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Ph_Annghen from '../../Avatar3D/Ph_Annghen.jsx';
 import SmartChatAI from "@/components/AI/SmartChatAI.jsx";
+import MicButton from "@/components/AI/MicButton.jsx";
+import ChatPanel from "@/components/AI/ChatPanel.jsx";
+import { useSpeechToText } from '@/services/hooks/useSpeechToText.js';
+import { Sidebar } from "@/components/Sidebar.jsx";
+import { TopBar } from "@/components/TopBar.jsx";
+import "@/assets/styles/philoverse-chat.css";
 
 const VirtualAssistant = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const philosopher = location.state?.philosopher;
+
     const [isAiTalking, setIsAiTalking] = useState(false);
-    const [isAiThinking, setIsAiThinking] = useState(false); // Thêm trạng thái Suy nghĩ
+    const [isAiThinking, setIsAiThinking] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const chatRef = useRef(null);
+    const autoSendTimerRef = useRef(null);
+
+    // Voice Recognition Hook
+    const { isListening, toggleListening, stopListening, error: micError } = useSpeechToText({
+        continuous: false,
+        onTranscript: (text) => {
+            if (chatRef.current) {
+                chatRef.current.setInputValue(text);
+
+                if (text.trim() !== '') {
+                    if (autoSendTimerRef.current) clearTimeout(autoSendTimerRef.current);
+
+                    autoSendTimerRef.current = setTimeout(() => {
+                        if (chatRef.current) {
+                            chatRef.current.handleSendMessage(text);
+                        }
+                    }, 2000);
+                }
+            }
+        }
+    });
+
+    const navigateTo = (newView) => {
+        if (newView === "selection") {
+            navigate("/chat");
+        }
+    };
 
     return (
-        <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-            <div style={{ flex: 6, position: 'relative' }}>
-                {/* Truyền cả 2 trạng thái xuống Avatar */}
-                <Ph_Annghen isTalking={isAiTalking} isThinking={isAiThinking} />
-            </div>
+        <>
+            <div className="noise-overlay fixed inset-0 z-[100]" />
+            <div className="vignette fixed inset-0 z-30 pointer-events-none" />
+            <div className="fixed inset-0 bg-surface-dim pointer-events-none z-[-1]" />
+            <div className="fixed inset-0 atmospheric-fog z-[1]" />
 
-            <div style={{ flex: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backgroundColor: '#f0f2f5' }}>
-                <div style={{ width: '100%', maxWidth: '600px' }}>
-                    {/* Truyền cả 2 hàm set trạng thái xuống khung Chat */}
-                    <SmartChatAI setAiTalking={setIsAiTalking} setAiThinking={setIsAiThinking} />
+            <Sidebar currentView="dialogue" onNavigate={navigateTo} />
+
+            <main className="flex flex-col min-h-screen relative transition-all duration-500">
+                <TopBar
+                    currentView="dialogue"
+                    philosopherName={philosopher?.name || "Triết gia"}
+                    onNavigate={navigateTo}
+                />
+
+                <div className="flex-1 transition-all duration-500 lg:ml-64 relative overflow-hidden">
+                    <div style={{
+                        display: 'flex',
+                        height: 'calc(100vh - 80px)',
+                        width: '100%',
+                        position: 'relative'
+                    }}>
+
+                        {/* Main View: Animation & Mic */}
+                        <div style={{
+                            flex: 1,
+                            position: 'relative',
+                            transition: 'all 0.3s ease'
+                        }}>
+                            <Ph_Annghen isTalking={isAiTalking} isThinking={isAiThinking} />
+
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '40px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                zIndex: 10
+                            }}>
+                                <MicButton
+                                    isListening={isListening}
+                                    onClick={toggleListening}
+                                    disabled={isAiThinking}
+                                    size="60px"
+                                    activeColor="#ef4444"
+                                    idleColor="#3b82f6"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Chat Sidebar using the new component */}
+                        <ChatPanel
+                            isOpen={isChatOpen}
+                            onToggle={() => setIsChatOpen(!isChatOpen)}
+                        >
+                            <SmartChatAI
+                                ref={chatRef}
+                                visible={isChatOpen}
+                                isListening={isListening}
+                                toggleListening={toggleListening}
+                                stopListening={stopListening}
+                                micError={micError}
+                                setAiTalking={setIsAiTalking}
+                                setAiThinking={setIsAiThinking}
+                            />
+                        </ChatPanel>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </main>
+        </>
     );
 };
 
