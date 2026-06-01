@@ -8,7 +8,7 @@ import com.philosophy.rag.service.S3StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +24,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
-@Profile("!dev")
 public class DocumentController {
 
         private final S3StorageService s3StorageService;
@@ -59,6 +58,29 @@ public class DocumentController {
                                                 + URLEncoder.encode(document.getKey(), StandardCharsets.UTF_8)));
 
                 return ResponseEntity.ok(ApiResponse.success(documents, "Document list retrieved successfully"));
+        }
+
+        @Operation(summary = "Download a document from S3 by key")
+        @GetMapping("/download")
+        public ResponseEntity<byte[]> downloadDocument(
+                        @RequestParam("key") String key) throws ApiException {
+
+                log.info("Downloading document with key: {}", key);
+                byte[] fileBytes = s3StorageService.downloadDocument(key);
+                String contentType = s3StorageService.getContentType(key);
+
+                // Extract readable filename from key (format: documents/date/uuid-filename)
+                String fileName = key.substring(key.lastIndexOf('/') + 1);
+                if (fileName.length() > 37 && fileName.charAt(36) == '-') {
+                        fileName = fileName.substring(37);
+                }
+
+                return ResponseEntity.ok()
+                                .contentType(MediaType.parseMediaType(contentType))
+                                .header(HttpHeaders.CONTENT_DISPOSITION,
+                                                "attachment; filename=\"" + fileName + "\"")
+                                .header("Access-Control-Expose-Headers", HttpHeaders.CONTENT_DISPOSITION)
+                                .body(fileBytes);
         }
 
 }

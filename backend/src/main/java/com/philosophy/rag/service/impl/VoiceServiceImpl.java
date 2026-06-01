@@ -58,9 +58,9 @@ public class VoiceServiceImpl implements VoiceService {
             // 1. Ghi text ra file txt (sử dụng UTF-8 để không bị lỗi font tiếng Việt)
             Files.writeString(textFile.toPath(), text, StandardCharsets.UTF_8);
 
-            // 2. Gọi lệnh CMD, dùng cờ -f (viết tắt của --file) để đọc từ file thay vì --text
+            // 2. Gọi lệnh qua Python launcher để không phụ thuộc vào PATH
             ProcessBuilder processBuilder = new ProcessBuilder(
-                    "cmd.exe", "/c", "edge-tts",
+                    "cmd.exe", "/c", "py", "-m", "edge_tts",
                     "--voice", voice,
                     "-f", textFile.getAbsolutePath(),
                     "--write-media", outputFile.getAbsolutePath()

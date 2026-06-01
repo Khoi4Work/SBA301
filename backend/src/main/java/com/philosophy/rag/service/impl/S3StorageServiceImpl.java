@@ -8,11 +8,13 @@ import com.philosophy.rag.service.S3StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
@@ -31,7 +33,6 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@Profile("!dev")
 public class S3StorageServiceImpl implements S3StorageService {
 
     @Value("${aws.s3.bucket-name}")
@@ -201,5 +202,39 @@ public class S3StorageServiceImpl implements S3StorageService {
             return "text/plain";
         }
         return "application/octet-stream";
+    }
+
+    @Override
+    public byte[] downloadDocument(String key) throws ApiException {
+        try {
+            log.info("Downloading document from S3: bucket={}, key={}", bucketName, key);
+            ResponseBytes<GetObjectResponse> objectBytes = s3Client.getObjectAsBytes(
+                    GetObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(key)
+                            .build());
+            return objectBytes.asByteArray();
+        } catch (S3Exception e) {
+            log.error("S3 download error: {}", e.awsErrorDetails().errorMessage(), e);
+            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to download file from S3");
+        } catch (Exception e) {
+            log.error("File download error: {}", e.getMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "File download failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public String getContentType(String key) throws ApiException {
+        try {
+            HeadObjectResponse head = s3Client.headObject(
+                    HeadObjectRequest.builder().bucket(bucketName).key(key).build());
+            String ct = head.contentType();
+            if (ct == null || ct.isBlank()) {
+                return inferContentType(extractFileNameFromKey(key));
+            }
+            return ct;
+        } catch (S3Exception e) {
+            return "application/octet-stream";
+        }
     }
 }

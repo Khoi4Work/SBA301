@@ -9,12 +9,13 @@ import {TestPage} from "@/pages/TestPage.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
 import Chat from "@/pages/Chat.jsx";
 import Study from "@/pages/Study.jsx";
+import LessonPage from "@/pages/LessonPage.jsx";
 
 function AppLayout() {
     const location = useLocation();
 
-    // Ẩn header ở home + login
-    const hideHeader = ['/', '/login'].includes(location.pathname);
+    // Ẩn header ở home + login + lesson (lesson có header riêng)
+    const hideHeader = ['/', '/login', '/study/lesson'].includes(location.pathname);
 
     return (
         <>
@@ -29,6 +30,7 @@ function AppLayout() {
                 <Route path={"/test"} element={<TestPage/>}/>
                 <Route path="/dashboard" element={<PhiloVerse />} />
                 <Route path="/Study" element={<Study/>}/>
+                <Route path="/study/lesson" element={<LessonPage/>}/>
             </Routes>
         </>
     );
