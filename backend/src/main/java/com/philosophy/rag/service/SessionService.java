@@ -2,7 +2,9 @@ package com.philosophy.rag.service;
 
 import com.philosophy.rag.dto.response.QuizGenerateResponse;
 import com.philosophy.rag.dto.response.SessionContentResponse;
+import org.springframework.context.annotation.Profile;
 
+@Profile("!dev")
 public interface SessionService {
     /**
      * Download file từ S3 theo key, extract text (PDF/DOCX/MD/TXT), trả về content

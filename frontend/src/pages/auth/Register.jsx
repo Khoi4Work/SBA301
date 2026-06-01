@@ -1,7 +1,7 @@
 import { Menu } from 'lucide-react';
-import { Background } from '../components/Background';
-import { SignatureInput } from '../components/SignatureInput';
-import { AestheticDivider } from '../components/AestheticDivider';
+import { Background } from '../../components/Background.jsx';
+import { SignatureInput } from '../../components/SignatureInput.jsx';
+import { AestheticDivider } from '../../components/AestheticDivider.jsx';
 import {useContext, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {AuthContext} from "@/contexts/AuthContext.jsx";

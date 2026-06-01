@@ -1,4 +1,4 @@
-import '../assets/styles/philoverse.css';
+import '../../assets/styles/philoverse.css';
 import {useContext, useEffect, useRef, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {AuthContext} from "@/contexts/AuthContext.jsx";

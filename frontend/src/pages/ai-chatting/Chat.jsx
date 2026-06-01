@@ -14,7 +14,7 @@ export default function  Chat() {
 
     const handleSelect = (philosopher) => {
         setSelectedPhilosopher(philosopher);
-        navigate("/test", { state: { philosopher } });
+        navigate("/ai", { state: { philosopher } });
     };
 
     const navigateTo = (newView) => {
