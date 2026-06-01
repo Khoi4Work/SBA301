@@ -1,35 +1,37 @@
-import React, {useState, useRef, useEffect, useCallback} from 'react';
-import {apiVoice} from "../services/apiVoice.js"; // File API của bạn
-import {useSpeechToText} from '../services/hooks/useSpeechToText'; // Custom Hook đã tạo ở bài trước
-import MicButton from './MicButton';                 // UI Component đã tạo ở bài trước
-import AudioPlayer from '../components/AudioPlayer.jsx';             // UI Component đã tạo ở bài trước
+import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { apiVoice } from "@/services/apiVoice.js";
+import AudioPlayer from './AudioPlayer.jsx';
 
-const SmartChatAI = ({
-                         // === CÁC PROPS TÙY CHỈNH (CUSTOMIZATION) ===
+const SmartChatAI = forwardRef(({
                          title = "Trợ Lý Ảo Thông Minh",
                          voiceId = "vi-VN-HoaiMyNeural",
-                         enableAutoSend = true,       // Bật/tắt tính năng tự động gửi khi im lặng
-                         autoSendDelay = 2000,        // Thời gian im lặng (ms) trước khi tự gửi (2000ms = 2s)
-                         autoPlayAudio = true,        // Tự động phát giọng AI khi có phản hồi
-                         height = "80vh",             // Chiều cao khung chat
-                         welcomeMessage = "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?"
-                     }) => {
+                         autoPlayAudio = true,
+                         height = "80vh",
+                         welcomeMessage = "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?",
+                         setAiTalking = () => {},
+                         setAiThinking = () => {},
+                         visible = true
+                     }, ref) => {
 
     const [messages, setMessages] = useState([
         {role: 'ai', type: 'text', content: welcomeMessage}
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isAISpeaking, setIsAISpeaking] = useState(false);
 
     const messagesEndRef = useRef(null);
-    const autoSendTimerRef = useRef(null);
-
-    // 1. THÊM REF ĐỂ LƯU GIỮ TRẠNG THÁI "ĐANG GỬI" (Tránh Stale State của isLoading)
     const isSendingRef = useRef(false);
-    // 2. THÊM REF ĐỂ LƯU INPUT VALUE MỚI NHẤT DÀNH CHO TIMER
     const latestInputRef = useRef(inputValue);
 
-    // Luôn cập nhật latestInputRef khi inputValue thay đổi
+    useEffect(() => {
+        setAiTalking(isAISpeaking);
+    }, [isAISpeaking, setAiTalking]);
+
+    useEffect(() => {
+        setAiThinking(isLoading);
+    }, [isLoading, setAiThinking]);
+
     useEffect(() => {
         latestInputRef.current = inputValue;
     }, [inputValue]);
@@ -38,31 +40,20 @@ const SmartChatAI = ({
         messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
     }, [messages]);
 
-    // === HÀM GỬI TIN NHẮN (ĐÃ CẬP NHẬT CHỐNG ĐÚP) ===
-    const handleSendMessage = useCallback(async (textToSubmit = latestInputRef.current) => {
-        // CHẶN GỬI ĐÚP: Nếu đang gửi, hoặc không có chữ, thì return luôn
-        if (isSendingRef.current || !textToSubmit || !textToSubmit.trim()) return;
+    const handleSendMessage = useCallback(async (textToSubmit) => {
+        const finalText = textToSubmit || latestInputRef.current;
+        if (isSendingRef.current || !finalText || !finalText.trim()) return;
 
-        // Đánh dấu là đang gửi (Khóa cửa)
         isSendingRef.current = true;
         setIsLoading(true);
 
-        // Xóa timer nếu có (để tránh timer thứ 2 nổ)
-        if (autoSendTimerRef.current) {
-            clearTimeout(autoSendTimerRef.current);
-            autoSendTimerRef.current = null;
-        }
-
-        stopListening();
-
-        // Thêm tin nhắn của User
-        setMessages(prev => [...prev, {role: 'user', type: 'text', content: textToSubmit}]);
+        setMessages(prev => [...prev, {role: 'user', type: 'text', content: finalText}]);
         setInputValue('');
-        latestInputRef.current = ''; // Xóa luôn ref
+        latestInputRef.current = '';
 
         try {
             const response = await apiVoice.chat({
-                text: textToSubmit,
+                text: finalText,
                 voice: voiceId
             });
             const data = response.data;
@@ -84,41 +75,16 @@ const SmartChatAI = ({
             console.error("Lỗi gửi tin nhắn:", error);
             setMessages(prev => [...prev, {role: 'ai', type: 'text', content: "Mất kết nối đến máy chủ."}]);
         } finally {
-            // Mở khóa sau khi hoàn tất
             isSendingRef.current = false;
             setIsLoading(false);
         }
-    }, [voiceId]); // Xóa dependencies không cần thiết để tránh tái tạo hàm liên tục
+    }, [voiceId]);
 
-    // === HOOK XỬ LÝ NHẬN DIỆN GIỌNG NÓI ===
-    const {isListening, toggleListening, stopListening, error: micError} = useSpeechToText({
-        onTranscript: (text) => {
-            setInputValue(text);
-
-            // --- LOGIC AUTO-SEND KHI IM LẶNG ---
-            if (enableAutoSend && text.trim() !== '') {
-                // Hủy bộ đếm cũ
-                if (autoSendTimerRef.current) {
-                    clearTimeout(autoSendTimerRef.current);
-                }
-
-                // Cài đặt bộ đếm mới
-                autoSendTimerRef.current = setTimeout(() => {
-                    // Chỉ gửi nếu lúc timer nổ mà không có tiến trình gửi nào đang chạy
-                    if (!isSendingRef.current) {
-                        handleSendMessage(text);
-                    }
-                }, autoSendDelay);
-            }
-        }
-    });
-
-    // Dọn dẹp timer khi unmount
-    useEffect(() => {
-        return () => {
-            if (autoSendTimerRef.current) clearTimeout(autoSendTimerRef.current);
-        };
-    }, []);
+    useImperativeHandle(ref, () => ({
+        handleSendMessage,
+        setInputValue,
+        getInputValue: () => latestInputRef.current
+    }));
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -127,10 +93,9 @@ const SmartChatAI = ({
         }
     };
 
-    // === GIAO DIỆN ===
     return (
         <div style={{
-            display: 'flex',
+            display: visible ? 'flex' : 'none', // Sử dụng display: none thay vì opacity để không chiếm không gian/can thiệp UI
             flexDirection: 'column',
             height: height,
             maxWidth: '600px',
@@ -138,7 +103,8 @@ const SmartChatAI = ({
             border: '1px solid #ddd',
             borderRadius: '12px',
             backgroundColor: '#fff',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            transition: 'all 0.3s ease',
         }}>
 
             {/* Header */}
@@ -152,7 +118,6 @@ const SmartChatAI = ({
                 alignItems: 'center'
             }}>
                 <h3 style={{margin: 0, fontSize: '1.1rem'}}>{title}</h3>
-                {micError && <span style={{fontSize: '0.8rem', color: '#fca5a5'}} title={micError}>⚠️ Lỗi Mic</span>}
             </div>
 
             {/* Vùng Chat */}
@@ -169,7 +134,6 @@ const SmartChatAI = ({
                     <div key={index}
                          style={{alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%'}}>
 
-                        {/* Tin nhắn chữ thông thường */}
                         {msg.type === 'text' && (
                             <div style={{
                                 padding: '12px 16px',
@@ -182,7 +146,6 @@ const SmartChatAI = ({
                             </div>
                         )}
 
-                        {/* Tin nhắn có cả chữ và âm thanh (AI trả về) */}
                         {msg.type === 'both' && (
                             <div style={{
                                 padding: '12px 16px',
@@ -191,11 +154,14 @@ const SmartChatAI = ({
                                 color: '#1e293b'
                             }}>
                                 <div style={{marginBottom: '10px', lineHeight: '1.5'}}>{msg.content}</div>
-                                {/* Tái sử dụng AudioPlayer.jsx */}
+
                                 <AudioPlayer
                                     base64Data={msg.audioData}
                                     autoPlay={autoPlayAudio}
                                     label="Nghe trả lời:"
+                                    onPlay={() => setIsAISpeaking(true)}
+                                    onPause={() => setIsAISpeaking(false)}
+                                    onEnded={() => setIsAISpeaking(false)}
                                 />
                             </div>
                         )}
@@ -203,7 +169,6 @@ const SmartChatAI = ({
                     </div>
                 ))}
 
-                {/* Trạng thái đang tải */}
                 {isLoading && (
                     <div style={{
                         alignSelf: 'flex-start',
@@ -216,7 +181,7 @@ const SmartChatAI = ({
                         <span className="typing-indicator">⏳ Đang tổng hợp phản hồi...</span>
                     </div>
                 )}
-                <div ref={messagesEndRef}/>
+                <div ref={messagesEndRef}></div>
             </div>
 
             {/* Vùng Nhập liệu */}
@@ -230,24 +195,14 @@ const SmartChatAI = ({
                 borderRadius: '0 0 12px 12px'
             }}>
 
-                {/* Nút Mic đã được tách */}
-                <MicButton
-                    isListening={isListening}
-                    onClick={toggleListening}
-                    disabled={isLoading}
-                    activeColor="#ef4444" // Đỏ
-                    idleColor="#3b82f6"   // Xanh
-                />
-
                 <textarea
                     value={inputValue}
                     onChange={(e) => {
                         setInputValue(e.target.value);
-                        // Nếu tự gõ phím thì tắt auto-send timer đi để không gửi nhầm lúc đang gõ dở
-                        if (autoSendTimerRef.current) clearTimeout(autoSendTimerRef.current);
+                        latestInputRef.current = e.target.value;
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder={isListening ? "Hãy nói gì đó..." : "Nhập câu hỏi hoặc bấm Mic..."}
+                    placeholder="Nhập câu hỏi hoặc bấm Mic..."
                     rows="1"
                     style={{
                         flex: 1,
@@ -281,6 +236,6 @@ const SmartChatAI = ({
             </div>
         </div>
     );
-};
+});
 
 export default SmartChatAI;

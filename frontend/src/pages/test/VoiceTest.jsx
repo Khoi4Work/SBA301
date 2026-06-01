@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { apiVoice } from "../services/apiVoice.js";
-import Karl_Marx from "../Avatar3D/Karl_Marx.jsx";
+import { apiVoice } from "../../services/apiVoice.js";
+import Karl_Marx from "../../Avatar3D/Karl_Marx.jsx";
 
 const VoiceTest = () => {
   // Đã gộp text mặc định vào thẳng formData cho đồng bộ

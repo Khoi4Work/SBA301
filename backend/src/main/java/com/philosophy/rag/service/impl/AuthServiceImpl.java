@@ -14,6 +14,7 @@ import com.philosophy.rag.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,9 +46,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         userRepository.save(user);
 
-        String token = jwtTokenProvider.createToken(user.getUsername());
         return AuthResponse.builder()
-                .accessToken(token)
                 .tokenType("Bearer")
                 .username(user.getUsername())
                 .email(user.getEmail())
@@ -56,10 +55,25 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
-        User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsernameOrEmail(),
+                            request.getPassword()
+                    )
+            );
+        } catch (Exception e) {
+            throw new ApiException(ErrorCode.INVALID_INPUT, "Sai tài khoản hoặc mật khẩu");
+        }
+
+        User user = userRepository
+                .findByUsername(request.getUsernameOrEmail())
+                .or(() -> userRepository.findByEmail(request.getUsernameOrEmail()))
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found: " + request.getUsernameOrEmail()
+                        )
+                );
         String token = jwtTokenProvider.createToken(user.getUsername());
         return AuthResponse.builder()
                 .accessToken(token)

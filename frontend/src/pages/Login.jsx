@@ -1,10 +1,39 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import '../assets/styles/philoverse.css';
+import {useContext, useEffect, useRef, useState} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
+import {AuthContext} from "@/contexts/AuthContext.jsx";
 
 export default function Login() {
-  const canvasRef = useRef(null);
-  const [showPassword, setShowPassword] = useState(false);
+    const canvasRef = useRef(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [usernameOrEmail, setUsernameOrEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const { login } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+            await login({ usernameOrEmail, password });
+            // Nếu login thành công, redirect về home
+            navigate('/dashboard');
+        } catch (err) {
+            const msg =
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                err.response?.statusText ||
+                'Đăng nhập thất bại';
+
+            setError(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -108,27 +137,29 @@ export default function Login() {
               </p>
             </div>
 
-            <form
-              className="space-y-8"
-              onSubmit={(e) => {
-                e.preventDefault();
-                window.location.href = '/';
-              }}
-            >
+            <form className="space-y-8" onSubmit={handleSubmit}>
+                {error && (
+                    <div className="p-3 bg-red-500/20 border border-red-500 text-red-400 text-sm rounded">
+                        {error}
+                    </div>
+                )}
+
               {/* Email Field */}
               <div className="relative group">
                 <label
                   className="block font-label-md text-label-md text-tertiary mb-1 opacity-70 group-focus-within:opacity-100 transition-opacity"
                   htmlFor="email"
                 >
-                  Tên đăng nhập
+                    Tên đăng nhập hoặc Email
                 </label>
-                <input
-                  className="w-full bg-transparent border-0 border-b border-outline-variant/50 py-3 text-on-surface block outline-none placeholder:text-on-surface-variant/30 focus-ring transition-all font-body-md"
-                  id="email"
-                  placeholder="scholar@lyceum.edu"
-                  type="email"
-                />
+                  <input
+                      className="w-full bg-transparent border-0 border-b border-outline-variant/50 py-3 text-on-surface block outline-none placeholder:text-on-surface-variant/30 focus-ring transition-all font-body-md"
+                      id="usernameOrEmail"
+                      placeholder="Tên học giả..."
+                      type="text"
+                      value={usernameOrEmail}
+                      onChange={(e) => setUsernameOrEmail(e.target.value)}
+                  />
                 <div className="absolute right-0 bottom-3 text-on-surface-variant/30 group-focus-within:text-secondary transition-colors">
                   <span className="material-symbols-outlined text-[20px]">history_edu</span>
                 </div>
@@ -142,12 +173,14 @@ export default function Login() {
                 >
                   Mật khẩu
                 </label>
-                <input
-                  className="w-full bg-transparent border-0 border-b border-outline-variant/50 py-3 text-on-surface block outline-none placeholder:text-on-surface-variant/30 focus-ring transition-all font-body-md"
-                  id="password"
-                  placeholder="••••••••"
-                  type={showPassword ? 'text' : 'password'}
-                />
+                  <input
+                      className="w-full bg-transparent border-0 border-b border-outline-variant/50 py-3 text-on-surface block outline-none"
+                      id="password"
+                      placeholder="••••••••"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                  />
                 <button
                   className="absolute right-0 bottom-3 text-on-surface-variant/30 hover:text-secondary transition-colors"
                   type="button"
@@ -192,15 +225,12 @@ export default function Login() {
                 <span className="font-caption text-caption text-on-surface-variant italic">Hoặc tham gia học viện</span>
                 <div className="h-[1px] flex-1 bg-outline-variant/20"></div>
               </div>
-              <a
-                className="font-label-md text-label-md text-tertiary hover:text-secondary transition-colors group flex items-center gap-2"
-                href="#"
-              >
-                Tạo tài khoản mới
-                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
-                  arrow_right_alt
-                </span>
-              </a>
+                <Link to="/register" className="font-label-md text-label-md text-tertiary hover:text-secondary transition-colors group flex items-center gap-2">
+                    Tạo tài khoản mới
+                    <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
+                        arrow_right_alt
+                    </span>
+                </Link>
             </div>
           </div>
 

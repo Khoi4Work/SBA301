@@ -4,11 +4,13 @@ export const useSpeechToText = ({
                                     lang = 'vi-VN',
                                     continuous = true,
                                     interimResults = true,
-                                    onTranscript
+                                    onTranscript,
+                                    onEnd // Thêm callback khi kết thúc một đợt nói
                                 } = {}) => {
     const [isListening, setIsListening] = useState(false);
     const [error, setError] = useState(null);
     const recognitionRef = useRef(null);
+    const isUserActive = useRef(false); // Theo dõi xem người dùng có chủ động bật Mic không
 
     useEffect(() => {
         return () => {
@@ -46,22 +48,36 @@ export const useSpeechToText = ({
         };
 
         recognitionRef.current.onend = () => {
-            setIsListening(false);
+            // Nếu người dùng vẫn đang ở trạng thái "Active" (không bấm tắt),
+            // và chúng ta đang ở chế độ không continuous (để reset buffer),
+            // thì tự động khởi động lại để tạo cảm giác "liên tục"
+            if (isUserActive.current && !continuous) {
+                startListening();
+            } else {
+                setIsListening(false);
+            }
+            if (onEnd) onEnd();
         };
 
         recognitionRef.current.start();
         setIsListening(true);
-    }, [lang, continuous, interimResults, onTranscript]);
+    }, [lang, continuous, interimResults, onTranscript, onEnd]);
 
     const stopListening = useCallback(() => {
+        isUserActive.current = false; // Đánh dấu là người dùng muốn tắt
         if (recognitionRef.current) {
             recognitionRef.current.stop();
-            setIsListening(false);
         }
+        setIsListening(false);
     }, []);
 
     const toggleListening = useCallback(() => {
-        isListening ? stopListening() : startListening();
+        if (isListening) {
+            stopListening();
+        } else {
+            isUserActive.current = true; // Đánh dấu là người dùng muốn bật
+            startListening();
+        }
     }, [isListening, startListening, stopListening]);
 
     return { isListening, toggleListening, stopListening, error };

@@ -1,4 +1,4 @@
-package com.philosophy.rag.dto;
+package com.philosophy.rag.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

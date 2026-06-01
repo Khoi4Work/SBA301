@@ -18,9 +18,13 @@ public class UserDetails {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> {
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        return usernameOrEmail  -> {
+            User user = userRepository
+                    .findByUsername(usernameOrEmail)
+                    .or(() -> userRepository.findByEmail(usernameOrEmail))
+                    .orElseThrow(() ->
+                            new UsernameNotFoundException(
+                                    "User not found: " + usernameOrEmail));
             return new org.springframework.security.core.userdetails.User(
                     user.getUsername(),
                     user.getPasswordHash(),
