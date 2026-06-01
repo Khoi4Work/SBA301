@@ -9,7 +9,7 @@ import {TestPage} from "@/pages/test/TestPage.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
 import {AuthProvider} from "@/contexts/AuthContext.jsx";
 import Register from "@/pages/Register.jsx";
-import VirtualAssistant from "@/components/VirtualAssistant.jsx";
+import VirtualAssistant from "@/pages/test/VirtualAssistant.jsx";
 
 function AppLayout() {
     const location = useLocation();
@@ -26,7 +26,7 @@ function AppLayout() {
                 <Route path="/login" element={<Login/>}/>
                 <Route path="/voice" element={<VoiceTest/>}/>
                 <Route path="/model" element={<Karl_Marx/>}/>
-                <Route path={"/chat"} element={<TestPage/>}/>
+                <Route path={"/chat"} element={<VirtualAssistant/>}/>
                 <Route path={"/test"} element={<VirtualAssistant/>}/>
                 <Route path="/dashboard" element={<PhiloVerse/>}/>
                 <Route path="/register" element={<Register/>}/>

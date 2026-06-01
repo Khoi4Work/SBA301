@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Ph_Annghen from '../Avatar3D/Ph_Annghen';
+import Ph_Annghen from '../../Avatar3D/Ph_Annghen.jsx';
 import SmartChatAI from "@/components/AI/SmartChatAI.jsx";
 
 const VirtualAssistant = () => {
