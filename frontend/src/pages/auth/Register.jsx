@@ -5,7 +5,7 @@ import { AestheticDivider } from '../../components/AestheticDivider.jsx';
 import {useContext, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {AuthContext} from "@/contexts/AuthContext.jsx";
-import '../assets/styles/philoverse.css';
+// import '../assets/styles/philoverse.css';
 
 export default function Register() {
 

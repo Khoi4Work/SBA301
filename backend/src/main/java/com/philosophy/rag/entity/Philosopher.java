@@ -25,17 +25,10 @@ public class Philosopher extends BaseEntity {
 
     /** Mã triết gia — Khóa chính, tự tăng */
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "philosopher_id", nullable = false, updatable = false)
-    private UUID philosopherId;
+    private Long philosopherId;
 
-    @PrePersist
-    public void generateId() {
-        if (philosopherId == null) {
-            philosopherId = UuidCreator.getTimeOrderedEpoch();
-        }
-    }
-
-    /** Tên triết gia */
     @Column(name = "name", nullable = false, length = 200)
     private String name;
 
@@ -52,6 +45,12 @@ public class Philosopher extends BaseEntity {
      */
     @Column(name = "short_quote", length = 500)
     private String shortQuote;
+
+    @Column(name = "category", length = 200)
+    private String category;
+
+    @Column(name = "core", length = 200)
+    private String core;
 
     /** Tiểu sử tóm tắt */
     @Column(name = "biography", columnDefinition = "TEXT")

@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/api/voice/**").permitAll()
                         .requestMatchers("/api/documents/**").permitAll()
+                        .requestMatchers("/api/philosophers/**").permitAll()
                         .requestMatchers("/api/session/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
                         .requestMatchers(PathRequest.toH2Console()).permitAll()
