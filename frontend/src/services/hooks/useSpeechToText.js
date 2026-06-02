@@ -12,6 +12,12 @@ export const useSpeechToText = ({
     const recognitionRef = useRef(null);
     const isUserActive = useRef(false); // Theo dõi xem người dùng có chủ động bật Mic không
 
+    // Sử dụng ref để luôn giữ callback mới nhất, tránh lỗi closure trong onresult
+    const onTranscriptRef = useRef(onTranscript);
+    useEffect(() => {
+        onTranscriptRef.current = onTranscript;
+    }, [onTranscript]);
+
     useEffect(() => {
         return () => {
             if (recognitionRef.current) {
@@ -39,7 +45,7 @@ export const useSpeechToText = ({
             for (let i = 0; i < event.results.length; i++) {
                 currentTranscript += event.results[i][0].transcript;
             }
-            if (onTranscript) onTranscript(currentTranscript);
+            if (onTranscriptRef.current) onTranscriptRef.current(currentTranscript);
         };
 
         recognitionRef.current.onerror = (event) => {
@@ -61,7 +67,7 @@ export const useSpeechToText = ({
 
         recognitionRef.current.start();
         setIsListening(true);
-    }, [lang, continuous, interimResults, onTranscript, onEnd]);
+    }, [lang, continuous, interimResults, onEnd]); // Remove onTranscript from deps since we use ref
 
     const stopListening = useCallback(() => {
         isUserActive.current = false; // Đánh dấu là người dùng muốn tắt

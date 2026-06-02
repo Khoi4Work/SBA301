@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Ph_Annghen from '../../Avatar3D/Ph_Annghen.jsx';
 import SmartChatAI from "@/components/AI/SmartChatAI.jsx";
@@ -17,6 +17,7 @@ const VirtualAssistant = () => {
     const [isAiTalking, setIsAiTalking] = useState(false);
     const [isAiThinking, setIsAiThinking] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
+
     const chatRef = useRef(null);
     const autoSendTimerRef = useRef(null);
 
@@ -24,6 +25,7 @@ const VirtualAssistant = () => {
     const { isListening, toggleListening, stopListening, error: micError } = useSpeechToText({
         continuous: false,
         onTranscript: (text) => {
+            if (isAiTalking) return; // Cổng chặn: Bỏ qua thu âm khi AI đang nói
             if (chatRef.current) {
                 chatRef.current.setInputValue(text);
 
@@ -39,6 +41,28 @@ const VirtualAssistant = () => {
             }
         }
     });
+
+    const stopAllAudio = () => {
+        const audios = document.querySelectorAll('audio');
+        audios.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+    };
+
+    const handleMicClick = () => {
+        stopAllAudio();
+        if (isListening) {
+            if (autoSendTimerRef.current) {
+                clearTimeout(autoSendTimerRef.current);
+                autoSendTimerRef.current = null;
+            }
+            if (chatRef.current) {
+                chatRef.current.setInputValue('');
+            }
+        }
+        toggleListening();
+    };
 
     const navigateTo = (newView) => {
         if (newView === "selection") {
@@ -87,7 +111,7 @@ const VirtualAssistant = () => {
                             }}>
                                 <MicButton
                                     isListening={isListening}
-                                    onClick={toggleListening}
+                                    onClick={handleMicClick}
                                     disabled={isAiThinking}
                                     size="60px"
                                     activeColor="#ef4444"

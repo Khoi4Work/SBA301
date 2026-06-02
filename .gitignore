@@ -1,3 +1,5 @@
+#Claude
+.claude/
 # --- IDE & System ---
 .idea/
 .vscode/

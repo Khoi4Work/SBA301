@@ -44,6 +44,13 @@ const SmartChatAI = forwardRef(({
         const finalText = textToSubmit || latestInputRef.current;
         if (isSendingRef.current || !finalText || !finalText.trim()) return;
 
+        // Ngắt tất cả âm thanh đang phát trước khi gửi tin nhắn mới
+        const audios = document.querySelectorAll('audio');
+        audios.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+
         isSendingRef.current = true;
         setIsLoading(true);
 
@@ -94,66 +101,33 @@ const SmartChatAI = forwardRef(({
     };
 
     return (
-        <div style={{
-            display: visible ? 'flex' : 'none', // Sử dụng display: none thay vì opacity để không chiếm không gian/can thiệp UI
-            flexDirection: 'column',
-            height: height,
-            maxWidth: '600px',
-            margin: '0 auto',
-            border: '1px solid #ddd',
-            borderRadius: '12px',
-            backgroundColor: '#fff',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            transition: 'all 0.3s ease',
-        }}>
+        <div style={{ display: visible ? 'flex' : 'none', height: height }}
+             className="flex flex-col max-w-[600px] mx-auto border border-outline-variant rounded-xl bg-surface-container shadow-xl transition-all duration-300">
 
             {/* Header */}
-            <div style={{
-                padding: '15px 20px',
-                backgroundColor: '#2563eb',
-                color: 'white',
-                borderRadius: '12px 12px 0 0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
-                <h3 style={{margin: 0, fontSize: '1.1rem'}}>{title}</h3>
+            <div className="p-4 px-5 bg-surface-container-high text-primary rounded-t-xl flex justify-between items-center">
+                <h3 className="m-0 text-lg font-display">{title}</h3>
             </div>
 
             {/* Vùng Chat */}
-            <div style={{
-                flex: 1,
-                padding: '20px',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '15px',
-                backgroundColor: '#f8fafc'
-            }}>
+            <div className="flex-1 p-5 overflow-y-auto flex flex-col gap-4 parchment-gradient scroll-hide">
                 {messages.map((msg, index) => (
                     <div key={index}
-                         style={{alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%'}}>
+                         className={`self-auto max-w-[85%] ${msg.role === 'user' ? 'self-end' : 'self-start'}`}>
 
                         {msg.type === 'text' && (
-                            <div style={{
-                                padding: '12px 16px',
-                                borderRadius: msg.role === 'user' ? '15px 15px 0 15px' : '15px 15px 15px 0',
-                                backgroundColor: msg.role === 'user' ? '#2563eb' : '#e2e8f0',
-                                color: msg.role === 'user' ? 'white' : '#1e293b',
-                                lineHeight: '1.5'
-                            }}>
+                            <div className={`p-3 px-4 rounded-2xl leading-relaxed ${
+                                msg.role === 'user'
+                                ? 'rounded-br-none bg-primary text-on-primary'
+                                : 'rounded-bl-none bg-surface-container-high text-on-surface'
+                            }`}>
                                 {msg.content}
                             </div>
                         )}
 
                         {msg.type === 'both' && (
-                            <div style={{
-                                padding: '12px 16px',
-                                borderRadius: '15px 15px 15px 0',
-                                backgroundColor: '#e2e8f0',
-                                color: '#1e293b'
-                            }}>
-                                <div style={{marginBottom: '10px', lineHeight: '1.5'}}>{msg.content}</div>
+                            <div className="p-3 px-4 rounded-2xl rounded-bl-none bg-surface-container-high text-on-surface leading-relaxed">
+                                <div className="mb-2.5 leading-relaxed">{msg.content}</div>
 
                                 <AudioPlayer
                                     base64Data={msg.audioData}
@@ -170,14 +144,7 @@ const SmartChatAI = forwardRef(({
                 ))}
 
                 {isLoading && (
-                    <div style={{
-                        alignSelf: 'flex-start',
-                        padding: '12px 16px',
-                        borderRadius: '15px 15px 15px 0',
-                        backgroundColor: '#e2e8f0',
-                        color: '#64748b',
-                        fontStyle: 'italic'
-                    }}>
+                    <div className="self-start p-3 px-4 rounded-2xl rounded-bl-none bg-surface-container-low text-on-surface-variant italic">
                         <span className="typing-indicator">⏳ Đang tổng hợp phản hồi...</span>
                     </div>
                 )}
@@ -185,15 +152,7 @@ const SmartChatAI = forwardRef(({
             </div>
 
             {/* Vùng Nhập liệu */}
-            <div style={{
-                padding: '15px',
-                borderTop: '1px solid #e2e8f0',
-                display: 'flex',
-                gap: '10px',
-                alignItems: 'center',
-                backgroundColor: '#fff',
-                borderRadius: '0 0 12px 12px'
-            }}>
+            <div className="p-4 border-t border-outline-variant flex gap-2.5 items-center bg-surface-container rounded-b-xl">
 
                 <textarea
                     value={inputValue}
@@ -204,32 +163,13 @@ const SmartChatAI = forwardRef(({
                     onKeyDown={handleKeyDown}
                     placeholder="Nhập câu hỏi hoặc bấm Mic..."
                     rows="1"
-                    style={{
-                        flex: 1,
-                        padding: '12px 15px',
-                        borderRadius: '24px',
-                        border: '1px solid #cbd5e1',
-                        resize: 'none',
-                        outline: 'none',
-                        fontFamily: 'inherit',
-                        fontSize: '15px'
-                    }}
+                    className="flex-1 p-3 px-4 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface resize-none outline-none font-sans text-sm focus:border-secondary transition-colors"
                 />
 
                 <button
                     onClick={() => handleSendMessage()}
                     disabled={isLoading || !inputValue.trim()}
-                    style={{
-                        padding: '10px 20px',
-                        borderRadius: '24px',
-                        border: 'none',
-                        backgroundColor: '#2563eb',
-                        color: 'white',
-                        cursor: (isLoading || !inputValue.trim()) ? 'not-allowed' : 'pointer',
-                        fontWeight: 'bold',
-                        transition: 'all 0.2s',
-                        opacity: (isLoading || !inputValue.trim()) ? 0.5 : 1
-                    }}
+                    className="px-5 py-2.5 rounded-full border-none bg-secondary text-on-secondary cursor-pointer font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Gửi
                 </button>
