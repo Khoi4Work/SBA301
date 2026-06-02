@@ -42,6 +42,12 @@ const VirtualAssistant = () => {
         }
     });
 
+    useEffect(() => {
+        if (isAiTalking && isListening) {
+            stopListening();
+        }
+    }, [isAiTalking, isListening, stopListening]);
+
     const stopAllAudio = () => {
         const audios = document.querySelectorAll('audio');
         audios.forEach(audio => {

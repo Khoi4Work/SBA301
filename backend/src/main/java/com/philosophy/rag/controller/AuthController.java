@@ -44,4 +44,14 @@ public class AuthController {
         authService.logout(token);
         return ResponseEntity.ok(ApiResponse.success("OK", "Logout successful"));
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@RequestBody java.util.Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new ApiException(ErrorCode.INVALID_INPUT, "Refresh token is required");
+        }
+        AuthResponse response = authService.refreshAccessToken(refreshToken);
+        return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
+    }
 }
