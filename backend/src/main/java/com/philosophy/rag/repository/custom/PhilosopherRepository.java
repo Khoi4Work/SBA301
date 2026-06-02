@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-public interface PhilosopherRepository extends JpaRepository<Philosopher, Long> {
+public interface PhilosopherRepository extends JpaRepository<Philosopher, UUID> {
 }

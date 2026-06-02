@@ -9,7 +9,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PhilosopherResponse {
-    private Long id;
+    private UUID id;
     private String name;
     private String category;
     private String quote;

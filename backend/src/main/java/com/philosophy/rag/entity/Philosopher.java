@@ -23,11 +23,17 @@ import java.util.UUID;
 @Builder
 public class Philosopher extends BaseEntity {
 
-    /** Mã triết gia — Khóa chính, tự tăng */
+    /** Mã triết gia — Khóa chính */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "philosopher_id", nullable = false, updatable = false)
-    private Long philosopherId;
+    private UUID philosopherId;
+
+    @PrePersist
+    public void generateId() {
+        if (philosopherId == null) {
+            philosopherId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
 
     @Column(name = "name", nullable = false, length = 200)
     private String name;
