@@ -34,7 +34,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-//@Profile("!dev")
+@Profile("!dev")
 public class S3StorageServiceImpl implements S3StorageService {
 
     @Value("${aws.s3.bucket-name}")

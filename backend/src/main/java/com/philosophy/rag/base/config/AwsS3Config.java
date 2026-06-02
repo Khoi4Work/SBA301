@@ -10,7 +10,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
-//@Profile("!dev")
+@Profile("!dev")
 public class AwsS3Config {
 
     @Value("${aws.region}")
