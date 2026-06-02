@@ -5,6 +5,7 @@ import { AestheticDivider } from '../../components/AestheticDivider.jsx';
 import {useContext, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {AuthContext} from "@/contexts/AuthContext.jsx";
+// import '../assets/styles/philoverse.css';
 
 export default function Register() {
 
@@ -59,7 +60,7 @@ export default function Register() {
 
             {/* Header / Brand Anchor */}
             <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-8 py-8 border-b border-outline-variant/30 bg-surface/80 backdrop-blur-md">
-                <div className="font-headline text-2xl text-secondary uppercase tracking-widest font-medium">
+                <div className="font-headline-md text-2xl text-secondary tracking-widest font-medium">
                     PhiloVerse
                 </div>
                 <button className="text-secondary hover:text-secondary-fixed-dim transition-colors">
@@ -75,7 +76,7 @@ export default function Register() {
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-secondary-container/20"></div>
 
                         <div className="mb-12 text-center">
-                            <h1 className="font-headline text-3xl md:text-4xl text-secondary mb-2 font-semibold">Gia Nhập Viện Đào Tạo</h1>
+                            <h1 className="font-headline-md text-3xl md:text-4xl text-secondary mb-2 font-semibold italic">Gia Nhập Viện Đào Tạo</h1>
                             <p className="font-body text-sm text-on-surface-variant uppercase tracking-widest font-semibold">Kiến tạo hành trình tri thức</p>
                         </div>
 
@@ -205,7 +206,7 @@ export default function Register() {
 
             {/* Global Footer */}
             <footer className="relative z-20 w-full py-12 px-6 md:px-16 flex flex-col md:flex-row justify-between items-center gap-8 border-t border-outline-variant/20 bg-surface">
-                <div className="font-headline text-2xl font-medium text-secondary">The Lyceum</div>
+                <div className="font-headline text-2xl font-medium text-secondary">PhiloVerse</div>
                 <div className="flex flex-wrap justify-center gap-6">
                     <a href="#" className="font-body text-sm font-semibold text-on-surface-variant hover:text-secondary transition-colors duration-300">Curriculum</a>
                     <a href="#" className="font-body text-sm font-semibold text-on-surface-variant hover:text-secondary transition-colors duration-300">Library</a>
@@ -213,7 +214,7 @@ export default function Register() {
                     <a href="#" className="font-body text-sm font-semibold text-on-surface-variant hover:text-secondary transition-colors duration-300">Privacy</a>
                 </div>
                 <div className="font-body text-sm font-semibold text-on-surface-variant uppercase tracking-tighter">
-                    © MMXXIV THE LYCEUM ARCHIVE
+                    © MMXXIV PHILOVERSE ARCHIVE
                 </div>
             </footer>
         </div>

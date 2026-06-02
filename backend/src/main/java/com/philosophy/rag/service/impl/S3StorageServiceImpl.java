@@ -34,7 +34,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@Profile("!dev")
+//@Profile("!dev")
 public class S3StorageServiceImpl implements S3StorageService {
 
     @Value("${aws.s3.bucket-name}")
@@ -69,9 +69,9 @@ public class S3StorageServiceImpl implements S3StorageService {
         String key = "documents/" + LocalDate.now() + "/" + UUID.randomUUID() + "-" + safeFileName;
         try {
             Map<String, String> metadata = Map.of(
-                    "title", title != null && !title.isBlank() ? title : originalFileName,
+                    "title", title != null && !title.isBlank() ? title : safeFileName,
                     "description", description != null && !description.isBlank() ? description : "",
-                    "original-file-name", originalFileName,
+                    "original-file-name", safeFileName,
                     "uploaded-at", LocalDate.now().toString());
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()

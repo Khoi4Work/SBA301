@@ -1,7 +1,38 @@
 import { motion } from "motion/react";
-import { PHILOSOPHERS } from "@/utils/data";
+import { useState, useEffect } from "react";
+import apiClient from "@/services/apiClient";
 
 export function SelectionView({ onSelect }) {
+  const [philosophers, setPhilosophers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPhilosophers = async () => {
+      try {
+        const response = await apiClient.get("/philosophers/getAll");
+        if (response.data?.code === 1000) {
+          setPhilosophers(response.data.result || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch philosophers:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPhilosophers();
+  }, []);
+
+  const limitedPhilosophers = philosophers.slice(0, 2);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-on-surface-variant italic">Đang tải danh sách đàm đạo...</p>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -21,8 +52,8 @@ export function SelectionView({ onSelect }) {
         <div className="w-24 h-px bg-secondary mx-auto mt-8"></div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {PHILOSOPHERS.map((phil) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+        {limitedPhilosophers.map((phil) => (
           <div
             key={phil.id}
             onClick={() => onSelect(phil)}

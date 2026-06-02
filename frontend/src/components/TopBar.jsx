@@ -7,21 +7,13 @@ export function TopBar({ currentView, philosopherName, onNavigate }) {
   const navagate = useNavigate();
   if (currentView === "dialogue") {
     return (
-      <header className="fixed top-0 right-0 left-0 lg:left-64 z-50 bg-gradient-to-b from-surface/90 to-transparent px-8 h-20 flex justify-between items-center transition-all duration-500">
+      <header className="fixed top-20 right-0 left-0 lg:left-64 z-50 bg-gradient-to-b from-surface/90 to-transparent px-8 h-20 flex justify-between items-center transition-all duration-500">
         <div className="flex flex-col">
           <h2 className="font-display text-2xl text-primary tracking-tighter">
             Đàm đạo cùng {philosopherName}
           </h2>
         </div>
         <div className="flex items-center gap-6">
-          <div className="hidden lg:flex items-center gap-8 text-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-            <button className="hover:text-secondary transition-colors">
-              Thư viện
-            </button>
-            <button className="hover:text-secondary transition-colors">
-              Luận đàm
-            </button>
-          </div>
           <div className="flex items-center gap-4">
             <button className="text-on-surface-variant hover:text-secondary transition-colors">
               <Settings size={20} />

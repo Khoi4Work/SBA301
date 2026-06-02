@@ -1,84 +1,72 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, useAnimations, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
 
-function Model({ isTalking }) {
-    // 1. Load file gốc (chứa ngoại hình + hoạt ảnh Khoanh tay)
-    const { scene, animations: idleAnimations } = useGLTF('/model/Karl-Marx-Standing.glb');
+function Model({ isTalking, isThinking }) {
+    // 1. Load 3 file Model (Tương tự Ph_Annghen)
+    const { scene, animations: idleAnims } = useGLTF('/model/Karl-Marx-Standing.glb');
+    const { animations: talkAnims } = useGLTF('/model/Karl-Marx-Animation.glb');
+    const { animations: thinkAnims } = useGLTF('/model/Karl-Marx-Thinking.glb');
 
-    // 2. Load THÊM file thứ 2 (Chỉ lấy hoạt ảnh Nói chuyện của nó)
-    const { animations: talkAnimations } = useGLTF('/model/Karl-Marx-Animation.glb');
+    // 2. Đổi tên để dễ gọi
+    idleAnims[0].name = 'Idle';
+    talkAnims[0].name = 'Talking';
+    thinkAnims[0].name = 'Thinking';
 
-    // 3. Đổi tên 2 hoạt ảnh này cho dễ gọi
-    idleAnimations[0].name = 'Idle';
-    talkAnimations[0].name = 'Talking';
+    // 3. Gộp 3 animation
+    const { actions } = useAnimations([idleAnims[0], talkAnims[0], thinkAnims[0]], scene);
 
-    // 4. Gộp 2 hoạt ảnh vào chung 1 mảng và bơm vào nhân vật gốc
-    const { actions } = useAnimations([idleAnimations[0], talkAnimations[0]], scene);
-
+    // 4. Xử lý Animation chuẩn bằng Cleanup Function (Đồng bộ với Ph_Annghen)
     useEffect(() => {
-        // Kiểm tra xem hành động nào cần chạy, hành động nào cần dừng
-        const actionToPlay = isTalking ? actions['Talking'] : actions['Idle'];
-        const actionToStop = isTalking ? actions['Idle'] : actions['Talking'];
+        // Xác định hành động hiện tại
+        let currentAction = 'Idle';
+        if (isTalking) currentAction = 'Talking';
+        else if (isThinking) currentAction = 'Thinking';
 
-        // Dừng hành động cũ từ từ trong 0.5 giây (để tay hạ xuống từ từ)
-        if (actionToStop) {
-            actionToStop.fadeOut(0.5);
+        const action = actions[currentAction];
+
+        if (action) {
+            action.reset().fadeIn(0.0001).play();
+            action.setLoop(THREE.LoopRepeat, Infinity);
         }
 
-        // Bắt đầu hành động mới từ từ trong 0.5 giây
-        if (actionToPlay) {
-            actionToPlay.reset().fadeIn(0.5).play();
-        }
+        return () => {
+            if (action) {
+                action.fadeOut(0.5);
+            }
+        };
+    }, [isTalking, isThinking, actions]);
 
-    }, [isTalking, actions]); // Mỗi khi bấm nút đổi isTalking, useEffect này sẽ chạy lại
-
-    return <primitive object={scene} scale={2} position={[0, -1.8, 0]} />;
+    return <primitive object={scene} scale={2} position={[0, -1.5, 0]} />;
 }
 
-export default function Karl_Marx() {
-    const [isTalking, setIsTalking] = useState(false);
-
+export default function Karl_Marx({ isTalking, isThinking }) {
     return (
-        <div style={{ height: '100vh', width: '100vw', backgroundColor: '#e0e0e0', position: 'relative' }}>
-
-            {/* Nút bấm điều khiển */}
-            <button
-                onClick={() => setIsTalking(!isTalking)}
-                style={{
-                    position: 'absolute',
-                    top: '30px',
-                    left: '30px',
-                    zIndex: 10,
-                    padding: '12px 24px',
-                    fontSize: '16px',
-                    fontWeight: 'bold',
-                    backgroundColor: isTalking ? '#ef4444' : '#10b981', // Đỏ khi nói, Xanh lá khi khoanh tay
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                }}
-            >
-                {isTalking ? 'Dừng nói (Trở về khoanh tay)' : 'Bắt đầu thuyết trình'}
-            </button>
-
-            <Canvas camera={{ position: [0, 0, 4], fov: 50 }} shadows>
-                <ambientLight intensity={0.6} />
+        <div style={{ height: '100%', width: '100%', background: 'transparent', position: 'absolute', inset: 0 }}>
+            <Canvas camera={{ position: [0, 1.5, 5.5], fov: 50 }} shadows>
+                <ambientLight intensity={0.8} />
                 <directionalLight position={[5, 5, 5]} intensity={1.5} castShadow />
                 <Environment preset="city" />
 
                 <Suspense fallback={null}>
-                    <Model isTalking={isTalking} />
+                    <Model isTalking={isTalking} isThinking={isThinking} />
                 </Suspense>
 
-                <ContactShadows position={[0, -1.8, 0]} opacity={0.6} scale={5} blur={2.5} far={4} />
-                <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2} />
+                <ContactShadows position={[0, -2.5, 0]} opacity={0.6} scale={5} blur={2.5} far={4} color="#000000" />
+
+                <OrbitControls
+                    enablePan={false}
+                    enableZoom={false}
+                    maxPolarAngle={Math.PI / 2}
+                    target={[0, 1, 0]}
+                />
             </Canvas>
         </div>
     );
 }
 
+// Preload cả 3 file để tránh giật lag khi switch
 useGLTF.preload('/model/Karl-Marx-Standing.glb');
 useGLTF.preload('/model/Karl-Marx-Animation.glb');
+useGLTF.preload('/model/Karl-Marx-Thinking.glb');
