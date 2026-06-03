@@ -96,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_INPUT, "User not found"));
 
-        refreshTokenRepository.deleteByUserId(user.getUserId());
+        refreshTokenRepository.deleteByUser_UserId(user.getUserId());
     }
 
     @Override
