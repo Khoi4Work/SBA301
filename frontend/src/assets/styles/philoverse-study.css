@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+    --color-background: #121414;
+    --color-on-background: #e2e2e2;
+
+    --color-surface: #121414;
+    --color-on-surface: #e2e2e2;
+    --color-surface-variant: #333535;
+    --color-on-surface-variant: #c8c5cd;
+
+    --color-surface-container-highest: #333535;
+    --color-surface-container-high: #282a2b;
+    --color-surface-container: #1e2020;
+    --color-surface-container-low: #1a1c1c;
+    --color-surface-container-lowest: #0d0f0f;
+
+    --color-primary: #c6c4df;
+    --color-on-primary: #2f2e43;
+    --color-primary-container: #1a1a2e;
+    --color-on-primary-container: #83829b;
+
+    --color-secondary: #e9c176;
+    --color-on-secondary: #412d00;
+    --color-secondary-container: #604403;
+    --color-on-secondary-container: #dab36a;
+
+    --color-outline: #929097;
+    --color-outline-variant: #47464c;
+
+    --color-tertiary: #cdc6b3;
+
+    --font-display: "Playfair Display", serif;
+    --font-body: "Inter", sans-serif;
+}
+
+@layer utilities {
+    .paper-texture {
+        background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA7PJ6ImtDN0nZ-cdcpYLJIvbSkTdqoYbK0oUyfYWZqJdXNVE43ZDQAktSP1Umcbs--tEyiFQyA3DXZHw0TPD4UqJ86KTV4HLYbaN5js1uFUgydp4k8GQy6pLhlbkFLpMFYQg3vtmZ0ej-wBgUrXUUc6JA7GQNp_XXnJtuEOA947C1DwXQ60LFFfbQz4lAm9093VJK-FIL8Z2s21EYx-3Xp05Qv71-yav2OSRED8c-YDHqNCMH1oy_auyp8o4FCo5o467DGNYMkaJQ');
+        opacity: 0.03;
+    }
+    .folio-border {
+        border-left: 2px solid var(--color-secondary);
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+body {
+    @apply bg-background text-on-background font-body overflow-x-hidden selection:bg-secondary/30 selection:text-secondary;
+}

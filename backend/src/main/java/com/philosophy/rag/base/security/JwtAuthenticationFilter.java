@@ -1,5 +1,6 @@
 package com.philosophy.rag.base.security;
 
+import com.philosophy.rag.repository.custom.TokenBlacklistRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -36,6 +38,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
+        if (tokenBlacklistRepository.existsByToken(jwt)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
             username = jwtTokenProvider.extractUsername(jwt);
         } catch (Exception e) {

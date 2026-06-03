@@ -1,27 +1,72 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { useGLTF, useAnimations, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
 
-function Model({ url }) {
-    const { scene } = useGLTF(url);
-    return <primitive object={scene} scale={2} position={[0, -1.8, 0]} />;
+function Model({ isTalking, isThinking }) {
+    // 1. Load 3 file Model (Tương tự Ph_Annghen)
+    const { scene, animations: idleAnims } = useGLTF('/model/Karl-Marx-Standing.glb');
+    const { animations: talkAnims } = useGLTF('/model/Karl-Marx-Animation.glb');
+    const { animations: thinkAnims } = useGLTF('/model/Karl-Marx-Thinking.glb');
+
+    // 2. Đổi tên để dễ gọi
+    idleAnims[0].name = 'Idle';
+    talkAnims[0].name = 'Talking';
+    thinkAnims[0].name = 'Thinking';
+
+    // 3. Gộp 3 animation
+    const { actions } = useAnimations([idleAnims[0], talkAnims[0], thinkAnims[0]], scene);
+
+    // 4. Xử lý Animation chuẩn bằng Cleanup Function (Đồng bộ với Ph_Annghen)
+    useEffect(() => {
+        // Xác định hành động hiện tại
+        let currentAction = 'Idle';
+        if (isTalking) currentAction = 'Talking';
+        else if (isThinking) currentAction = 'Thinking';
+
+        const action = actions[currentAction];
+
+        if (action) {
+            action.reset().fadeIn(0.0001).play();
+            action.setLoop(THREE.LoopRepeat, Infinity);
+        }
+
+        return () => {
+            if (action) {
+                action.fadeOut(0.5);
+            }
+        };
+    }, [isTalking, isThinking, actions]);
+
+    return <primitive object={scene} scale={2} position={[0, -1.5, 0]} />;
 }
 
-export default function Karl_Marx() {
+export default function Karl_Marx({ isTalking, isThinking }) {
     return (
-        <div style={{ height: '100vh', width: '100vw', backgroundColor: '#e0e0e0' }}>
-            <Canvas camera={{ position: [0, 0, 4], fov: 50 }} shadows>
-                <ambientLight intensity={0.6} />
+        <div style={{ height: '100%', width: '100%', background: 'transparent', position: 'absolute', inset: 0 }}>
+            <Canvas camera={{ position: [0, 1.5, 5.5], fov: 50 }} shadows>
+                <ambientLight intensity={0.8} />
                 <directionalLight position={[5, 5, 5]} intensity={1.5} castShadow />
                 <Environment preset="city" />
 
                 <Suspense fallback={null}>
-                    <Model url="/model/Karl-Marx.glb" />
+                    <Model isTalking={isTalking} isThinking={isThinking} />
                 </Suspense>
 
-                <ContactShadows position={[0, -1.8, 0]} opacity={0.6} scale={5} blur={2.5} far={4} />
-                <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2} />
+                <ContactShadows position={[0, -2.5, 0]} opacity={0.6} scale={5} blur={2.5} far={4} color="#000000" />
+
+                <OrbitControls
+                    enablePan={false}
+                    enableZoom={false}
+                    maxPolarAngle={Math.PI / 2}
+                    target={[0, 1, 0]}
+                />
             </Canvas>
         </div>
     );
 }
+
+// Preload cả 3 file để tránh giật lag khi switch
+useGLTF.preload('/model/Karl-Marx-Standing.glb');
+useGLTF.preload('/model/Karl-Marx-Animation.glb');
+useGLTF.preload('/model/Karl-Marx-Thinking.glb');

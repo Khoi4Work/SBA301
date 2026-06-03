@@ -1,5 +1,7 @@
 package com.philosophy.rag.entity;
 
+import com.github.f4b6a3.uuid.UuidCreator;
+import com.philosophy.rag.base.persistence.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,13 +23,18 @@ import java.util.UUID;
 @Builder
 public class Philosopher extends BaseEntity {
 
-    /** Mã triết gia — Khóa chính, tự tăng */
+    /** Mã triết gia — Khóa chính */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "philosopher_id")
+    @Column(name = "philosopher_id", nullable = false, updatable = false)
     private UUID philosopherId;
 
-    /** Tên triết gia */
+    @PrePersist
+    public void generateId() {
+        if (philosopherId == null) {
+            philosopherId = UuidCreator.getTimeOrderedEpoch();
+        }
+    }
+
     @Column(name = "name", nullable = false, length = 200)
     private String name;
 
@@ -44,6 +51,12 @@ public class Philosopher extends BaseEntity {
      */
     @Column(name = "short_quote", length = 500)
     private String shortQuote;
+
+    @Column(name = "category", length = 200)
+    private String category;
+
+    @Column(name = "core", length = 200)
+    private String core;
 
     /** Tiểu sử tóm tắt */
     @Column(name = "biography", columnDefinition = "TEXT")

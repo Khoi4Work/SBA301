@@ -1,4 +1,4 @@
-package com.philosophy.rag.entity;
+package com.philosophy.rag.base.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

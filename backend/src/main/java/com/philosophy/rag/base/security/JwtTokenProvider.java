@@ -19,7 +19,9 @@ public class JwtTokenProvider {
     // Trong thực tế, secret key này nên được đưa vào application.properties
 
     private final String SECRET_KEY;
-    private final long TOKEN_VALIDITY = 86400000L; // 24h
+    public static final long ACCESS_TOKEN_VALIDITY = 900000L; // 15 minutes
+    public static final long REFRESH_TOKEN_VALIDITY = 604800000L; // 7 days
+    private final long TOKEN_VALIDITY = 86400000L; // 24h (legacy)
     // Spring sẽ truyền giá trị thông qua tham số này khi khởi tạo
     
     public JwtTokenProvider(@Value("${jwt.secret:default-secret-key}") String secretKey) {
@@ -33,15 +35,20 @@ public class JwtTokenProvider {
     public String createToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         // TODO: Add roles/permissions here when needed
-        return createToken(claims, username);
+        return createToken(claims, username, TOKEN_VALIDITY);
     }
 
-    private String createToken(Map<String, Object> claims, String username) {
+    public String createToken(String username, long validityMillis) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, username, validityMillis);
+    }
+
+    private String createToken(Map<String, Object> claims, String username, long validityMillis) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY))
+                .setExpiration(new Date(System.currentTimeMillis() + validityMillis))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -66,5 +73,9 @@ public class JwtTokenProvider {
 
     private boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration).before(new Date());
+    }
+
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
     }
 }
