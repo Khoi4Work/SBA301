@@ -199,9 +199,9 @@ export default function LibrarySection() {
             {/* Section Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
                 <div>
-                    <span className="text-xs uppercase tracking-[0.3em] text-secondary mb-2 block font-medium">
-                        Tri thức chọn lọc
-                    </span>
+                    {/*<span className="text-xs uppercase tracking-[0.3em] text-secondary mb-2 block font-medium">*/}
+                    {/*    Tri thức chọn lọc*/}
+                    {/*</span>*/}
                     <h2 className="font-display text-5xl text-on-background font-bold tracking-tight">
                         Thư viện học giả
                     </h2>

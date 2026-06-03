@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import { Sidebar } from "@/components/Sidebar.jsx";
-import { TopBar } from "@/components/TopBar.jsx";
 import { SelectionView } from "@/components/SelectionView.jsx";
 import { DialogueView } from "@/components/DialogueView.jsx";
 import "@/assets/styles/philoverse-chat.css";
+import Header from "@/components/Header.jsx";
 
 export default function  Chat() {
     const navigate = useNavigate();
@@ -36,18 +36,15 @@ export default function  Chat() {
                 </>
             )}
 
-            {/* Persistent Sidebar (Layout adjusts slightly) */}
+
+            <Header/>
             <Sidebar currentView={view} onNavigate={navigateTo} />
 
             {/* Main Content Area */}
             <main
                 className={`flex flex-col min-h-screen relative transition-all duration-500`}
             >
-                <TopBar
-                    currentView={view}
-                    philosopherName={selectedPhilosopher?.name}
-                    onNavigate={navigateTo}
-                />
+
 
                 {/* The main view content, shifting padding to account for sidebar */}
                 <div

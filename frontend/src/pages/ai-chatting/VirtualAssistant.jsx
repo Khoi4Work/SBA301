@@ -7,7 +7,6 @@ import MicButton from "@/components/AI/MicButton.jsx";
 import ChatPanel from "@/components/AI/ChatPanel.jsx";
 import { useSpeechToText } from '@/services/hooks/useSpeechToText.js';
 import { Sidebar } from "@/components/Sidebar.jsx";
-import { TopBar } from "@/components/TopBar.jsx";
 import "@/assets/styles/philoverse-chat.css";
 
 const VirtualAssistant = () => {
@@ -87,11 +86,11 @@ const VirtualAssistant = () => {
             <Sidebar currentView="dialogue" onNavigate={navigateTo} />
 
             <main className="flex flex-col min-h-screen relative transition-all duration-500">
-                <TopBar
-                    currentView="dialogue"
-                    philosopherName={philosopher?.name || "Triết gia"}
-                    onNavigate={navigateTo}
-                />
+                {/*<TopBar*/}
+                {/*    currentView="dialogue"*/}
+                {/*    philosopherName={philosopher?.name || "Triết gia"}*/}
+                {/*    onNavigate={navigateTo}*/}
+                {/*/>*/}
 
                 <div className="flex-1 transition-all duration-500 lg:ml-64 relative overflow-hidden">
                     <div style={{
