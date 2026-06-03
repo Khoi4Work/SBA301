@@ -1,7 +1,7 @@
 package com.philosophy.rag.base.security;
 
 import com.philosophy.rag.entity.User;
-import com.philosophy.rag.repository.custom.UserRepository;
+import com.philosophy.rag.repository.itf.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

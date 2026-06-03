@@ -2,7 +2,7 @@ package com.philosophy.rag.service.impl;
 
 import com.philosophy.rag.dto.response.PhilosopherResponse;
 import com.philosophy.rag.entity.Philosopher;
-import com.philosophy.rag.repository.custom.PhilosopherRepository;
+import com.philosophy.rag.repository.itf.PhilosopherRepository;
 import com.philosophy.rag.service.PhilosopherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
