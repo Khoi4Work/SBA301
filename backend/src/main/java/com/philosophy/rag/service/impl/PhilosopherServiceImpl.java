@@ -1,11 +1,13 @@
 package com.philosophy.rag.service.impl;
 
+import com.philosophy.rag.dto.request.PhilosopherRequest;
 import com.philosophy.rag.dto.response.PhilosopherResponse;
 import com.philosophy.rag.entity.Philosopher;
 import com.philosophy.rag.repository.itf.PhilosopherRepository;
 import com.philosophy.rag.service.PhilosopherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +24,23 @@ public class PhilosopherServiceImpl implements PhilosopherService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public PhilosopherResponse createPhilosopher(PhilosopherRequest request) {
+        Philosopher philosopher = Philosopher.builder()
+                .name(request.getName())
+                .avatarUrl(request.getAvatarUrl())
+                .shortQuote(request.getShortQuote())
+                .category(request.getCategory())
+                .core(request.getCore())
+                .biography(request.getBiography())
+                .systemPrompt(request.getSystemPrompt())
+                .build();
+
+        Philosopher saved = philosopherRepository.save(philosopher);
+        return mapToResponse(saved);
     }
 
     private PhilosopherResponse mapToResponse(Philosopher entity) {
