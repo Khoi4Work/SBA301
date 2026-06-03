@@ -4,10 +4,12 @@ import com.philosophy.rag.dto.request.PhilosopherRequest;
 import com.philosophy.rag.dto.response.PhilosopherResponse;
 import com.philosophy.rag.entity.Philosopher;
 import com.philosophy.rag.repository.itf.PhilosopherRepository;
+import com.philosophy.rag.service.CloudinaryService;
 import com.philosophy.rag.service.PhilosopherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class PhilosopherServiceImpl implements PhilosopherService {
 
     private final PhilosopherRepository philosopherRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public List<PhilosopherResponse> findAllPhilosophers() {
@@ -28,10 +31,15 @@ public class PhilosopherServiceImpl implements PhilosopherService {
 
     @Override
     @Transactional
-    public PhilosopherResponse createPhilosopher(PhilosopherRequest request) {
+    public PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file) {
+        String avatarUrl = request.getAvatarUrl();
+        if (file != null && !file.isEmpty()) {
+            avatarUrl = cloudinaryService.uploadImage(file, "philosophy/avatars").getSecureUrl();
+        }
+
         Philosopher philosopher = Philosopher.builder()
                 .name(request.getName())
-                .avatarUrl(request.getAvatarUrl())
+                .avatarUrl(avatarUrl)
                 .shortQuote(request.getShortQuote())
                 .category(request.getCategory())
                 .core(request.getCore())

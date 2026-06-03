@@ -22,7 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-//@Profile("!dev")
+@Profile("!dev")
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -51,7 +51,6 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/api/philosophers/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
-                        .requestMatchers("/api/slogan/**").permitAll()
 
                         // Protected APIs - Detailed Permissions
                         // Allow GET for a general user, require AUTH for other methods
@@ -62,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/documents/**").permitAll()
                         .requestMatchers("/api/documents/**").authenticated()
                         .requestMatchers("/api/session/**").authenticated()
+                        .requestMatchers("/api/images/**").authenticated()
 
                         .anyRequest().authenticated()
                 )
@@ -70,13 +70,5 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
 }
+

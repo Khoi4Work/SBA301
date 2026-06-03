@@ -9,8 +9,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -30,9 +32,11 @@ public class PhilosopherController {
     }
 
     @Operation(summary = "Thêm triết gia mới")
-    @PostMapping("/add")
-    public ResponseEntity<ApiResponse<PhilosopherResponse>> createPhilosopher(@Valid @RequestBody PhilosopherRequest request) {
-        PhilosopherResponse response = philosopherService.createPhilosopher(request);
+    @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<PhilosopherResponse>> createPhilosopher(
+            @ModelAttribute @Valid PhilosopherRequest request,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+        PhilosopherResponse response = philosopherService.createPhilosopher(request, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Thêm triết gia thành công"));
     }
 }
