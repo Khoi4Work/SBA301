@@ -8,6 +8,8 @@
 *.iws
 .DS_Store
 Thumbs.db
+MEMORY.md
+docker-compose.yml
 
 # --- Backend (Java / Maven) ---
 backend/target/

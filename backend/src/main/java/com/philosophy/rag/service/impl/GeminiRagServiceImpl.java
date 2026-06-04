@@ -14,6 +14,7 @@ import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,13 +31,14 @@ import java.util.stream.Stream;
 
 @Service
 @Slf4j
-public class RagServiceImpl implements RagService {
+@ConditionalOnProperty(name = "ai.provider", havingValue = "google")
+public class GeminiRagServiceImpl implements RagService {
     private final VectorStore vectorStore;
     private final VectorStoreRepository vectorStoreRepository;
     private final ChatClient chatClient;
-    private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true);
+    private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true, java.util.List.of('\n', '\r', ' '));
 
-    public RagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, ChatClient.Builder chatClientBuilder) {
+    public GeminiRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, ChatClient.Builder chatClientBuilder) {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
         this.chatClient = chatClientBuilder.build();
@@ -53,7 +55,6 @@ public class RagServiceImpl implements RagService {
         try {
             String rawText = "";
 
-            // Phân loại luồng đọc text theo đuôi file
             if (filename.toLowerCase().endsWith(".pdf")) {
                 rawText = extractTextFromPdf(tempFile);
             } else if (filename.toLowerCase().endsWith(".md")) {
@@ -65,10 +66,10 @@ public class RagServiceImpl implements RagService {
             Document document = createDocument(cleanedText, file);
             List<Document> chunks = textSplitter.apply(List.of(document));
 
-            log.info("Indexing {} chunks for file: {}", chunks.size(), filename);
+            log.info("[Gemini RAG] Indexing {} chunks for file: {}", chunks.size(), filename);
             vectorStore.accept(chunks);
 
-            return "Document uploaded and indexed successfully: " + filename;
+            return "Document uploaded and indexed successfully (Gemini): " + filename;
         } catch (Exception e) {
             log.error("Error uploading document {}: {}", filename, e.getMessage());
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to process document: " + e.getMessage());
@@ -79,7 +80,7 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public String ask(String query) {
-        log.info("[RAG DEBUG] Incoming Query: {}", query);
+        log.info("[Gemini RAG DEBUG] Incoming Query: {}", query);
 
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
@@ -98,9 +99,10 @@ public class RagServiceImpl implements RagService {
         return vectorStoreRepository.getDocumentContent();
     }
 
+    @Override
     public void resetVectorStore() {
         try {
-            log.info("Resetting vector store data...");
+            log.info("Resetting vector store data (Gemini)...");
             vectorStoreRepository.truncateStore();
         } catch (Exception e) {
             log.error("Failed to reset vector store: {}", e.getMessage());
@@ -121,7 +123,6 @@ public class RagServiceImpl implements RagService {
 
     private String extractTextFromMarkdown(Path path) {
         try {
-            // Đọc toàn bộ nội dung file text/markdown bằng UTF-8
             return Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Error extracting text from Markdown");
@@ -137,26 +138,14 @@ public class RagServiceImpl implements RagService {
         }
     }
 
-
     private String cleanText(String text) {
         if (text == null) return "";
-
-        // 1. Remove all control characters except newline
-        // \p{Cc} matches any control character. [^\n] ensures we don't remove newlines yet.
         String cleaned = text.replaceAll("[\\p{Cc}&&[^\n]]", " ");
-
-        // 2. Handle hyphenated line breaks
         cleaned = cleaned.replaceAll("-\s*\n", " ");
-
-        // 3. Replace single newlines (not paragraphs) with space
         cleaned = cleaned.replaceAll("(?<!\n)\n(?!\n)", " ");
-
-        // 4. Standardize all whitespace to a single space
         cleaned = cleaned.replaceAll("\s{2,}", " ").trim();
-
         return cleaned;
     }
-
 
     private Document createDocument(String content, MultipartFile file) {
         Map<String, Object> metadata = new HashMap<>();
@@ -169,10 +158,8 @@ public class RagServiceImpl implements RagService {
 
     private List<Document> retrieveCandidates(String query) {
         String keywordQuery = query.replaceAll("(?i)c?\s+kh?ng|c?\s+ph?i\s+l?|l?\s+g?|t?i\s+sao", " ").trim();
-
-        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.query(query).withTopK(500));
-        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.query(keywordQuery).withTopK(500));
-
+        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.builder().query(query).topK(500).build());
+        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.builder().query(keywordQuery).topK(500).build());
         return Stream.concat(queryDocs.stream(), keywordDocs.stream())
                 .distinct()
                 .collect(Collectors.toList());
@@ -185,7 +172,7 @@ public class RagServiceImpl implements RagService {
 
         for (Document doc : candidates) {
             boolean isMatch = false;
-            String text = doc.getContent().toLowerCase();
+            String text = doc.getText().toLowerCase();
             for (String kw : keywords) {
                 if (kw.length() > 2 && text.contains(kw.toLowerCase())) {
                     isMatch = true;
@@ -212,7 +199,7 @@ public class RagServiceImpl implements RagService {
     private String buildContext(List<Document> docs) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < docs.size(); i++) {
-            sb.append("[Source ").append(i + 1).append("]: ").append(docs.get(i).getContent()).append("\n\n");
+            sb.append("[Source ").append(i + 1).append("]: ").append(docs.get(i).getText()).append("\n\n");
         }
         return sb.toString();
     }

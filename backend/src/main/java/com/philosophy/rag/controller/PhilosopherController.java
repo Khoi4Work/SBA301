@@ -19,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/philosophers")
 @RequiredArgsConstructor
-@Tag(name = "Philosopher", description = "Quản lý thông tin triết gia")
+@Tag(name = "philosopher-controller", description = "Quản lý thông tin triết gia")
 public class PhilosopherController {
 
     private final PhilosopherService philosopherService;
