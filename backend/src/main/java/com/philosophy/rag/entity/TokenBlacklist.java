@@ -16,14 +16,8 @@ import java.util.UUID;
 public class TokenBlacklist {
     @Id
     @Column(name = "blacklist_id", nullable = false, updatable = false)
-    private UUID blacklistId;
-
-    @PrePersist
-    public void generateId() {
-        if (blacklistId == null) {
-            blacklistId = UuidCreator.getTimeOrderedEpoch();
-        }
-    }
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long blacklistId;
 
     @Column(nullable = false, unique = true, columnDefinition = "text")
     private String token;
