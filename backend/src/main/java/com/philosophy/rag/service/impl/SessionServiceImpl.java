@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
+import com.philosophy.rag.base.persistence.Prompt;
 import com.philosophy.rag.dto.response.QuizGenerateResponse;
 import com.philosophy.rag.dto.response.QuizQuestion;
 import com.philosophy.rag.dto.response.SessionContentResponse;
+import com.philosophy.rag.service.RagService;
 import com.philosophy.rag.service.S3StorageService;
 import com.philosophy.rag.service.SessionService;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +32,8 @@ import java.util.regex.Pattern;
 public class SessionServiceImpl implements SessionService {
 
     private final S3StorageService s3StorageService;
-    private final ChatClient.Builder chatClientBuilder;
     private final ObjectMapper objectMapper;
+    private final RagService ragService;
 
     // ─── getContent ───────────────────────────────────────────────────────────
 
@@ -80,11 +82,7 @@ public class SessionServiceImpl implements SessionService {
 
         String prompt = buildQuizPrompt(context);
 
-        ChatClient chatClient = chatClientBuilder.build();
-        String rawResponse = chatClient.prompt()
-                .user(prompt)
-                .call()
-                .content();
+        String rawResponse = ragService.prompt(prompt);
 
         log.debug("Raw quiz response from AI: {}", rawResponse);
 
@@ -147,30 +145,8 @@ public class SessionServiceImpl implements SessionService {
     // ─── Helpers: Quiz Prompt & Parse ─────────────────────────────────────────
 
     private String buildQuizPrompt(String context) {
-        return """
-                Bạn là giáo viên chuyên nghiệp. Dựa vào nội dung tài liệu sau, hãy tạo ra đúng 10 câu hỏi trắc nghiệm bằng tiếng Việt.
-
-                YÊU CẦU QUAN TRỌNG:
-                - Mỗi câu phải có đúng 4 lựa chọn (A, B, C, D)
-                - Chỉ có 1 đáp án đúng
-                - Câu hỏi phải bám sát nội dung tài liệu
-                - Trả lời CHÍNH XÁC theo định dạng JSON sau, không thêm bất kỳ text nào ngoài JSON:
-
-                ```json
-                [
-                  {
-                    "index": 1,
-                    "question": "Câu hỏi ở đây?",
-                    "options": ["Lựa chọn A", "Lựa chọn B", "Lựa chọn C", "Lựa chọn D"],
-                    "correctIndex": 0,
-                    "explanation": "Giải thích tại sao đáp án này đúng"
-                  }
-                ]
-                ```
-
-                NỘI DUNG TÀI LIỆU:
-                """
-                + context;
+        return Prompt.QUIZ_GENERATOR
+                .replace("{context}", context);
     }
 
     private List<QuizQuestion> parseQuizResponse(String rawResponse) {
