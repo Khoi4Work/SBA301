@@ -8,51 +8,65 @@ import {
   Medal,
   Sparkles,
 } from "lucide-react";
+import { useLocation, Link } from "react-router-dom";
 
 export function Sidebar() {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const getMenuItemClass = (path, alternativePaths = []) => {
+      const isActive = path === "/"
+          ? currentPath === "/"
+          : currentPath.startsWith(path) || alternativePaths.some(p => currentPath.startsWith(p));
+      
+      return isActive
+          ? "flex items-center gap-4 px-4 py-3 text-primary bg-primary/10 rounded-lg transition-all duration-200"
+          : "flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors";
+  };
+
   return (
     <nav className="hidden md:flex flex-col h-screen py-8 bg-surface-container-low border-r border-outline-variant/10 fixed left-0 top-0 w-64 z-50">
-      <div className="px-8 mb-12">
-        <h1 className="font-display-lg text-headline-md text-primary tracking-tight">
+      <div className="px-10 mb-6 text-center">
+        <h1 style={{fontSize: '2.2rem'}} className="font-display-lg text-headline-md text-primary tracking-tight">
             PhiloVerse
         </h1>
       </div>
       <div className="flex-1 space-y-1 px-4">
-        <a
-          className="flex items-center gap-4 px-4 py-3 text-primary bg-primary/10 rounded-lg transition-all duration-200"
-          href="/dashboard"
+        <Link
+          className={getMenuItemClass("/dashboard")}
+          to="/dashboard"
         >
           <LayoutDashboard className="w-5 h-5" />
           <span className="font-label-md text-label-md">Bảng điều khiển</span>
-        </a>
-        <a
-          className="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors"
-          href="/study"
+        </Link>
+        <Link
+          className={getMenuItemClass("/study")}
+          to="/study"
         >
           <GraduationCap className="w-5 h-5" />
           <span className="font-label-md text-label-md">Học viện</span>
-        </a>
-        <a
-            className="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors"
-            href="/"
+        </Link>
+        <Link
+            className={getMenuItemClass("/")}
+            to="/"
         >
           <Clapperboard className="w-5 h-5" />
           <span className="font-label-md text-label-md">Xưởng sáng tạo</span>
-        </a>
-        <a
-          className="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors"
-          href="/chat"
+        </Link>
+        <Link
+          className={getMenuItemClass("/chat", ["/ai"])}
+          to="/chat"
         >
           <Sparkles className="w-5 h-5" />
           <span className="font-label-md text-label-md">Luận đàm</span>
-        </a>
-        <a
-          className="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors"
-          href="#"
+        </Link>
+        <Link
+          className={getMenuItemClass("/review")}
+          to="#"
         >
           <BookOpen className="w-5 h-5" />
           <span className="font-label-md text-label-md">Ôn tập</span>
-        </a>
+        </Link>
         {/*<a*/}
         {/*  className="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors"*/}
         {/*  href="#"*/}

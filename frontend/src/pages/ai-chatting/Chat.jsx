@@ -6,6 +6,7 @@ import { SelectionView } from "@/components/SelectionView.jsx";
 import { DialogueView } from "@/components/DialogueView.jsx";
 import "@/assets/styles/philoverse-chat.css";
 import Header from "@/components/Header.jsx";
+import Footer from "@/components/Footer.jsx";
 
 export default function  Chat() {
     const navigate = useNavigate();
@@ -64,6 +65,8 @@ export default function  Chat() {
                     </AnimatePresence>
                 </div>
             </main>
+
+            <Footer />
         </>
     );
 }
