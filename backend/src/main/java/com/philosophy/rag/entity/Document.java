@@ -19,7 +19,8 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "philosophy_documents", indexes = {
-        @Index(name = "idx_doc_category", columnList = "category")
+        @Index(name = "idx_doc_category", columnList = "category"),
+        @Index(name = "idx_doc_s3_key", columnList = "s3_key")
 })
 @Getter
 @Setter
@@ -39,6 +40,10 @@ public class Document extends BaseEntity {
             documentId = UuidCreator.getTimeOrderedEpoch();
         }
     }
+
+    /** Key lưu trữ trên S3 */
+    @Column(name = "s3_key", length = 500, unique = true)
+    private String s3Key;
 
     /** Tiêu đề tài liệu */
     @Column(name = "title", nullable = false, length = 500)

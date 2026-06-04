@@ -63,4 +63,8 @@ public class QuizOption extends BaseEntity {
     @Column(name = "is_correct", nullable = false)
     @Builder.Default
     private Boolean isCorrect = false;
+
+    /** Thứ tự sắp xếp (dùng cho Timeline / Matching) */
+    @Column(name = "order_index")
+    private Integer orderIndex;
 }

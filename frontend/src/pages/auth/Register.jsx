@@ -2,17 +2,21 @@ import { Menu } from 'lucide-react';
 import { Background } from '../../components/Background.jsx';
 import { SignatureInput } from '../../components/SignatureInput.jsx';
 import { AestheticDivider } from '../../components/AestheticDivider.jsx';
-import {useContext, useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {AuthContext} from "@/contexts/AuthContext.jsx";
+import Footer from "@/components/Footer.jsx";
+import { getSloganContent, getSloganAuthor} from "@/services/SloganService.js";
 // import '../assets/styles/philoverse.css';
 
 export default function Register() {
 
     const { register } = useContext(AuthContext);
-    const[error, setError] = useState(null);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [currentSloganContent, setCurrentSloganContent] = useState("Đang kết nối tới kho lưu trữ...");
+    const [currentSloganAuthor, setCurrentSloganAuthor] = useState("");
 
     const [formData, setFormData] = useState({
         username: '',
@@ -21,16 +25,144 @@ export default function Register() {
         confirmPassword: ''
     });
 
+    const [validationErrors, setValidationErrors] = useState({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    });
+
+    const [touched, setTouched] = useState({
+        username: false,
+        email: false,
+        password: false,
+        confirmPassword: false
+    });
+
+    const [focusedField, setFocusedField] = useState(null);
+
+    useEffect(() => {
+        const fetchSlogan = async () => {
+            try {
+                const [contentRes, authorRes] = await Promise.all([getSloganContent(), getSloganAuthor()]);
+                setCurrentSloganContent(contentRes.data);
+                setCurrentSloganAuthor(authorRes.data);
+            } catch (error) {
+                console.error("Lỗi khi tải slogan:", error);
+            }
+        }
+
+        fetchSlogan();
+    }, []);
+
+    const validateField = (name, value, passwordVal = formData.password) => {
+        switch (name) {
+            case 'username':
+                if (!value.trim()) {
+                    return 'Tên đăng nhập không được để trống';
+                }
+                if (value.length < 3 || value.length > 100) {
+                    return 'Tên đăng nhập phải từ 3 đến 100 ký tự';
+                }
+                return '';
+            case 'email':
+                if (!value.trim()) {
+                    return 'Địa chỉ email không được để trống';
+                }
+                const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+                if (!emailRegex.test(value)) {
+                    return 'Định dạng email không hợp lệ (ví dụ: scholar@lyceum.edu)';
+                }
+                return '';
+            case 'password':
+                if (!value) {
+                    return 'Mật mã không được để trống';
+                }
+                if (value.length < 6 || value.length > 100) {
+                    return 'Mật khẩu phải từ 6 đến 100 ký tự';
+                }
+                const hasLowercase = /[a-z]/.test(value);
+                const hasUppercase = /[A-Z]/.test(value);
+                const hasNumber = /\d/.test(value);
+                if (!hasLowercase || !hasUppercase || !hasNumber) {
+                    return 'Mật khẩu phải chứa ít nhất 1 chữ thường, 1 chữ hoa và 1 chữ số';
+                }
+                return '';
+            case 'confirmPassword':
+                if (!value) {
+                    return 'Vui lòng xác nhận mật mã';
+                }
+                if (value !== passwordVal) {
+                    return 'Mật khẩu xác nhận không trùng khớp';
+                }
+                return '';
+            default:
+                return '';
+        }
+    };
+
+    const handleInputChange = (name, value) => {
+        const updatedFormData = { ...formData, [name]: value };
+        setFormData(updatedFormData);
+        setError(null);
+
+        // Run validation in real-time if field was already touched
+        if (touched[name]) {
+            const fieldError = validateField(name, value, name === 'password' ? value : formData.password);
+            setValidationErrors(prev => ({ ...prev, [name]: fieldError }));
+        }
+
+        // Revalidate confirm password if it has been touched when password changes
+        if (name === 'password' && touched.confirmPassword) {
+            const confirmErrorMsg = validateField('confirmPassword', formData.confirmPassword, value);
+            setValidationErrors(prev => ({ ...prev, confirmPassword: confirmErrorMsg }));
+        }
+    };
+
+    const handleBlur = (name) => {
+        setTouched(prev => ({ ...prev, [name]: true }));
+        setFocusedField(null);
+        const fieldError = validateField(name, formData[name]);
+        setValidationErrors(prev => ({ ...prev, [name]: fieldError }));
+    };
+
+    const handleFocus = (name) => {
+        setFocusedField(name);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        setLoading(true);
 
-        if (formData.password !== formData.confirmPassword) {
-            setError('Mật khẩu xác nhận không khớp');
-            setLoading(false);
+        // Mark all fields as touched
+        const allTouched = {
+            username: true,
+            email: true,
+            password: true,
+            confirmPassword: true
+        };
+        setTouched(allTouched);
+
+        // Run full validation check
+        const usernameError = validateField('username', formData.username);
+        const emailError = validateField('email', formData.email);
+        const passwordError = validateField('password', formData.password);
+        const confirmError = validateField('confirmPassword', formData.confirmPassword);
+
+        const currentErrors = {
+            username: usernameError,
+            email: emailError,
+            password: passwordError,
+            confirmPassword: confirmError
+        };
+
+        setValidationErrors(currentErrors);
+
+        if (usernameError || emailError || passwordError || confirmError) {
             return;
         }
+
+        setLoading(true);
 
         try {
             await register({
@@ -45,13 +177,48 @@ export default function Register() {
                 }
             });
         } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                'Đăng ký thất bại'
-            );
+            const apiResponse = err.response?.data;
+            if (apiResponse) {
+                // Handle Field Validation Errors from Backend (code 4000)
+                if (apiResponse.errors) {
+                    setValidationErrors(prev => ({
+                        ...prev,
+                        ...apiResponse.errors
+                    }));
+                } 
+                // Handle Specific Logic Errors like Username / Email duplication
+                else if (apiResponse.message) {
+                    const msg = apiResponse.message;
+                    if (msg.includes("Username already exists")) {
+                        setValidationErrors(prev => ({
+                            ...prev,
+                            username: "Tên đăng nhập đã tồn tại trong hệ thống"
+                        }));
+                    } else if (msg.includes("Email already exists")) {
+                        setValidationErrors(prev => ({
+                            ...prev,
+                            email: "Địa chỉ email đã được đăng ký"
+                        }));
+                    } else {
+                        setError(msg);
+                    }
+                } else {
+                    setError('Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.');
+                }
+            } else {
+                setError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại đường truyền mạng.');
+            }
         } finally {
             setLoading(false);
         }
+    };
+
+    // Calculate password requirements checklist status
+    const passwordChecks = {
+        length: formData.password.length >= 6,
+        lowercase: /[a-z]/.test(formData.password),
+        uppercase: /[A-Z]/.test(formData.password),
+        number: /\d/.test(formData.password),
     };
 
     return (
@@ -80,7 +247,7 @@ export default function Register() {
                             <p className="font-body text-sm text-on-surface-variant uppercase tracking-widest font-semibold">Kiến tạo hành trình tri thức</p>
                         </div>
 
-                        <form className="space-y-8" onSubmit={handleSubmit}>
+                        <form className="space-y-8" onSubmit={handleSubmit} noValidate>
                             {error && (
                                 <div className="p-3 rounded border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
                                     {error}
@@ -91,70 +258,84 @@ export default function Register() {
                                 label="Tên đăng nhập"
                                 name="username"
                                 value={formData.username}
-                                onChange={(e) => {
-                                    setError(null);
-
-                                    setFormData({
-                                        ...formData,
-                                        username: e.target.value
-                                    });
-                                }}
-                                minLength={3}
-                                maxLength={100}
+                                onChange={(e) => handleInputChange('username', e.target.value)}
+                                onBlur={() => handleBlur('username')}
+                                onFocus={() => handleFocus('username')}
+                                error={touched.username ? validationErrors.username : ''}
                                 placeholder="Username"
                             />
+
                             <SignatureInput
                                 label="Địa chỉ Email"
                                 name="email"
                                 type="email"
                                 value={formData.email}
-                                onChange={(e) => {
-                                    setError(null);
-
-                                    setFormData({
-                                        ...formData,
-                                        email: e.target.value
-                                    });
-                                }}
-                                minLength={5}
-                                maxLength={100}
-                                pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+                                onChange={(e) => handleInputChange('email', e.target.value)}
+                                onBlur={() => handleBlur('email')}
+                                onFocus={() => handleFocus('email')}
+                                error={touched.email ? validationErrors.email : ''}
                                 placeholder="scholar@lyceum.edu"
                             />
 
-                            <SignatureInput
-                                label="Mật mã"
-                                name="password"
-                                type="password"
-                                value={formData.password}
-                                onChange={(e) => {
-                                    setError(null);
-                                    setFormData({
-                                        ...formData,
-                                        password: e.target.value
-                                    });
-                                }}
-                                minLength={6}
-                                maxLength={100}
-                                pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
-                                placeholder="••••••••"
-                            />
+                            <div className="flex flex-col">
+                                <SignatureInput
+                                    label="Mật mã"
+                                    name="password"
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={(e) => handleInputChange('password', e.target.value)}
+                                    onBlur={() => handleBlur('password')}
+                                    onFocus={() => handleFocus('password')}
+                                    error={touched.password ? validationErrors.password : ''}
+                                    placeholder="••••••••"
+                                />
+
+                                {/* Password requirements checklist helper */}
+                                {(focusedField === 'password' || formData.password.length > 0) && (
+                                    <div className="mt-3 p-4 bg-surface-container-lowest/70 border border-outline-variant/30 rounded shadow-inner space-y-2 transition-all duration-300 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <p className="font-caption text-[11px] uppercase tracking-wider text-on-surface-variant/80 font-bold mb-1.5 flex items-center gap-1.5">
+                                            <span className="material-symbols-outlined text-[14px] text-secondary">info</span>
+                                            Điều kiện bảo mật mật mã:
+                                        </p>
+                                        <ul className="text-xs space-y-1.5 font-body">
+                                            <li className={`flex items-center gap-2 transition-colors duration-200 ${passwordChecks.length ? 'text-emerald-400 font-medium' : 'text-on-surface-variant/50'}`}>
+                                                <span className="text-[14px] flex items-center justify-center w-4 h-4 border border-current rounded-full text-center text-[10px]">
+                                                    {passwordChecks.length ? '✓' : '1'}
+                                                </span>
+                                                <span>Dài từ 6 đến 100 ký tự</span>
+                                            </li>
+                                            <li className={`flex items-center gap-2 transition-colors duration-200 ${passwordChecks.lowercase ? 'text-emerald-400 font-medium' : 'text-on-surface-variant/50'}`}>
+                                                <span className="text-[14px] flex items-center justify-center w-4 h-4 border border-current rounded-full text-center text-[10px]">
+                                                    {passwordChecks.lowercase ? '✓' : '2'}
+                                                </span>
+                                                <span>Chứa ít nhất 1 chữ cái thường (a-z)</span>
+                                            </li>
+                                            <li className={`flex items-center gap-2 transition-colors duration-200 ${passwordChecks.uppercase ? 'text-emerald-400 font-medium' : 'text-on-surface-variant/50'}`}>
+                                                <span className="text-[14px] flex items-center justify-center w-4 h-4 border border-current rounded-full text-center text-[10px]">
+                                                    {passwordChecks.uppercase ? '✓' : '3'}
+                                                </span>
+                                                <span>Chứa ít nhất 1 chữ cái hoa (A-Z)</span>
+                                            </li>
+                                            <li className={`flex items-center gap-2 transition-colors duration-200 ${passwordChecks.number ? 'text-emerald-400 font-medium' : 'text-on-surface-variant/50'}`}>
+                                                <span className="text-[14px] flex items-center justify-center w-4 h-4 border border-current rounded-full text-center text-[10px]">
+                                                    {passwordChecks.number ? '✓' : '4'}
+                                                </span>
+                                                <span>Chứa ít nhất 1 chữ số (0-9)</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
 
                             <SignatureInput
                                 label="Xác nhận mật mã"
                                 name="confirmPassword"
                                 type="password"
                                 value={formData.confirmPassword}
-                                onChange={(e) => {
-                                    setError(null);
-                                    setFormData({
-                                        ...formData,
-                                        confirmPassword: e.target.value
-                                    });
-                                }}
-                                minLength={6}
-                                maxLength={100}
-                                pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+                                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                                onBlur={() => handleBlur('confirmPassword')}
+                                onFocus={() => handleFocus('confirmPassword')}
+                                error={touched.confirmPassword ? validationErrors.confirmPassword : ''}
                                 placeholder="••••••••"
                             />
 
@@ -162,7 +343,7 @@ export default function Register() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-secondary-container border border-secondary text-secondary-fixed py-4 font-body text-sm font-semibold uppercase tracking-widest hover:bg-secondary hover:text-on-secondary transition-all duration-500 active:scale-95 shadow-lg shadow-secondary/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full bg-secondary-container border border-secondary text-secondary-fixed py-4 font-body text-sm font-semibold uppercase tracking-widest hover:bg-secondary hover:text-on-secondary transition-all duration-500 active:scale-95 shadow-lg shadow-secondary/10 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                 >
                                     {loading ? "Đang tạo..." : "Tạo Tài Khoản"}
                                 </button>
@@ -188,35 +369,16 @@ export default function Register() {
                 {/* Philosopher Quote */}
                 <div className="max-w-2xl text-center px-6 md:px-8">
                     <p className="font-headline text-2xl text-tertiary italic mb-4 font-medium">
-                        "Học vấn là một hạt giống của hạnh phúc."
+                        {currentSloganContent}
                     </p>
                     <p className="font-body text-sm font-semibold text-secondary-fixed-dim tracking-[0.3em] uppercase">
-                        — Aristotle
+                        — {currentSloganAuthor}
                     </p>
                 </div>
             </main>
 
-            {/* Visual Artifacts */}
-            <div className="fixed bottom-12 left-12 hidden lg:block opacity-40 z-10 pointer-events-none">
-                <div className="w-24 h-[1px] bg-secondary-fixed-dim mb-4"></div>
-                <p className="font-body text-xs text-secondary uppercase tracking-[0.2em] transform -rotate-90 origin-left translate-y-24">
-                    ANNO MMXXIV
-                </p>
-            </div>
+            <Footer />
 
-            {/* Global Footer */}
-            <footer className="relative z-20 w-full py-12 px-6 md:px-16 flex flex-col md:flex-row justify-between items-center gap-8 border-t border-outline-variant/20 bg-surface">
-                <div className="font-headline text-2xl font-medium text-secondary">PhiloVerse</div>
-                <div className="flex flex-wrap justify-center gap-6">
-                    <a href="#" className="font-body text-sm font-semibold text-on-surface-variant hover:text-secondary transition-colors duration-300">Curriculum</a>
-                    <a href="#" className="font-body text-sm font-semibold text-on-surface-variant hover:text-secondary transition-colors duration-300">Library</a>
-                    <a href="#" className="font-body text-sm font-semibold text-on-surface-variant hover:text-secondary transition-colors duration-300">Socratic Method</a>
-                    <a href="#" className="font-body text-sm font-semibold text-on-surface-variant hover:text-secondary transition-colors duration-300">Privacy</a>
-                </div>
-                <div className="font-body text-sm font-semibold text-on-surface-variant uppercase tracking-tighter">
-                    © MMXXIV PHILOVERSE ARCHIVE
-                </div>
-            </footer>
         </div>
     );
 }

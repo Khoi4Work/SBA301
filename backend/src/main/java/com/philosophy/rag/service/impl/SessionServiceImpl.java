@@ -11,13 +11,13 @@ import com.philosophy.rag.dto.response.SessionContentResponse;
 import com.philosophy.rag.service.RagService;
 import com.philosophy.rag.service.S3StorageService;
 import com.philosophy.rag.service.SessionService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -28,12 +28,17 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SessionServiceImpl implements SessionService {
 
     private final S3StorageService s3StorageService;
     private final ObjectMapper objectMapper;
     private final RagService ragService;
+
+    public SessionServiceImpl(S3StorageService s3StorageService, ObjectMapper objectMapper, RagService ragService) {
+        this.s3StorageService = s3StorageService;
+        this.objectMapper = objectMapper;
+        this.ragService = ragService;
+    }
 
     // ─── getContent ───────────────────────────────────────────────────────────
 

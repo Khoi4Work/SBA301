@@ -49,17 +49,25 @@ public class Quiz extends BaseEntity {
                 foreignKey = @ForeignKey(name = "fk_quiz_document"))
     private Document document;
 
+    /** Bộ đề ôn tập chứa câu hỏi này (nếu có) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quiz_set_id",
+                foreignKey = @ForeignKey(name = "fk_quiz_quiz_set"))
+    private QuizSet quizSet;
+
     /** Nội dung câu hỏi */
     @Column(name = "question_text", columnDefinition = "TEXT", nullable = false)
     private String questionText;
 
+    /** Giải thích đáp án */
+    @Column(name = "explanation", columnDefinition = "TEXT")
+    private String explanation;
+
     /**
      * Loại hình Minigame (QuizType).
-     * MULTIPLE_CHOICE: trắc nghiệm 4 đáp án.
-     * DRAG_AND_DROP: kéo thả ghép thẻ bài triết gia - câu nói.
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "quiz_type", nullable = false, length = 20)
+    @Column(name = "quiz_type", nullable = false, length = 30)
     private QuizType quizType;
 
     /**
@@ -96,6 +104,16 @@ public class Quiz extends BaseEntity {
         /** Câu hỏi trắc nghiệm nhiều lựa chọn */
         MULTIPLE_CHOICE,
         /** Trò chơi kéo thả ghép thẻ bài */
-        DRAG_AND_DROP
+        DRAG_AND_DROP,
+        /** Điền vào chỗ trống */
+        FILL_IN_THE_BLANK,
+        /** Đúng - Sai */
+        TRUE_FALSE,
+        /** Nối cột */
+        MATCHING,
+        /** Sắp xếp dòng thời gian */
+        TIMELINE,
+        /** Scenario-based Quiz */
+        SCENARIO
     }
 }

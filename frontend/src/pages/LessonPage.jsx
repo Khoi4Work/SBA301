@@ -105,7 +105,7 @@ function ReadingStage({ lesson, onComplete }) {
                             Nội dung bài học
                         </span>
                     </div>
-                    <div className="p-8 max-h-[65vh] overflow-y-auto scrollbar-hide">
+                    <div className="p-8 max-h-[65vh] overflow-y-auto custom-scrollbar">
                         <div className="prose prose-invert max-w-none">
                             <pre className="whitespace-pre-wrap font-body text-base leading-relaxed text-on-surface-variant">
                                 {content || 'Không có nội dung.'}
@@ -117,83 +117,85 @@ function ReadingStage({ lesson, onComplete }) {
 
             {/* Audio Panel */}
             <div className="lg:col-span-1">
-                <div className="sticky top-28 bg-surface-container-low border border-outline-variant/20 rounded-lg overflow-hidden">
-                    <div className="px-6 py-5 border-b border-outline-variant/20">
-                        <span className="text-sm font-bold tracking-wider uppercase text-secondary flex items-center gap-2">
-                            <Volume2 size={16} />
-                            Nghe bài học
-                        </span>
-                    </div>
-                    <div className="p-6 space-y-5">
-                        {/* Audio element (ẩn) */}
-                        <audio ref={audioRef} onEnded={handleAudioEnded} className="hidden" />
-
-                        {/* Error */}
-                        {audioError && (
-                            <div className="flex items-start gap-2 text-sm text-on-surface-variant bg-surface-container-high p-3 rounded">
-                                <AlertTriangle size={14} className="text-secondary mt-0.5 shrink-0" />
-                                {audioError}
-                            </div>
-                        )}
-
-                        {/* Start button */}
-                        {!ttsStarted ? (
-                            <button
-                                onClick={handleStartAudio}
-                                disabled={isLoadingAudio}
-                                className="w-full py-4 bg-secondary text-on-secondary font-bold tracking-wider uppercase text-sm rounded flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 disabled:opacity-60"
-                            >
+                <div className="sticky top-28 space-y-4">
+                    <div className="bg-surface-container-low border border-outline-variant/20 rounded-lg overflow-hidden">
+                        <div className="px-6 py-5 border-b border-outline-variant/20">
+                            <span className="text-sm font-bold tracking-wider uppercase text-secondary flex items-center gap-2">
                                 <Volume2 size={16} />
                                 Nghe bài học
-                            </button>
-                        ) : (
-                            <>
-                                {/* Progress */}
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-xs text-on-surface-variant">
-                                        <span>Đoạn {currentChunk + 1}/{chunks.length}</span>
-                                        <span>{progressPct}%</span>
-                                    </div>
-                                    <div className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-secondary transition-all duration-500"
-                                            style={{ width: `${progressPct}%` }}
-                                        />
-                                    </div>
+                            </span>
+                        </div>
+                        <div className="p-6 space-y-5">
+                            {/* Audio element (ẩn) */}
+                            <audio ref={audioRef} onEnded={handleAudioEnded} className="hidden" />
+
+                            {/* Error */}
+                            {audioError && (
+                                <div className="flex items-start gap-2 text-sm text-on-surface-variant bg-surface-container-high p-3 rounded">
+                                    <AlertTriangle size={14} className="text-secondary mt-0.5 shrink-0" />
+                                    {audioError}
                                 </div>
+                            )}
 
-                                {/* Controls */}
-                                {isLoadingAudio ? (
-                                    <div className="flex items-center justify-center gap-2 py-3 text-sm text-on-surface-variant">
-                                        <Loader2 size={16} className="animate-spin text-secondary" />
-                                        Đang tạo giọng đọc...
+                            {/* Start button */}
+                            {!ttsStarted ? (
+                                <button
+                                    onClick={handleStartAudio}
+                                    disabled={isLoadingAudio}
+                                    className="w-full py-4 bg-secondary text-on-secondary font-bold tracking-wider uppercase text-sm rounded flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 disabled:opacity-60"
+                                >
+                                    <Volume2 size={16} />
+                                    Nghe bài học
+                                </button>
+                            ) : (
+                                <>
+                                    {/* Progress */}
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-xs text-on-surface-variant">
+                                            <span>Đoạn {currentChunk + 1}/{chunks.length}</span>
+                                            <span>{progressPct}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-secondary transition-all duration-500"
+                                                style={{ width: `${progressPct}%` }}
+                                            />
+                                        </div>
                                     </div>
-                                ) : (
-                                    <button
-                                        onClick={togglePlay}
-                                        className="w-full py-3 border border-secondary text-secondary font-bold text-sm tracking-wider uppercase rounded flex items-center justify-center gap-2 hover:bg-secondary hover:text-on-secondary transition-all"
-                                    >
-                                        {isPlaying ? <><Pause size={15} /> Tạm dừng</> : <><Play size={15} /> Tiếp tục</>}
-                                    </button>
-                                )}
-                            </>
-                        )}
 
-                        {/* Tip */}
-                        <p className="text-xs text-outline leading-relaxed">
-                            🎙️ Giọng đọc tiếng Việt tự nhiên. Bài học sẽ được đọc liên tục từng đoạn.
-                        </p>
+                                    {/* Controls */}
+                                    {isLoadingAudio ? (
+                                        <div className="flex items-center justify-center gap-2 py-3 text-sm text-on-surface-variant">
+                                            <Loader2 size={16} className="animate-spin text-secondary" />
+                                            Đang tạo giọng đọc...
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={togglePlay}
+                                            className="w-full py-3 border border-secondary text-secondary font-bold text-sm tracking-wider uppercase rounded flex items-center justify-center gap-2 hover:bg-secondary hover:text-on-secondary transition-all"
+                                        >
+                                            {isPlaying ? <><Pause size={15} /> Tạm dừng</> : <><Play size={15} /> Tiếp tục</>}
+                                        </button>
+                                    )}
+                                </>
+                            )}
+
+                            {/* Tip */}
+                            <p className="text-xs text-outline leading-relaxed">
+                                🎙️ Giọng đọc tiếng Việt tự nhiên. Bài học sẽ được đọc liên tục từng đoạn.
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                {/* Complete button */}
-                <button
-                    onClick={onComplete}
-                    className="mt-6 w-full py-4 bg-secondary text-on-secondary font-bold tracking-wider uppercase text-sm rounded flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-secondary/20"
-                >
-                    Hoàn thành bài học
-                    <ChevronRight size={16} />
-                </button>
+                    {/* Complete button */}
+                    <button
+                        onClick={onComplete}
+                        className="w-full py-4 bg-secondary text-on-secondary font-bold tracking-wider uppercase text-sm rounded flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-secondary/20"
+                    >
+                        Hoàn thành bài học
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
             </div>
         </div>
     );
