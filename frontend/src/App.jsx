@@ -13,6 +13,7 @@ import Study from "@/pages/Study.jsx";
 import LessonPage from "@/pages/LessonPage.jsx";
 import Review from "@/pages/Review.jsx";
 import QuizPlay from "@/pages/QuizPlay.jsx";
+import ProtectedRoute from "@/contexts/ProtectedRoute.jsx";
 
 
 function AppLayout() {
@@ -28,16 +29,64 @@ function AppLayout() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/model" element={<Karl_Marx />} />
-                <Route path="/dashboard" element={<PhiloVerse />} />
-                <Route path="/Study" element={<Study />} />
-                <Route path="/study/lesson" element={<LessonPage />} />
-                <Route path={"/ai"} element={<VirtualAssistant />} />
-                <Route path="/dashboard" element={<PhiloVerse />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/review" element={<Review />} />
                 <Route path="/review/play/:id" element={<QuizPlay />} />
+
+                <Route
+                    path="/model"
+                    element={
+                        <ProtectedRoute>
+                            <Karl_Marx />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/dashboard"
+                    element={
+                        <ProtectedRoute>
+                            <PhiloVerse />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/Study"
+                    element={
+                        <ProtectedRoute>
+                            <Study />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/study/lesson"
+                    element={
+                        <ProtectedRoute>
+                            <LessonPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/ai"
+                    element={
+                        <ProtectedRoute>
+                            <VirtualAssistant />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/chat"
+                    element={
+                        <ProtectedRoute>
+                            <Chat />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </>
     );
