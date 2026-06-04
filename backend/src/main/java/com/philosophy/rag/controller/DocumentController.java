@@ -33,11 +33,15 @@ public class DocumentController {
         public ResponseEntity<ApiResponse<DocumentUploadResponse>> uploadDocument(
                         @RequestPart("file") MultipartFile file,
                         @RequestParam(value = "title", required = false) String title,
-                        @RequestParam(value = "description", required = false) String description) throws ApiException {
+                        @RequestParam(value = "description", required = false) String description,
+                        @RequestPart(value = "image", required = false) MultipartFile image,
+                        @RequestParam(value = "imageUrl", required = false) String imageUrl,
+                        @RequestParam(value = "category", required = false) String category) throws ApiException {
 
-                log.info("Uploading file: {}", file.getOriginalFilename());
+                log.info("Uploading file: {}, title: {}, category: {}", file.getOriginalFilename(), title, category);
 
-                DocumentUploadResponse response = s3StorageService.uploadDocument(file, title, description);
+                DocumentUploadResponse response = s3StorageService.uploadDocument(file, title, description, image,
+                                imageUrl, category);
 
                 return ResponseEntity.ok(
                                 ApiResponse.success(response, "Upload successful"));

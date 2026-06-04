@@ -35,4 +35,18 @@ public class ChatClientConfig {
     public ChatClient.Builder chatClientBuilder(ChatModel primaryChatModel) {
         return ChatClient.builder(primaryChatModel);
     }
+
+    /**
+     * Provides the ChatClient.Builder bean specifically for Quiz generation.
+     * Uses quiz.ai.provider configuration.
+     */
+    @Bean
+    public ChatClient.Builder quizChatClientBuilder(
+            @Qualifier("googleGenAiChatModel") ChatModel googleModel,
+            @Qualifier("ollamaChatModel") ChatModel ollamaModel,
+            @Value("${quiz.ai.provider:google}") String provider) {
+
+        ChatModel model = "ollama".equalsIgnoreCase(provider) ? ollamaModel : googleModel;
+        return ChatClient.builder(model);
+    }
 }

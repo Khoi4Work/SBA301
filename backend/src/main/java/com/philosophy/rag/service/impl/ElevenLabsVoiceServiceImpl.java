@@ -17,7 +17,7 @@ import java.util.Base64;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "ai.provider", havingValue = "google")
+@ConditionalOnProperty(name = "voice.provider", havingValue = "elevenlabs")
 public class ElevenLabsVoiceServiceImpl implements VoiceService {
     private final RagService ragService;
     private final WebClient webClient;

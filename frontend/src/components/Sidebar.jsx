@@ -48,7 +48,7 @@ export function Sidebar() {
         </a>
         <a
           className="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors"
-          href="#"
+          href="/review"
         >
           <BookOpen className="w-5 h-5" />
           <span className="font-label-md text-label-md">Ôn tập</span>

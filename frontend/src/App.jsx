@@ -11,13 +11,15 @@ import VirtualAssistant from "@/pages/ai-chatting/VirtualAssistant.jsx";
 import Chat from "@/pages/ai-chatting/Chat.jsx";
 import Study from "@/pages/Study.jsx";
 import LessonPage from "@/pages/LessonPage.jsx";
+import Review from "@/pages/Review.jsx";
+import QuizPlay from "@/pages/QuizPlay.jsx";
 
 
 function AppLayout() {
     const location = useLocation();
 
-    // Ẩn header ở home + login + lesson (lesson có header riêng)
-    const hideHeader = ['/', '/login', '/study/lesson'].includes(location.pathname);
+    // Ẩn header ở home + login + lesson + quiz play (có header riêng hoặc cần tập trung)
+    const hideHeader = ['/', '/login', '/study/lesson'].includes(location.pathname) || location.pathname.startsWith('/review/play');
 
     return (
         <>
@@ -34,6 +36,8 @@ function AppLayout() {
                 <Route path="/dashboard" element={<PhiloVerse />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/chat" element={<Chat />} />
+                <Route path="/review" element={<Review />} />
+                <Route path="/review/play/:id" element={<QuizPlay />} />
             </Routes>
         </>
     );
