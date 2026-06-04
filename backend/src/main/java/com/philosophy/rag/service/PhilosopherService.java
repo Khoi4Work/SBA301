@@ -10,4 +10,6 @@ public interface PhilosopherService {
     List<PhilosopherResponse> findAllPhilosophers();
 
     PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file);
+
+    void deleteAllPhilosophers();
 }

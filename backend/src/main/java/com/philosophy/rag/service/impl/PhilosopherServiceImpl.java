@@ -51,6 +51,12 @@ public class PhilosopherServiceImpl implements PhilosopherService {
         return mapToResponse(saved);
     }
 
+    @Override
+    @Transactional
+    public void deleteAllPhilosophers() {
+        philosopherRepository.deleteAll();
+    }
+
     private PhilosopherResponse mapToResponse(Philosopher entity) {
         return PhilosopherResponse.builder()
                 .id(entity.getPhilosopherId())

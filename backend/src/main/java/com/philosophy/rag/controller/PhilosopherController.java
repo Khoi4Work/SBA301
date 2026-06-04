@@ -39,4 +39,11 @@ public class PhilosopherController {
         PhilosopherResponse response = philosopherService.createPhilosopher(request, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Thêm triết gia thành công"));
     }
+
+    @Operation(summary = "Xóa toàn bộ dữ liệu triết gia")
+    @DeleteMapping("/deleteAll")
+    public ResponseEntity<ApiResponse<Void>> deleteAllPhilosophers() {
+        philosopherService.deleteAllPhilosophers();
+        return ResponseEntity.ok(ApiResponse.success(null, "Xóa toàn bộ triết gia thành công"));
+    }
 }
