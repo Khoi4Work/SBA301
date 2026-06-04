@@ -36,7 +36,7 @@ public class OllamaRagServiceImpl implements RagService {
     private final VectorStore vectorStore;
     private final VectorStoreRepository vectorStoreRepository;
     private final ChatClient chatClient;
-    private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true);
+    private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true, java.util.List.of('\n', '\r', ' '));
 
     public OllamaRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, ChatClient.Builder chatClientBuilder) {
         this.vectorStore = vectorStore;
@@ -159,8 +159,8 @@ public class OllamaRagServiceImpl implements RagService {
 
     private List<Document> retrieveCandidates(String query) {
         String keywordQuery = query.replaceAll("(?i)c?\s+kh?ng|c?\s+ph?i\s+l?|l?\s+g?|t?i\s+sao", " ").trim();
-        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.query(query).withTopK(500));
-        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.query(keywordQuery).withTopK(500));
+        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.builder().query(query).topK(500).build());
+        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.builder().query(keywordQuery).topK(500).build());
         return Stream.concat(queryDocs.stream(), keywordDocs.stream())
                 .distinct()
                 .collect(Collectors.toList());
@@ -173,7 +173,7 @@ public class OllamaRagServiceImpl implements RagService {
 
         for (Document doc : candidates) {
             boolean isMatch = false;
-            String text = doc.getContent().toLowerCase();
+            String text = doc.getText().toLowerCase();
             for (String kw : keywords) {
                 if (kw.length() > 2 && text.contains(kw.toLowerCase())) {
                     isMatch = true;
@@ -200,7 +200,7 @@ public class OllamaRagServiceImpl implements RagService {
     private String buildContext(List<Document> docs) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < docs.size(); i++) {
-            sb.append("[Source ").append(i + 1).append("]: ").append(docs.get(i).getContent()).append("\n\n");
+            sb.append("[Source ").append(i + 1).append("]: ").append(docs.get(i).getText()).append("\n\n");
         }
         return sb.toString();
     }
