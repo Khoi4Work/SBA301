@@ -61,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/documents/**").permitAll()
                         .requestMatchers("/api/documents/**").authenticated()
                         .requestMatchers("/api/session/**").authenticated()
+                        .requestMatchers("/api/images/**").authenticated()
 
                         .anyRequest().authenticated()
                 )

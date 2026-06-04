@@ -7,7 +7,6 @@ import MicButton from "@/components/AI/MicButton.jsx";
 import ChatPanel from "@/components/AI/ChatPanel.jsx";
 import { useSpeechToText } from '@/services/hooks/useSpeechToText.js';
 import { Sidebar } from "@/components/Sidebar.jsx";
-import { TopBar } from "@/components/TopBar.jsx";
 import "@/assets/styles/philoverse-chat.css";
 
 const VirtualAssistant = () => {
@@ -42,6 +41,13 @@ const VirtualAssistant = () => {
             }
         }
     });
+
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
 
     useEffect(() => {
         if (isAiTalking && isListening) {
@@ -87,16 +93,21 @@ const VirtualAssistant = () => {
             <Sidebar currentView="dialogue" onNavigate={navigateTo} />
 
             <main className="flex flex-col min-h-screen relative transition-all duration-500">
-                <TopBar
-                    currentView="dialogue"
-                    philosopherName={philosopher?.name || "Triết gia"}
-                    onNavigate={navigateTo}
-                />
+                {/*<TopBar*/}
+                {/*    currentView="dialogue"*/}
+                {/*    philosopherName={philosopher?.name || "Triết gia"}*/}
+                {/*    onNavigate={navigateTo}*/}
+                {/*/>*/}
 
                 <div className="flex-1 transition-all duration-500 lg:ml-64 relative overflow-hidden">
+                    <div className="flex justify-start pt-22 pl-6 relative z-20">
+                        <p className="text-[11px] uppercase tracking-[0.4em] text-secondary/60">
+                            Đàm đạo cùng {philosopher?.name || "Triết gia"}
+                        </p>
+                    </div>
                     <div style={{
                         display: 'flex',
-                        height: 'calc(100vh - 80px)',
+                        height: 'calc(100vh - 120px)',
                         width: '100%',
                         position: 'relative'
                     }}>
