@@ -1,10 +1,8 @@
 package com.philosophy.rag.entity;
 
-import com.github.f4b6a3.uuid.UuidCreator;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "token_blacklist")

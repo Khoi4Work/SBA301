@@ -1,6 +1,5 @@
 package com.philosophy.rag.service.impl;
 
-import com.philosophy.rag.base.response.ApiResponse;
 import com.philosophy.rag.dto.request.TtsRequest;
 import com.philosophy.rag.dto.response.ChatResponse;
 import com.philosophy.rag.service.RagService;
@@ -63,8 +62,7 @@ public class VoiceServiceImpl implements VoiceService {
                     "cmd.exe", "/c", "py", "-m", "edge_tts",
                     "--voice", voice,
                     "-f", textFile.getAbsolutePath(),
-                    "--write-media", outputFile.getAbsolutePath()
-            );
+                    "--write-media", outputFile.getAbsolutePath());
 
             log.info("Đang thực thi edge-tts qua file txt tạm...");
             processBuilder.redirectErrorStream(true);
@@ -103,7 +101,7 @@ public class VoiceServiceImpl implements VoiceService {
         }
     }
 
-    //Helpers
+    // Helpers
     public String cleanTextForTTS(String rawText) {
         if (rawText == null || rawText.isEmpty()) {
             return "";
@@ -120,12 +118,13 @@ public class VoiceServiceImpl implements VoiceService {
                 .replaceAll("\\n+", ". ")
                 // 5. Thay thế các khoảng trắng liền nhau thành 1 khoảng trắng
                 .replaceAll("\\s{2,}", " ")
-                // 6. Xử lý trường hợp 2 dấu chấm đứng cạnh nhau (do ghép \n với dấu chấm có sẵn)
+                // 6. Xử lý trường hợp 2 dấu chấm đứng cạnh nhau (do ghép \n với dấu chấm có
+                // sẵn)
                 .replaceAll("\\.{2,}", ".")
                 .trim();
     }
 
-// CÁCH DÙNG:
-// String cleanText = cleanTextForTTS(chatResponseText);
-// String audioBase64 = textToSpeak(new TtsRequest(request.voice(), cleanText));
+    // CÁCH DÙNG:
+    // String cleanText = cleanTextForTTS(chatResponseText);
+    // String audioBase64 = textToSpeak(new TtsRequest(request.voice(), cleanText));
 }

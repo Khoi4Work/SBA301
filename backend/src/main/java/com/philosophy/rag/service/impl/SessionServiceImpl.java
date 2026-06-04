@@ -16,12 +16,10 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +27,6 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Profile("!dev")
 public class SessionServiceImpl implements SessionService {
 
     private final S3StorageService s3StorageService;
@@ -49,7 +46,8 @@ public class SessionServiceImpl implements SessionService {
         // 2. Extract filename
         String rawFileName = s3Key.substring(s3Key.lastIndexOf('/') + 1);
         String fileName = (rawFileName.length() > 37 && rawFileName.charAt(36) == '-')
-                ? rawFileName.substring(37) : rawFileName;
+                ? rawFileName.substring(37)
+                : rawFileName;
         String title = stripExtension(fileName);
 
         // 3. Extract text theo loại file
@@ -106,10 +104,10 @@ public class SessionServiceImpl implements SessionService {
             if (lower.endsWith(".pdf") || (contentType != null && contentType.contains("pdf"))) {
                 return extractPdf(bytes);
             } else if (lower.endsWith(".docx") || lower.endsWith(".doc") ||
-                       contentType != null && contentType.contains("openxmlformats")) {
+                    contentType != null && contentType.contains("openxmlformats")) {
                 return extractDocx(bytes);
             } else if (lower.endsWith(".md") || lower.endsWith(".txt") ||
-                       contentType != null && (contentType.contains("text") || contentType.contains("markdown"))) {
+                    contentType != null && (contentType.contains("text") || contentType.contains("markdown"))) {
                 return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
             } else {
                 // fallback: thử đọc như UTF-8 text
@@ -171,7 +169,8 @@ public class SessionServiceImpl implements SessionService {
                 ```
 
                 NỘI DUNG TÀI LIỆU:
-                """ + context;
+                """
+                + context;
     }
 
     private List<QuizQuestion> parseQuizResponse(String rawResponse) {
@@ -194,7 +193,8 @@ public class SessionServiceImpl implements SessionService {
 
         try {
             List<QuizQuestion> questions = objectMapper.readValue(
-                    jsonStr, new TypeReference<List<QuizQuestion>>() {});
+                    jsonStr, new TypeReference<List<QuizQuestion>>() {
+                    });
             // Đảm bảo chỉ lấy 10 câu
             return questions.size() > 10 ? questions.subList(0, 10) : questions;
         } catch (Exception e) {
