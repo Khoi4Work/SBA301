@@ -43,6 +43,13 @@ const VirtualAssistant = () => {
     });
 
     useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
+    useEffect(() => {
         if (isAiTalking && isListening) {
             stopListening();
         }
@@ -93,9 +100,14 @@ const VirtualAssistant = () => {
                 {/*/>*/}
 
                 <div className="flex-1 transition-all duration-500 lg:ml-64 relative overflow-hidden">
+                    <div className="flex justify-start pt-22 pl-6 relative z-20">
+                        <p className="text-[11px] uppercase tracking-[0.4em] text-secondary/60">
+                            Đàm đạo cùng {philosopher?.name || "Triết gia"}
+                        </p>
+                    </div>
                     <div style={{
                         display: 'flex',
-                        height: 'calc(100vh - 80px)',
+                        height: 'calc(100vh - 120px)',
                         width: '100%',
                         position: 'relative'
                     }}>
