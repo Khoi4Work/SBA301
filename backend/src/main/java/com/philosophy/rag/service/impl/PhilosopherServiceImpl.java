@@ -12,7 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import com.philosophy.rag.base.exception.ApiException;
+import com.philosophy.rag.base.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +58,31 @@ public class PhilosopherServiceImpl implements PhilosopherService {
     @Transactional
     public void deleteAllPhilosophers() {
         philosopherRepository.deleteAll();
+    }
+
+    @Override
+    @Transactional
+    public PhilosopherResponse updatePhilosopher(UUID id, PhilosopherRequest request, MultipartFile file) {
+        Philosopher philosopher = philosopherRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        String avatarUrl = philosopher.getAvatarUrl();
+        if (file != null && !file.isEmpty()) {
+            avatarUrl = cloudinaryService.uploadImage(file, "philosophy/avatars").getSecureUrl();
+        } else if (request.getAvatarUrl() != null && !request.getAvatarUrl().isBlank()) {
+            avatarUrl = request.getAvatarUrl();
+        }
+
+        philosopher.setName(request.getName());
+        philosopher.setAvatarUrl(avatarUrl);
+        philosopher.setShortQuote(request.getShortQuote());
+        philosopher.setCategory(request.getCategory());
+        philosopher.setCore(request.getCore());
+        philosopher.setBiography(request.getBiography());
+        philosopher.setSystemPrompt(request.getSystemPrompt());
+
+        Philosopher saved = philosopherRepository.save(philosopher);
+        return mapToResponse(saved);
     }
 
     private PhilosopherResponse mapToResponse(Philosopher entity) {

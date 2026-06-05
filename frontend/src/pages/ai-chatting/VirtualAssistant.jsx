@@ -140,7 +140,7 @@ const VirtualAssistant = () => {
                                     disabled={isAiThinking}
                                     size="60px"
                                     activeColor="#ef4444"
-                                    idleColor="#3b82f6"
+                                    idleColor="#e9c176"
                                 />
                             </div>
                         </div>

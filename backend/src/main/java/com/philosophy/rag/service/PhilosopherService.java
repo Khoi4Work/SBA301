@@ -11,5 +11,7 @@ public interface PhilosopherService {
 
     PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file);
 
+    PhilosopherResponse updatePhilosopher(java.util.UUID id, PhilosopherRequest request, MultipartFile file);
+
     void deleteAllPhilosophers();
 }

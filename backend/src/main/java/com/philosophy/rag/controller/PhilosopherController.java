@@ -19,31 +19,41 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/philosophers")
 @RequiredArgsConstructor
-@Tag(name = "philosopher-controller", description = "Quản lý thông tin triết gia")
+@Tag(name = "philosopher-controller")
 public class PhilosopherController {
 
     private final PhilosopherService philosopherService;
 
-    @Operation(summary = "Lấy danh sách toàn bộ triết gia")
+    @Operation(summary = "Get all philosophers")
     @GetMapping("/getAll")
     public ResponseEntity<ApiResponse<List<PhilosopherResponse>>> getAllPhilosophers() {
         List<PhilosopherResponse> philosophers = philosopherService.findAllPhilosophers();
-        return ResponseEntity.ok(ApiResponse.success(philosophers, "Lấy danh sách triết gia thành công"));
+        return ResponseEntity.ok(ApiResponse.success(philosophers, "Successfully retrieved philosopher list"));
     }
 
-    @Operation(summary = "Thêm triết gia mới")
+    @Operation(summary = "Add new philosopher")
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PhilosopherResponse>> createPhilosopher(
             @ModelAttribute @Valid PhilosopherRequest request,
             @RequestParam(value = "file", required = false) MultipartFile file) {
         PhilosopherResponse response = philosopherService.createPhilosopher(request, file);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Thêm triết gia thành công"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Successfully added philosopher"));
     }
 
-    @Operation(summary = "Xóa toàn bộ dữ liệu triết gia")
+    @Operation(summary = "Update philosopher")
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<PhilosopherResponse>> updatePhilosopher(
+            @PathVariable java.util.UUID id,
+            @ModelAttribute @Valid PhilosopherRequest request,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+        PhilosopherResponse response = philosopherService.updatePhilosopher(id, request, file);
+        return ResponseEntity.ok(ApiResponse.success(response, "Successfully updated philosopher"));
+    }
+
+    @Operation(summary = "Delete all philosophers")
     @DeleteMapping("/deleteAll")
     public ResponseEntity<ApiResponse<Void>> deleteAllPhilosophers() {
         philosopherService.deleteAllPhilosophers();
-        return ResponseEntity.ok(ApiResponse.success(null, "Xóa toàn bộ triết gia thành công"));
+        return ResponseEntity.ok(ApiResponse.success(null, "Successfully deleted all philosophers"));
     }
 }
