@@ -10,9 +10,9 @@
     </parent>
     <groupId>com.philosophy</groupId>
     <artifactId>rag-project</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>philosophy-rag-project</name>
-    <description>Philosophy RAG Base Project</description>
+    <description>Web platform for philosophy learning and AI-assisted knowledge retrieval</description>
 
     <properties>
         <java.version>21</java.version>
