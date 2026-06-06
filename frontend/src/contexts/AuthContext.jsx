@@ -16,9 +16,15 @@ export function AuthProvider({ children }) {
                 const base64Url = token.split('.')[1];
                 const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                 const payload = JSON.parse(atob(base64));
-                setUser({
-                    username: payload.sub || payload.username || 'User'
-                });
+                const now = Date.now()/1000;
+                if (payload.exp < now) {
+                    localStorage.removeItem('accessToken');
+                    setUser(null);
+                } else {
+                    setUser({
+                        username: payload.sub || payload.username || 'User'
+                    });
+                }
             } catch (e) {
                 localStorage.removeItem('accessToken');
             }

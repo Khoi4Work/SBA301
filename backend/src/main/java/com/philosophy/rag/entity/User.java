@@ -46,6 +46,14 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    /** Avatar URL trả về từ cloundinary */
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    /** Public ID của Cloundinary */
+    @Column(name = "cloudinary_public_id", length = 255)
+    private String cloudinaryPublicId;
+
     /**
      * Điểm kinh nghiệm tích lũy (TotalXP).
      * Hiển thị trên Dashboard, cập nhật khi hoàn thành Minigame.

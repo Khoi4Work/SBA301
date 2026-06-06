@@ -38,6 +38,7 @@ public enum ErrorCode {
     MONITOR_ALREADY_EXISTS(4091, "Admin account already exists", HttpStatus.CONFLICT),
     PHONE_NUMBER_EXISTS(4092, "Phone number already in use", HttpStatus.CONFLICT),
     PERMISSION_IN_USE(40901, "Permission in use", HttpStatus.CONFLICT),
+    USER_NOT_FOUND(4093, "Users not found", HttpStatus.NOT_FOUND),
 
     // Other client errors
     UNSUPPORTED_MEDIA_TYPE(4150, "Unsupported media type", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
