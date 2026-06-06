@@ -13,4 +13,6 @@ public interface RagService {
     List<DocumentContent> listDocuments();
 
     void resetVectorStore();
+
+    String prompt(String prompt);
 }

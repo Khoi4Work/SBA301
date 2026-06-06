@@ -1,6 +1,5 @@
 package com.philosophy.rag.service;
 
-import com.philosophy.rag.base.response.ApiResponse;
 import com.philosophy.rag.dto.request.TtsRequest;
 import com.philosophy.rag.dto.response.ChatResponse;
 

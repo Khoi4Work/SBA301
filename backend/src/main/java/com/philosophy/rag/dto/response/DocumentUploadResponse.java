@@ -17,4 +17,6 @@ public class DocumentUploadResponse {
     private String url;
     private Long fileSize;
     private String contentType;
+    private String imageUrl;
+    private String category;
 }

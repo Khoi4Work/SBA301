@@ -8,7 +8,6 @@ import com.philosophy.rag.service.S3StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +24,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
-@Profile("!dev")
 public class DocumentController {
 
         private final S3StorageService s3StorageService;
@@ -35,11 +33,15 @@ public class DocumentController {
         public ResponseEntity<ApiResponse<DocumentUploadResponse>> uploadDocument(
                         @RequestPart("file") MultipartFile file,
                         @RequestParam(value = "title", required = false) String title,
-                        @RequestParam(value = "description", required = false) String description) throws ApiException {
+                        @RequestParam(value = "description", required = false) String description,
+                        @RequestPart(value = "image", required = false) MultipartFile image,
+                        @RequestParam(value = "imageUrl", required = false) String imageUrl,
+                        @RequestParam(value = "category", required = false) String category) throws ApiException {
 
-                log.info("Uploading file: {}", file.getOriginalFilename());
+                log.info("Uploading file: {}, title: {}, category: {}", file.getOriginalFilename(), title, category);
 
-                DocumentUploadResponse response = s3StorageService.uploadDocument(file, title, description);
+                DocumentUploadResponse response = s3StorageService.uploadDocument(file, title, description, image,
+                                imageUrl, category);
 
                 return ResponseEntity.ok(
                                 ApiResponse.success(response, "Upload successful"));

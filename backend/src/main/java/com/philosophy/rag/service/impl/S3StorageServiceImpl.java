@@ -8,7 +8,6 @@ import com.philosophy.rag.service.S3StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -24,17 +23,21 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
+import com.philosophy.rag.service.CloudinaryService;
+
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.net.URLEncoder;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@Profile("!dev")
 public class S3StorageServiceImpl implements S3StorageService {
 
     @Value("${aws.s3.bucket-name}")
@@ -44,9 +47,10 @@ public class S3StorageServiceImpl implements S3StorageService {
     private String awsRegion;
 
     private final S3Client s3Client;
+    private final CloudinaryService cloudinaryService;
 
     @Override
-    public DocumentUploadResponse uploadDocument(MultipartFile file, String title, String description)
+    public DocumentUploadResponse uploadDocument(MultipartFile file, String title, String description, MultipartFile image, String imageUrl, String category)
             throws ApiException {
         log.info("Starting document upload: {}", file.getOriginalFilename());
         // Validate file rỗng
@@ -64,15 +68,38 @@ public class S3StorageServiceImpl implements S3StorageService {
 
         // Clean file name để tránh lỗi khi lưu trữ
         String safeFileName = originalFileName.replaceAll("\\s+", "_");
+        String asciiFileName = sanitizeFileName(safeFileName);
+
+        // Tải ảnh bìa lên Cloudinary (nếu có file image truyền lên)
+        String uploadedImageUrl = imageUrl;
+        if (image != null && !image.isEmpty()) {
+            try {
+                log.info("Uploading cover image to Cloudinary for document: {}", originalFileName);
+                uploadedImageUrl = cloudinaryService.uploadImage(image, "philosophy/documents").getSecureUrl();
+            } catch (Exception e) {
+                log.error("Failed to upload cover image to Cloudinary", e);
+            }
+        }
 
         // Tạo key cho S3 với định dạng: documents/yyyy-MM-dd/uuid-filename
-        String key = "documents/" + LocalDate.now() + "/" + UUID.randomUUID() + "-" + safeFileName;
+        String key = "documents/" + LocalDate.now() + "/" + UUID.randomUUID() + "-" + asciiFileName;
         try {
-            Map<String, String> metadata = Map.of(
-                    "title", title != null && !title.isBlank() ? title : safeFileName,
-                    "description", description != null && !description.isBlank() ? description : "",
-                    "original-file-name", safeFileName,
-                    "uploaded-at", LocalDate.now().toString());
+            Map<String, String> metadata = new java.util.HashMap<>();
+            
+            // Mã hóa UTF-8 tiếng Việt cho các trường metadata
+            String rawTitle = title != null && !title.isBlank() ? title : originalFileName;
+            String rawDescription = description != null && !description.isBlank() ? description : "";
+            String rawCategory = category != null && !category.isBlank() ? category : "";
+
+            metadata.put("title", URLEncoder.encode(rawTitle, StandardCharsets.UTF_8.name()));
+            metadata.put("description", URLEncoder.encode(rawDescription, StandardCharsets.UTF_8.name()));
+            metadata.put("category", URLEncoder.encode(rawCategory, StandardCharsets.UTF_8.name()));
+            metadata.put("original-file-name", URLEncoder.encode(originalFileName, StandardCharsets.UTF_8.name()));
+            metadata.put("uploaded-at", LocalDate.now().toString());
+            
+            if (uploadedImageUrl != null && !uploadedImageUrl.isBlank()) {
+                metadata.put("image-url", uploadedImageUrl);
+            }
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
@@ -108,6 +135,8 @@ public class S3StorageServiceImpl implements S3StorageService {
                 .url(url)
                 .fileSize(file.getSize())
                 .contentType(file.getContentType())
+                .imageUrl(uploadedImageUrl)
+                .category(category)
                 .build();
     }
 
@@ -148,9 +177,43 @@ public class S3StorageServiceImpl implements S3StorageService {
                     .build());
 
             Map<String, String> metadata = headObject.metadata();
-            String fileName = extractFileNameFromKey(object.key());
+            
+            // Lấy và giải mã Tiếng Việt từ S3 User Metadata
+            String rawFileName = metadata.get("original-file-name");
+            String fileName = null;
+            if (rawFileName != null) {
+                try {
+                    fileName = URLDecoder.decode(rawFileName, StandardCharsets.UTF_8.name());
+                } catch (Exception e) {
+                    // Ignore
+                }
+            }
+            if (fileName == null || fileName.isBlank()) {
+                fileName = extractFileNameFromKey(object.key());
+            }
+            
             String title = metadata.getOrDefault("title", fileName);
+            try {
+                title = URLDecoder.decode(title, StandardCharsets.UTF_8.name());
+            } catch (Exception e) {
+                // Giữ nguyên tiêu đề gốc nếu không thể giải mã
+            }
+
             String description = metadata.getOrDefault("description", "");
+            try {
+                description = URLDecoder.decode(description, StandardCharsets.UTF_8.name());
+            } catch (Exception e) {
+                // Giữ nguyên mô tả gốc nếu không thể giải mã
+            }
+
+            String category = metadata.getOrDefault("category", "");
+            try {
+                category = URLDecoder.decode(category, StandardCharsets.UTF_8.name());
+            } catch (Exception e) {
+                // Giữ nguyên phân loại gốc nếu không thể giải mã
+            }
+
+            String imageUrl = metadata.get("image-url");
 
             return new DocumentDistributionResponse(
                     title,
@@ -164,7 +227,9 @@ public class S3StorageServiceImpl implements S3StorageService {
                     object.lastModified() != null
                             ? object.lastModified().atZone(ZoneId.systemDefault())
                                     .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                            : null);
+                            : null,
+                    imageUrl,
+                    category);
         } catch (Exception e) {
             log.warn("Unable to read metadata for S3 object {}: {}", object.key(), e.getMessage());
             String fileName = extractFileNameFromKey(object.key());
@@ -180,7 +245,9 @@ public class S3StorageServiceImpl implements S3StorageService {
                     object.lastModified() != null
                             ? object.lastModified().atZone(ZoneId.systemDefault())
                                     .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                            : null);
+                            : null,
+                    null,
+                    "");
         }
     }
 
@@ -238,5 +305,20 @@ public class S3StorageServiceImpl implements S3StorageService {
         } catch (S3Exception e) {
             return "application/octet-stream";
         }
+    }
+
+    private String sanitizeFileName(String fileName) {
+        if (fileName == null) return "document";
+        // Normalize Vietnamese accents and remove them
+        String normalized = java.text.Normalizer.normalize(fileName, java.text.Normalizer.Form.NFD);
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        String ascii = pattern.matcher(normalized).replaceAll("");
+        // Replace 'đ' and 'Đ'
+        ascii = ascii.replace('đ', 'd').replace('Đ', 'D');
+        // Replace non-alphanumeric (except dots, underscores, hyphens) with underscores
+        ascii = ascii.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
+        // Replace multiple underscores with a single underscore
+        ascii = ascii.replaceAll("_+", "_");
+        return ascii;
     }
 }

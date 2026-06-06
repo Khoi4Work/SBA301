@@ -15,14 +15,16 @@ export default function Study() {
             <Header />
             <Sidebar />
 
-            <main className="lg:ml-64 pt-20 min-h-screen px-4 md:px-16 py-12 bg-surface">
-                <div className="max-w-[1200px] mx-auto">
-                    <LibrarySection />
-                    <QuizSection onSubmit={() => setIsModalOpen(true)} />
+            <main className="md:ml-64 min-h-screen bg-surface">
+                <div className="pt-20 px-4 md:px-16 py-12">
+                    <div className="max-w-[1200px] mx-auto">
+                        <LibrarySection />
+                        <QuizSection onSubmit={() => setIsModalOpen(true)} />
+                    </div>
                 </div>
-            </main>
 
-          <Footer />
+                <Footer />
+            </main>
 
             <SuccessModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>

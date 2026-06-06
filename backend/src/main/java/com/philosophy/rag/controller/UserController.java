@@ -1,0 +1,92 @@
+package com.philosophy.rag.controller;
+
+import com.philosophy.rag.base.exception.ApiException;
+import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.dto.request.UserUpdateRequest;
+import com.philosophy.rag.dto.response.UserResponse;
+import com.philosophy.rag.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+@Slf4j
+public class UserController {
+
+    private final UserService userService;
+
+    @Operation(summary = "Get user by ID")
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable UUID id) {
+
+        log.info("Received request to get user with id: {}", id);
+
+        UserResponse response = userService.getUser(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "User retrieved successfully")
+        );
+    }
+
+    @Operation(summary = "Get all users")
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
+
+        log.info("Received request to get all users");
+        List<UserResponse> response = userService.getAllUsers();
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Users retrieved successfully")
+        );
+    }
+
+    @Operation(summary = "Update user")
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable UUID id,
+            @RequestBody UserUpdateRequest request) {
+
+        log.info("Received request to update user with id: {}", id);
+        UserResponse response = userService.updateUser(id, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "User updated successfully")
+        );
+    }
+
+    @Operation(summary = "Delete user")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
+
+        log.info("Received request to delete user with id: {}", id);
+        userService.deleteUser(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "User deleted successfully")
+        );
+    }
+
+    @Operation(summary = "Upload user avatar")
+    @PostMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserResponse>> uploadAvatar(
+            @PathVariable UUID id,
+            @RequestPart("file") MultipartFile file)
+            throws ApiException {
+
+        log.info("Received request to upload avatar for user: {}", id);
+        UserResponse response = userService.uploadAvatar(id, file);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Avatar uploaded successfully")
+        );
+    }
+}

@@ -4,7 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import lombok.Builder;
+
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocumentDistributionResponse {
@@ -17,4 +20,6 @@ public class DocumentDistributionResponse {
     private Long fileSize;
     private String contentType;
     private String lastModified;
+    private String imageUrl;
+    private String category;
 }

@@ -7,23 +7,22 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * ╔══════════════════════════════════════════════════════════╗
- * ║  ASPECT 3: TRANSACTION                                   ║
+ * ║ ASPECT 3: TRANSACTION ║
  * ╠══════════════════════════════════════════════════════════╣
- * ║  Quan sát và ghi log toàn bộ vòng đời transaction:       ║
- * ║                                                          ║
- * ║  • Log khi transaction bắt đầu                           ║
- * ║  • Log khi transaction COMMIT                            ║
- * ║  • Log khi transaction ROLLBACK                          ║
- * ║  • Log tên transaction đang hoạt động                    ║
- * ║                                                          ║
- * ║  @Order(2) — chạy SAU SecurityAspect(1),                 ║
- * ║              TRƯỚC ExceptionHandlingAspect(3)            ║
+ * ║ Quan sát và ghi log toàn bộ vòng đời transaction: ║
+ * ║ ║
+ * ║ • Log khi transaction bắt đầu ║
+ * ║ • Log khi transaction COMMIT ║
+ * ║ • Log khi transaction ROLLBACK ║
+ * ║ • Log tên transaction đang hoạt động ║
+ * ║ ║
+ * ║ @Order(2) — chạy SAU SecurityAspect(1), ║
+ * ║ TRƯỚC ExceptionHandlingAspect(3) ║
  * ╚══════════════════════════════════════════════════════════╝
  */
 @Slf4j
@@ -41,14 +40,16 @@ public class TransactionAspect {
      * Bao gồm cả javax.transaction và jakarta.transaction.
      */
     @Pointcut("@annotation(org.springframework.transaction.annotation.Transactional) " +
-              "|| @within(org.springframework.transaction.annotation.Transactional)")
-    public void transactionalMethod() {}
+            "|| @within(org.springframework.transaction.annotation.Transactional)")
+    public void transactionalMethod() {
+    }
 
     /**
      * Tất cả method trong tầng service — thường là nơi logic DB xảy ra.
      */
     @Pointcut("within(com.philosophy.rag.service..*)")
-    public void serviceLayer() {}
+    public void serviceLayer() {
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // ADVICE: AROUND @Transactional — Quan sát vòng đời transaction
@@ -56,20 +57,20 @@ public class TransactionAspect {
 
     /**
      * @Around — Bọc quanh mọi method có @Transactional.
-     * - Ghi log trạng thái transaction (active/readonly/name)
-     * - Đăng ký TransactionSynchronization để bắt COMMIT / ROLLBACK
-     * - Log exception nếu transaction bị rollback
+     *         - Ghi log trạng thái transaction (active/readonly/name)
+     *         - Đăng ký TransactionSynchronization để bắt COMMIT / ROLLBACK
+     *         - Log exception nếu transaction bị rollback
      */
     @Around("transactionalMethod()")
     public Object observeTransaction(ProceedingJoinPoint pjp) throws Throwable {
-        String className  = pjp.getTarget().getClass().getSimpleName();
+        String className = pjp.getTarget().getClass().getSimpleName();
         String methodName = pjp.getSignature().getName();
-        String txLabel    = className + "." + methodName + "()";
+        String txLabel = className + "." + methodName + "()";
 
         // ─── Log trạng thái trước khi thực thi ────────────────────────────
-        boolean isTxActive   = TransactionSynchronizationManager.isActualTransactionActive();
-        boolean isReadOnly   = TransactionSynchronizationManager.isCurrentTransactionReadOnly();
-        String  txName       = TransactionSynchronizationManager.getCurrentTransactionName();
+        boolean isTxActive = TransactionSynchronizationManager.isActualTransactionActive();
+        boolean isReadOnly = TransactionSynchronizationManager.isCurrentTransactionReadOnly();
+        String txName = TransactionSynchronizationManager.getCurrentTransactionName();
 
         log.info("[TX-START] {} | active={} | readOnly={} | txName={}",
                 txLabel, isTxActive, isReadOnly, txName != null ? txName : "N/A");
@@ -82,15 +83,14 @@ public class TransactionAspect {
                         public void afterCompletion(int status) {
                             switch (status) {
                                 case TransactionSynchronization.STATUS_COMMITTED ->
-                                        log.info("[TX-COMMIT]   {} — COMMITTED ✓", txLabel);
+                                    log.info("[TX-COMMIT]   {} — COMMITTED ✓", txLabel);
                                 case TransactionSynchronization.STATUS_ROLLED_BACK ->
-                                        log.warn("[TX-ROLLBACK] {} — ROLLED BACK ✗", txLabel);
+                                    log.warn("[TX-ROLLBACK] {} — ROLLED BACK ✗", txLabel);
                                 default ->
-                                        log.warn("[TX-UNKNOWN]  {} — status={}", txLabel, status);
+                                    log.warn("[TX-UNKNOWN]  {} — status={}", txLabel, status);
                             }
                         }
-                    }
-            );
+                    });
         }
 
         // ─── Thực thi method ───────────────────────────────────────────────
@@ -111,8 +111,8 @@ public class TransactionAspect {
 
     /**
      * @Around — Log trạng thái transaction cho tất cả service method.
-     * Phát hiện service call mà KHÔNG có transaction đang hoạt động
-     * (có thể là dấu hiệu bỏ quên @Transactional).
+     *         Phát hiện service call mà KHÔNG có transaction đang hoạt động
+     *         (có thể là dấu hiệu bỏ quên @Transactional).
      */
     @Around("serviceLayer() && !transactionalMethod()")
     public Object warnIfNoTransaction(ProceedingJoinPoint pjp) throws Throwable {

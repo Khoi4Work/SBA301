@@ -4,37 +4,41 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
+import com.philosophy.rag.base.persistence.Prompt;
 import com.philosophy.rag.dto.response.QuizGenerateResponse;
 import com.philosophy.rag.dto.response.QuizQuestion;
 import com.philosophy.rag.dto.response.SessionContentResponse;
+import com.philosophy.rag.service.RagService;
 import com.philosophy.rag.service.S3StorageService;
 import com.philosophy.rag.service.SessionService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
-@Profile("!dev")
 public class SessionServiceImpl implements SessionService {
 
     private final S3StorageService s3StorageService;
-    private final ChatClient.Builder chatClientBuilder;
     private final ObjectMapper objectMapper;
+    private final RagService ragService;
+
+    public SessionServiceImpl(S3StorageService s3StorageService, ObjectMapper objectMapper, RagService ragService) {
+        this.s3StorageService = s3StorageService;
+        this.objectMapper = objectMapper;
+        this.ragService = ragService;
+    }
 
     // ─── getContent ───────────────────────────────────────────────────────────
 
@@ -49,7 +53,8 @@ public class SessionServiceImpl implements SessionService {
         // 2. Extract filename
         String rawFileName = s3Key.substring(s3Key.lastIndexOf('/') + 1);
         String fileName = (rawFileName.length() > 37 && rawFileName.charAt(36) == '-')
-                ? rawFileName.substring(37) : rawFileName;
+                ? rawFileName.substring(37)
+                : rawFileName;
         String title = stripExtension(fileName);
 
         // 3. Extract text theo loại file
@@ -82,11 +87,7 @@ public class SessionServiceImpl implements SessionService {
 
         String prompt = buildQuizPrompt(context);
 
-        ChatClient chatClient = chatClientBuilder.build();
-        String rawResponse = chatClient.prompt()
-                .user(prompt)
-                .call()
-                .content();
+        String rawResponse = ragService.prompt(prompt);
 
         log.debug("Raw quiz response from AI: {}", rawResponse);
 
@@ -106,10 +107,10 @@ public class SessionServiceImpl implements SessionService {
             if (lower.endsWith(".pdf") || (contentType != null && contentType.contains("pdf"))) {
                 return extractPdf(bytes);
             } else if (lower.endsWith(".docx") || lower.endsWith(".doc") ||
-                       contentType != null && contentType.contains("openxmlformats")) {
+                    contentType != null && contentType.contains("openxmlformats")) {
                 return extractDocx(bytes);
             } else if (lower.endsWith(".md") || lower.endsWith(".txt") ||
-                       contentType != null && (contentType.contains("text") || contentType.contains("markdown"))) {
+                    contentType != null && (contentType.contains("text") || contentType.contains("markdown"))) {
                 return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
             } else {
                 // fallback: thử đọc như UTF-8 text
@@ -149,29 +150,8 @@ public class SessionServiceImpl implements SessionService {
     // ─── Helpers: Quiz Prompt & Parse ─────────────────────────────────────────
 
     private String buildQuizPrompt(String context) {
-        return """
-                Bạn là giáo viên chuyên nghiệp. Dựa vào nội dung tài liệu sau, hãy tạo ra đúng 10 câu hỏi trắc nghiệm bằng tiếng Việt.
-
-                YÊU CẦU QUAN TRỌNG:
-                - Mỗi câu phải có đúng 4 lựa chọn (A, B, C, D)
-                - Chỉ có 1 đáp án đúng
-                - Câu hỏi phải bám sát nội dung tài liệu
-                - Trả lời CHÍNH XÁC theo định dạng JSON sau, không thêm bất kỳ text nào ngoài JSON:
-
-                ```json
-                [
-                  {
-                    "index": 1,
-                    "question": "Câu hỏi ở đây?",
-                    "options": ["Lựa chọn A", "Lựa chọn B", "Lựa chọn C", "Lựa chọn D"],
-                    "correctIndex": 0,
-                    "explanation": "Giải thích tại sao đáp án này đúng"
-                  }
-                ]
-                ```
-
-                NỘI DUNG TÀI LIỆU:
-                """ + context;
+        return Prompt.QUIZ_GENERATOR
+                .replace("{context}", context);
     }
 
     private List<QuizQuestion> parseQuizResponse(String rawResponse) {
@@ -194,7 +174,8 @@ public class SessionServiceImpl implements SessionService {
 
         try {
             List<QuizQuestion> questions = objectMapper.readValue(
-                    jsonStr, new TypeReference<List<QuizQuestion>>() {});
+                    jsonStr, new TypeReference<List<QuizQuestion>>() {
+                    });
             // Đảm bảo chỉ lấy 10 câu
             return questions.size() > 10 ? questions.subList(0, 10) : questions;
         } catch (Exception e) {

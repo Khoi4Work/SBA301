@@ -1,4 +1,4 @@
-package com.philosophy.rag.repository.custom;
+package com.philosophy.rag.repository.itf;
 
 import com.philosophy.rag.entity.TokenBlacklist;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -2,6 +2,7 @@ package com.philosophy.rag.service.impl;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
+import com.philosophy.rag.base.persistence.Prompt;
 import com.philosophy.rag.dto.response.DocumentContent;
 import com.philosophy.rag.repository.custom.VectorStoreRepository;
 import com.philosophy.rag.service.RagService;
@@ -9,11 +10,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,16 +35,17 @@ import java.util.stream.Stream;
 
 @Service
 @Slf4j
-public class RagServiceImpl implements RagService {
+@ConditionalOnProperty(name = "ai.provider", havingValue = "ollama")
+public class OllamaRagServiceImpl implements RagService {
     private final VectorStore vectorStore;
     private final VectorStoreRepository vectorStoreRepository;
     private final ChatClient chatClient;
-    private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true);
+    private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true, java.util.List.of('\n', '\r', ' '));
 
-    public RagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, ChatClient.Builder chatClientBuilder) {
+    public OllamaRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, @Qualifier("ollamaChatModel") ChatModel chatModel) {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
-        this.chatClient = chatClientBuilder.build();
+        this.chatClient = ChatClient.builder(chatModel).build();
     }
 
     @Override
@@ -79,7 +85,7 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public String ask(String query) {
-        log.info("[RAG DEBUG] Incoming Query: {}", query);
+        log.info("[Ollama RAG DEBUG] Incoming Query: {}", query);
 
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
@@ -98,14 +104,23 @@ public class RagServiceImpl implements RagService {
         return vectorStoreRepository.getDocumentContent();
     }
 
+    @Override
     public void resetVectorStore() {
         try {
-            log.info("Resetting vector store data...");
+            log.info("Resetting vector store data (Ollama)...");
             vectorStoreRepository.truncateStore();
         } catch (Exception e) {
             log.error("Failed to reset vector store: {}", e.getMessage());
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Could not reset vector store");
         }
+    }
+
+    @Override
+    public String prompt(String prompt) {
+        return chatClient.prompt()
+                .user(prompt)
+                .call()
+                .content();
     }
 
     private Path saveMultipartFile(MultipartFile file) {
@@ -121,7 +136,6 @@ public class RagServiceImpl implements RagService {
 
     private String extractTextFromMarkdown(Path path) {
         try {
-            // Đọc toàn bộ nội dung file text/markdown bằng UTF-8
             return Files.readString(path, java.nio.charset.StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Error extracting text from Markdown");
@@ -137,26 +151,14 @@ public class RagServiceImpl implements RagService {
         }
     }
 
-
     private String cleanText(String text) {
         if (text == null) return "";
-
-        // 1. Remove all control characters except newline
-        // \p{Cc} matches any control character. [^\n] ensures we don't remove newlines yet.
         String cleaned = text.replaceAll("[\\p{Cc}&&[^\n]]", " ");
-
-        // 2. Handle hyphenated line breaks
         cleaned = cleaned.replaceAll("-\s*\n", " ");
-
-        // 3. Replace single newlines (not paragraphs) with space
         cleaned = cleaned.replaceAll("(?<!\n)\n(?!\n)", " ");
-
-        // 4. Standardize all whitespace to a single space
         cleaned = cleaned.replaceAll("\s{2,}", " ").trim();
-
         return cleaned;
     }
-
 
     private Document createDocument(String content, MultipartFile file) {
         Map<String, Object> metadata = new HashMap<>();
@@ -169,10 +171,8 @@ public class RagServiceImpl implements RagService {
 
     private List<Document> retrieveCandidates(String query) {
         String keywordQuery = query.replaceAll("(?i)c?\s+kh?ng|c?\s+ph?i\s+l?|l?\s+g?|t?i\s+sao", " ").trim();
-
-        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.query(query).withTopK(500));
-        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.query(keywordQuery).withTopK(500));
-
+        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.builder().query(query).topK(500).build());
+        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.builder().query(keywordQuery).topK(500).build());
         return Stream.concat(queryDocs.stream(), keywordDocs.stream())
                 .distinct()
                 .collect(Collectors.toList());
@@ -185,7 +185,7 @@ public class RagServiceImpl implements RagService {
 
         for (Document doc : candidates) {
             boolean isMatch = false;
-            String text = doc.getContent().toLowerCase();
+            String text = doc.getText().toLowerCase();
             for (String kw : keywords) {
                 if (kw.length() > 2 && text.contains(kw.toLowerCase())) {
                     isMatch = true;
@@ -212,20 +212,15 @@ public class RagServiceImpl implements RagService {
     private String buildContext(List<Document> docs) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < docs.size(); i++) {
-            sb.append("[Source ").append(i + 1).append("]: ").append(docs.get(i).getContent()).append("\n\n");
+            sb.append("[Source ").append(i + 1).append("]: ").append(docs.get(i).getText()).append("\n\n");
         }
         return sb.toString();
     }
 
     private String buildPrompt(String query, String context) {
-        return "You are an expert academic professor. Your goal is to provide a structured and clear answer based STRICTLY on the provided context. " +
-                "Guidelines:\n" +
-                "1. Use Markdown formatting for the response to make it easy to read on a UI (use bold text for key terms, bullet points for lists).\n" +
-                "2. When citing, use the format [Source X] directly after the relevant information.\n" +
-                "3. If the context contains a statement that proves the fact, explicitly state 'Yes' or 'No' and then explain using a bulleted list of evidence from the sources.\n" +
-                "4. If the information is not available, state clearly that it's not in the provided documents.\n" +
-                "5. Always respond in the same language as the user's question.\n\n" +
-                "Context:\n" + context + "\n\nQuestion: " + query;
+        return Prompt.RAG_ACADEMIC_PROFESSOR
+                .replace("{context}", context)
+                .replace("{query}", query);
     }
 
     private void deleteTempFile(Path filePath) {

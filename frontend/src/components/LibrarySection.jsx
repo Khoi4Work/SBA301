@@ -63,8 +63,18 @@ function DocumentCard({ doc }) {
         <div className="group bg-surface-container-low border border-outline-variant/20 relative flex flex-col h-full hover:border-secondary/40 transition-all duration-500 rounded overflow-hidden">
             <div className="absolute inset-0 paper-texture pointer-events-none" />
 
-            {/* Thumbnail / File Banner */}
-            <FileBanner contentType={doc.contentType} fileName={doc.fileName} />
+            {/* Thumbnail / Cover Image from Cloudinary / File Banner */}
+            {doc.imageUrl ? (
+                <div className="relative h-48 overflow-hidden flex items-center justify-center bg-surface-container-highest">
+                    <img 
+                        src={doc.imageUrl} 
+                        alt={doc.title || doc.fileName} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    />
+                </div>
+            ) : (
+                <FileBanner contentType={doc.contentType} fileName={doc.fileName} />
+            )}
 
             {/* Card Body */}
             <div className="p-6 folio-border flex-1 flex flex-col">
@@ -147,7 +157,7 @@ function ErrorState({ message, onRetry }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-const CATEGORIES = ['Tất cả bộ sưu tập', 'PDF', 'Markdown', 'Text'];
+const CATEGORIES = ['Tất cả bộ sưu tập', 'Chương 1', 'Chương 2', 'Chương 3'];
 
 export default function LibrarySection() {
     const [documents, setDocuments] = useState([]);
@@ -177,11 +187,46 @@ export default function LibrarySection() {
     // Filter theo category và search query
     const filteredDocs = useMemo(() => {
         return documents.filter((doc) => {
-            const matchesCategory =
-                activeCategory === 'Tất cả bộ sưu tập' ||
-                (activeCategory === 'PDF' && doc.contentType?.includes('pdf')) ||
-                (activeCategory === 'Markdown' && (doc.contentType?.includes('markdown') || doc.fileName?.endsWith('.md'))) ||
-                (activeCategory === 'Text' && doc.contentType?.includes('text') && !doc.contentType?.includes('markdown'));
+            let matchesCategory = false;
+            if (activeCategory === 'Tất cả bộ sưu tập') {
+                matchesCategory = true;
+            } else if (activeCategory === 'Chương 1') {
+                matchesCategory =
+                    doc.category === 'Chương 1' ||
+                    doc.category?.toLowerCase()?.includes('chương 1') ||
+                    doc.category?.toLowerCase()?.includes('chuong 1') ||
+                    doc.title?.toLowerCase()?.includes('chương 1') ||
+                    doc.title?.toLowerCase()?.includes('chuong 1') ||
+                    doc.fileName?.toLowerCase()?.includes('chương 1') ||
+                    doc.fileName?.toLowerCase()?.includes('chuong 1') ||
+                    doc.fileName?.toLowerCase()?.includes('c1_') ||
+                    doc.fileName?.toLowerCase()?.includes('c1-') ||
+                    doc.fileName?.toLowerCase()?.includes('c1.');
+            } else if (activeCategory === 'Chương 2') {
+                matchesCategory =
+                    doc.category === 'Chương 2' ||
+                    doc.category?.toLowerCase()?.includes('chương 2') ||
+                    doc.category?.toLowerCase()?.includes('chuong 2') ||
+                    doc.title?.toLowerCase()?.includes('chương 2') ||
+                    doc.title?.toLowerCase()?.includes('chuong 2') ||
+                    doc.fileName?.toLowerCase()?.includes('chương 2') ||
+                    doc.fileName?.toLowerCase()?.includes('chuong 2') ||
+                    doc.fileName?.toLowerCase()?.includes('c2_') ||
+                    doc.fileName?.toLowerCase()?.includes('c2-') ||
+                    doc.fileName?.toLowerCase()?.includes('c2.');
+            } else if (activeCategory === 'Chương 3') {
+                matchesCategory =
+                    doc.category === 'Chương 3' ||
+                    doc.category?.toLowerCase()?.includes('chương 3') ||
+                    doc.category?.toLowerCase()?.includes('chuong 3') ||
+                    doc.title?.toLowerCase()?.includes('chương 3') ||
+                    doc.title?.toLowerCase()?.includes('chuong 3') ||
+                    doc.fileName?.toLowerCase()?.includes('chương 3') ||
+                    doc.fileName?.toLowerCase()?.includes('chuong 3') ||
+                    doc.fileName?.toLowerCase()?.includes('c3_') ||
+                    doc.fileName?.toLowerCase()?.includes('c3-') ||
+                    doc.fileName?.toLowerCase()?.includes('c3.');
+            }
 
             const q = searchQuery.toLowerCase();
             const matchesSearch =
@@ -199,9 +244,9 @@ export default function LibrarySection() {
             {/* Section Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
                 <div>
-                    <span className="text-xs uppercase tracking-[0.3em] text-secondary mb-2 block font-medium">
-                        Tri thức chọn lọc
-                    </span>
+                    {/*<span className="text-xs uppercase tracking-[0.3em] text-secondary mb-2 block font-medium">*/}
+                    {/*    Tri thức chọn lọc*/}
+                    {/*</span>*/}
                     <h2 className="font-display text-5xl text-on-background font-bold tracking-tight">
                         Thư viện học giả
                     </h2>

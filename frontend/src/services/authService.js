@@ -9,5 +9,15 @@ export const register = (data) => {
 };
 
 export const logout = () => {
-    return apiClient.post('/auth/logout');
+    const token = localStorage.getItem("accessToken");
+
+    return apiClient.post(
+        "/auth/logout",
+        {},
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
 };
