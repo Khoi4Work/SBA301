@@ -4,7 +4,8 @@ import { Sidebar } from '@/components/Sidebar';
 import apiClient from '@/services/apiClient';
 import { fetchDocuments, getFileTypeInfo, formatFileSize } from '@/services/documentService';
 import { FileText, Award, Calendar, ChevronRight, Sparkles, RefreshCw, Loader2, BookOpen } from 'lucide-react';
-import '@/assets/styles/philoverse-study.css'; // Reusing styles
+import '@/assets/styles/philoverse-study.css';
+import Footer from "@/components/Footer.jsx"; // Reusing styles
 
 export default function Review() {
     const navigate = useNavigate();
@@ -79,8 +80,8 @@ export default function Review() {
         <div className="min-h-screen bg-background text-on-background selection:bg-secondary/30 selection:text-secondary">
             <Sidebar />
 
-            <main className="lg:ml-64 pt-24 min-h-screen px-4 md:px-12 py-12 bg-surface">
-                <div className="max-w-[1400px] mx-auto">
+            <main className="md:ml-64 min-h-screen bg-surface">
+                <div className="pt-24 px-4 md:px-12 py-12">
                     {/* Page Header */}
                     <div className="mb-10">
                         <span className="text-xs uppercase tracking-[0.3em] text-secondary mb-2 block font-medium">
@@ -244,6 +245,7 @@ export default function Review() {
                         </div>
                     </div>
                 </div>
+                <Footer />
             </main>
 
             {/* AI Generation Loading Overlay */}

@@ -42,14 +42,14 @@ export default function  Chat() {
             <Sidebar currentView={view} onNavigate={navigateTo} />
 
             {/* Main Content Area */}
-            <main
-                className={`flex flex-col min-h-screen relative transition-all duration-500`}
-            >
+            <main className="flex flex-col min-h-screen relative lg:ml-64">
 
 
                 {/* The main view content, shifting padding to account for sidebar */}
                 <div
-                    className={`flex-1 transition-all duration-500 lg:ml-64 ${view === "selection" && "pt-20"}`}
+                    className={`flex-1 transition-all duration-500 ${
+                        view === "selection" && "pt-20"
+                    }`}
                 >
                     <AnimatePresence mode="wait">
                         {view === "selection" ? (
@@ -64,9 +64,9 @@ export default function  Chat() {
                         )}
                     </AnimatePresence>
                 </div>
+                <Footer/>
             </main>
 
-            <Footer />
         </>
     );
 }
