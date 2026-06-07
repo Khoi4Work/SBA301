@@ -100,7 +100,7 @@ export default function Home() {
                           </button>
 
                           <div className="w-10 h-10 rounded-full border border-secondary/50 p-0.5 overflow-hidden">
-                              <img alt="User Avatar" className="w-full h-full object-cover" src="https://www.gravatar.com/avatar/?d=mp"/>
+                              <img alt="User Avatar" className="w-full h-full object-cover"  src={user?.avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC-oK0dsp_C3vIjE4vXMXguDKTcYSJV_GbLTg1U8QdDvz0BE_MMpaa-IRRRpZQj-cMH4shRhuPcvsiGKI_D1MPkHDpcffkI0yix7TWuk5iLRSHX0WcTx0EB60i9zGNDWQKSecrxLOlkjFTAg6wt-xEUUnMbxKeLUhti-qJ6fNYL79V29FsTcWGuTEenzTrwLTZON1_8bC4KaG-0Son1-gGnKRMAVVt4drFWfozCx82870IJgk2NEnFzJBWOwpQYcK6VOriIiBmgAJw"}/>
                           </div>
                       </>
                   ) : (
