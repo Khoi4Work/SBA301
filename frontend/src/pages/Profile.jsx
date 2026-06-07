@@ -22,7 +22,14 @@ export default function Profile() {
                 }
 
                 const res = await apiClient.get(`/users/${userId}`);
-                setUser(res.data.data);
+
+                console.log("GET USER RESPONSE:", res.data);
+
+                const userData = res.data?.result || res.data?.data || res.data;
+
+                console.log("USER DATA:", userData);
+
+                setUser(userData);
             } catch (error) {
                 console.error(error);
             }

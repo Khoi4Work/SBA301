@@ -4,7 +4,9 @@ import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.persistence.Prompt;
 import com.philosophy.rag.dto.response.DocumentContent;
+import com.philosophy.rag.entity.Philosopher;
 import com.philosophy.rag.repository.custom.VectorStoreRepository;
+import com.philosophy.rag.repository.itf.PhilosopherRepository;
 import com.philosophy.rag.service.RagService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -18,7 +20,6 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,12 +42,14 @@ import java.util.stream.Stream;
 public class GeminiRagServiceImpl implements RagService {
     private final VectorStore vectorStore;
     private final VectorStoreRepository vectorStoreRepository;
+    private final PhilosopherRepository philosopherRepository;
     private final ChatClient chatClient;
     private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true, java.util.List.of('\n', '\r', ' '));
 
-    public GeminiRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, @Qualifier("googleGenAiChatModel") ChatModel chatModel) {
+    public GeminiRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, PhilosopherRepository philosopherRepository, @Qualifier("googleGenAiChatModel") ChatModel chatModel) {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
+        this.philosopherRepository = philosopherRepository;
         this.chatClient = ChatClient.builder(chatModel).build();
     }
 
@@ -83,14 +88,14 @@ public class GeminiRagServiceImpl implements RagService {
     }
 
     @Override
-    public String ask(String query) {
-        log.info("[Gemini RAG DEBUG] Incoming Query: {}", query);
+    public String ask(String query, UUID philosopherId) {
+        log.info("[Gemini RAG DEBUG] Incoming Query: {}, PhilosopherID: {}", query, philosopherId);
 
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
 
         String context = buildContext(prioritizedDocs);
-        String prompt = buildPrompt(query, context);
+        String prompt = buildPrompt(query, context, philosopherId);
 
         return chatClient.prompt()
                 .user(prompt)
@@ -216,8 +221,24 @@ public class GeminiRagServiceImpl implements RagService {
         return sb.toString();
     }
 
-    private String buildPrompt(String query, String context) {
-        return Prompt.RAG_ACADEMIC_PROFESSOR
+    private String buildPrompt(String query, String context, UUID philosopherId) {
+        String systemGuidelines = Prompt.RAG_ACADEMIC_PROFESSOR
+                .replace("You are an expert academic professor.", "") // Remove default persona
+                .trim();
+
+        String finalSystemPrompt;
+        if (philosopherId != null) {
+            Optional<Philosopher> philosopher = philosopherRepository.findById(philosopherId);
+            if (philosopher.isPresent()) {
+                finalSystemPrompt = philosopher.get().getSystemPrompt() + "\n\n" + systemGuidelines;
+            } else {
+                finalSystemPrompt = "You are an expert academic professor." + systemGuidelines;
+            }
+        } else {
+            finalSystemPrompt = "You are an expert academic professor." + systemGuidelines;
+        }
+
+        return finalSystemPrompt
                 .replace("{context}", context)
                 .replace("{query}", query);
     }

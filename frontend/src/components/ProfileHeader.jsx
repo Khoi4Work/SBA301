@@ -7,12 +7,12 @@ export default function ProfileHeader({ user, setUser }) {
 
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
-        if (!file || !user?.id) return;
+        if (!file || !user?.userId) return;
 
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await apiClient.post(`/users/${user.id}/avatar`, formData, {
+        const res = await apiClient.post(`/users/${user.userId}/avatar`, formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
             },
@@ -28,7 +28,10 @@ export default function ProfileHeader({ user, setUser }) {
                     <img
                         alt="Avatar"
                         className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 transition-all duration-700"
-                        src={user?.avatarUrl || "/default-avatar.png"}
+                        src={user?.avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuAPr_HnWKcvijj_O608atbbSwJ3WOe9UJG0OkAbvJhu31B0ugnn1U-cWrVH_-DP120u6Cl_abBaazaG9S8JMa0rqpRsHLnPd6omXNoQ4QNu6SDVe8x5_q7FuAR8eoqn2JjY_wEgKn9e4eX4lalHYp9S6t7F2DxJrWk_nErx26Iz5BuWzQ0JZQV1j629aW99M__r-UDZ07gI-ZrLHQ7dssSng1RaKBAGBZoec6G_S5_3tsVloFtCW44qLmYvL-zgzO3aa1USAY0ARmA"}
+                        onError={(e) => {
+                            e.currentTarget.src = "https://lh3.googleusercontent.com/aida-public/AB6AXuAPr_HnWKcvijj_O608atbbSwJ3WOe9UJG0OkAbvJhu31B0ugnn1U-cWrVH_-DP120u6Cl_abBaazaG9S8JMa0rqpRsHLnPd6omXNoQ4QNu6SDVe8x5_q7FuAR8eoqn2JjY_wEgKn9e4eX4lalHYp9S6t7F2DxJrWk_nErx26Iz5BuWzQ0JZQV1j629aW99M__r-UDZ07gI-ZrLHQ7dssSng1RaKBAGBZoec6G_S5_3tsVloFtCW44qLmYvL-zgzO3aa1USAY0ARmA";
+                        }}
                     />
                     <div className="absolute inset-0 border-[0.5px] border-secondary/20"></div>
                 </div>
@@ -51,7 +54,7 @@ export default function ProfileHeader({ user, setUser }) {
 
             <div className="flex-grow pb-4">
                 <h2 className="font-display-lg text-display-lg text-on-surface mb-2">
-                    {user?.fullName || "Đang tải..."}
+                    {user?.fullName || user?.username || "Triết gia vô danh"}
                 </h2>
             </div>
         </section>

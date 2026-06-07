@@ -137,11 +137,15 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(refreshToken);
 
         return AuthResponse.builder()
+                .id(user.getUserId())
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenString)
                 .tokenType("Bearer")
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .fullName(user.getFullName())
+                .biography(user.getBiography())
+                .avatarUrl(user.getAvatarUrl())
                 .expiresIn(JwtTokenProvider.ACCESS_TOKEN_VALIDITY / 1000)
                 .build();
     }
