@@ -3,14 +3,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../assets/styles/philoverse.css';
 import {AuthContext} from "@/contexts/AuthContext.jsx";
-import { getSloganContent, getSloganAuthor} from "@/services/SloganService.js";
+import {getSlogan} from "@/services/SloganService.js";
 
 export default function Home() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNavCompact, setIsNavCompact] = useState(false);
     const {user, logout} = useContext(AuthContext);
-    const [currentSloganContent, setCurrentSloganContent] = useState("Đang kết nối tới kho lưu trữ...");
-    const [currentSloganAuthor, setCurrentSloganAuthor] = useState("");
+    const [currentSloganContent, setCurrentSloganContent] = useState("Một cuộc đời không được xem xét thì không đáng sống.");
+    const [currentSloganAuthor, setCurrentSloganAuthor] = useState("SOCRATES");
 
 
 
@@ -19,9 +19,10 @@ export default function Home() {
 
         const fetchSlogan = async () => {
             try {
-                const [contentRes, authorRes] = await Promise.all([getSloganContent(), getSloganAuthor()]);
-                setCurrentSloganContent(contentRes.data);
-                setCurrentSloganAuthor(authorRes.data);
+                const slogan = await getSlogan() ;
+
+                setCurrentSloganContent(slogan.data.result.content);
+                setCurrentSloganAuthor(slogan.data.result.author);
             } catch (error) {
                 console.error("Lỗi khi tải slogan:", error);
             }

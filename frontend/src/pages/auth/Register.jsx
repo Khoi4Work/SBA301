@@ -6,7 +6,7 @@ import {useContext, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {AuthContext} from "@/contexts/AuthContext.jsx";
 import Footer from "@/components/Footer.jsx";
-import { getSloganContent, getSloganAuthor} from "@/services/SloganService.js";
+import {getSlogan} from "@/services/SloganService.js";
 // import '../assets/styles/philoverse.css';
 
 export default function Register() {
@@ -15,8 +15,8 @@ export default function Register() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [currentSloganContent, setCurrentSloganContent] = useState("Đang kết nối tới kho lưu trữ...");
-    const [currentSloganAuthor, setCurrentSloganAuthor] = useState("");
+    const [currentSloganContent, setCurrentSloganContent] = useState("Một cuộc đời không được xem xét thì không đáng sống.");
+    const [currentSloganAuthor, setCurrentSloganAuthor] = useState("SOCRATES");
 
     const [formData, setFormData] = useState({
         username: '',
@@ -41,19 +41,18 @@ export default function Register() {
 
     const [focusedField, setFocusedField] = useState(null);
 
-    useEffect(() => {
-        const fetchSlogan = async () => {
-            try {
-                const [contentRes, authorRes] = await Promise.all([getSloganContent(), getSloganAuthor()]);
-                setCurrentSloganContent(contentRes.data);
-                setCurrentSloganAuthor(authorRes.data);
-            } catch (error) {
-                console.error("Lỗi khi tải slogan:", error);
-            }
+    const fetchSlogan = async () => {
+        try {
+            const slogan = await getSlogan() ;
+            setCurrentSloganContent(slogan.data.result.content);
+            setCurrentSloganAuthor(slogan.data.result.author);
+        } catch (error) {
+            console.error("Lỗi khi tải slogan:", error);
         }
+    }
 
-        fetchSlogan();
-    }, []);
+    fetchSlogan();
+
 
     const validateField = (name, value, passwordVal = formData.password) => {
         switch (name) {
