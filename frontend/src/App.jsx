@@ -14,6 +14,7 @@ import LessonPage from "@/pages/LessonPage.jsx";
 import Review from "@/pages/Review.jsx";
 import QuizPlay from "@/pages/QuizPlay.jsx";
 import ProtectedRoute from "@/contexts/ProtectedRoute.jsx";
+import Profile from "@/pages/Profile.jsx";
 
 
 function AppLayout() {
@@ -33,6 +34,7 @@ function AppLayout() {
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/review" element={<Review />} />
                 <Route path="/review/play/:id" element={<QuizPlay />} />
+                <Route path="/profile" element={<Profile />} />
 
                 <Route
                     path="/model"

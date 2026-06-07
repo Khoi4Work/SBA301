@@ -6,6 +6,7 @@ import {
     Loader2, ArrowLeft, Pause, Play, AlertTriangle
 } from 'lucide-react';
 import { fetchLessonContent, generateQuiz, speakText } from '@/services/sessionService';
+import apiClient from '@/services/apiClient';
 import '@/assets/styles/philoverse-study.css';
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -449,9 +450,16 @@ export default function LessonPage() {
         })();
     }, [key]);
 
-    // Chuyển sang quiz stage: load quiz
+    // Chuyển sang quiz stage: load quiz và gọi API hoàn thành
     const handleCompleteLesson = async () => {
         setStage(STAGES.QUIZ);
+
+        try {
+            await apiClient.post('/users/complete-file', { key });
+        } catch (err) {
+            console.error('Failed to mark lesson complete:', err);
+        }
+
         if (quiz) return; // đã load rồi
 
         setQuizLoading(true);

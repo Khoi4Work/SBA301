@@ -25,8 +25,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -99,11 +97,10 @@ public class QuizSetServiceImpl implements QuizSetService {
                     return documentRepository.save(newDoc);
                 });
 
-        // 2. Tạo QuizSet
-        String title = request.getTitle();
-        if (title == null || title.isBlank()) {
-            title = "Bộ đề ôn tập: " + contentResponse.getTitle();
-        }
+        // 2. Tạo QuizSet có đánh số thứ tự
+        long existingCount = quizSetRepository.findByDocumentS3Key(request.getS3Key()).size();
+        String title = "Bộ đề số " + (existingCount + 1) + ": " + contentResponse.getTitle();
+        
         QuizSet quizSet = QuizSet.builder()
                 .title(title)
                 .document(doc)
@@ -117,7 +114,7 @@ public class QuizSetServiceImpl implements QuizSetService {
         }
 
         String prompt = Prompt.QUIZ_SET
-                .replace("{context}",context);
+                .replace("{context}", context);
 
         String rawResponse = ragService.prompt(prompt);
 
@@ -200,7 +197,8 @@ public class QuizSetServiceImpl implements QuizSetService {
 
         // 1. Lấy thông tin user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
             throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");
         }
         String username = authentication.getName();
@@ -251,7 +249,8 @@ public class QuizSetServiceImpl implements QuizSetService {
                         break;
 
                     case FILL_IN_THE_BLANK:
-                        // Trong fill-in-the-blank, QuizOption đầu tiên (hoặc có isCorrect = true) chứa kết quả đúng
+                        // Trong fill-in-the-blank, QuizOption đầu tiên (hoặc có isCorrect = true) chứa
+                        // kết quả đúng
                         QuizOption blankOpt = quiz.getOptions().stream()
                                 .filter(QuizOption::getIsCorrect)
                                 .findFirst()
@@ -301,7 +300,8 @@ public class QuizSetServiceImpl implements QuizSetService {
                     case TIMELINE:
                         // Sắp xếp theo orderIndex tăng dần
                         List<QuizOption> sortedDbOpts = quiz.getOptions().stream()
-                                .sorted(Comparator.comparing(opt -> opt.getOrderIndex() != null ? opt.getOrderIndex() : 0))
+                                .sorted(Comparator
+                                        .comparing(opt -> opt.getOrderIndex() != null ? opt.getOrderIndex() : 0))
                                 .collect(Collectors.toList());
 
                         correctTimelineOrder = sortedDbOpts.stream()
@@ -352,9 +352,10 @@ public class QuizSetServiceImpl implements QuizSetService {
         // Lưu kết quả làm bài
         userQuizResultRepository.saveAll(resultsToSave);
 
-        // Cập nhật điểm XP của User (không âm)
+        // Cập nhật điểm XP của User (không âm) và tăng chuỗi ngày học (streak) thêm 1
         int newTotalXp = Math.max(0, user.getTotalXp() + xpGained);
         user.setTotalXp(newTotalXp);
+        user.setStreak(user.getStreak() + 1);
         userRepository.save(user);
 
         return QuizSubmitResponse.builder()
@@ -380,8 +381,6 @@ public class QuizSetServiceImpl implements QuizSetService {
 
     // ── Helper: build prompt & parse response ─────────────────────────────────
 
-
-
     private List<AiQuizQuestionDto> parseAiResponse(String rawResponse) {
         String jsonStr = rawResponse.trim();
         Pattern jsonPattern = Pattern.compile("```json\\s*(\\[.*?\\].*?)\\s*```", Pattern.DOTALL);
@@ -405,7 +404,8 @@ public class QuizSetServiceImpl implements QuizSetService {
         } catch (Exception e) {
             log.error("Failed to parse AI generated quiz JSON: {}", e.getMessage(), e);
             log.error("Raw response: {}", rawResponse);
-            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "AI sinh bộ đề không đúng định dạng JSON. Vui lòng thử lại.");
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR,
+                    "AI sinh bộ đề không đúng định dạng JSON. Vui lòng thử lại.");
         }
     }
 

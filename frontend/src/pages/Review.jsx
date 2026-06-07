@@ -209,7 +209,7 @@ export default function Review() {
                                                         <div className="space-y-1">
                                                             <h4 className="font-semibold text-base text-on-surface flex items-center gap-2">
                                                                 <Award className="w-4.5 h-4.5 text-secondary" />
-                                                                {set.title || `Bộ đề ôn tập #${idx + 1}`}
+                                                                {`Bộ đề số ${idx + 1}: ${set.title ? set.title.replace(/^Bộ đề\s*(?:ôn tập|số\s*\d+)?\s*:\s*/i, '') : ''}`}
                                                             </h4>
                                                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-outline mt-1.5">
                                                                 <span className="flex items-center gap-1">

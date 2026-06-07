@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import apiClient from "@/services/apiClient";
 import {
   Book,
   Brain,
@@ -16,6 +18,29 @@ import { QuickLinkItem } from "./QuickLinkItem";
 import { StatCard } from "./StatCard";
 
 export function Dashboard() {
+  const [stats, setStats] = useState({
+    learningProgress: 0,
+    totalXp: 0,
+    streak: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await apiClient.get("/users/dashboard-stats");
+        if (res.data?.result) {
+          setStats(res.data.result);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard stats", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
   return (
     <div className="max-w-container-max mx-auto px-6 md:px-12 py-12">
       {/* Welcome Header */}
@@ -32,15 +57,15 @@ export function Dashboard() {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
         <StatCard
           icon={<Trophy className="w-5 h-5" />}
-          title="64"
+          title={loading ? "..." : stats.learningProgress.toString()}
           postfix="%"
           subtitle="Tiến độ học tập"
-          progress={64}
+          progress={stats.learningProgress}
           colorClass="text-secondary"
         />
         <StatCard
           icon={<Zap className="w-5 h-5" />}
-          title="1,240"
+          title={loading ? "..." : stats.totalXp.toLocaleString()}
           postfix="xp"
           subtitle="Bậc thầy biện chứng"
           colorClass="text-primary"
@@ -54,7 +79,7 @@ export function Dashboard() {
         />
         <StatCard
           icon={<Flame className="w-5 h-5" />}
-          title="7"
+          title={loading ? "..." : stats.streak.toString()}
           postfix=" ngày"
           subtitle="Chuỗi ngày học"
           colorClass="text-error"

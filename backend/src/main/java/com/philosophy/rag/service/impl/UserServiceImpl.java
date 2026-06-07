@@ -5,10 +5,18 @@ import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.dto.request.UserUpdateRequest;
 import com.philosophy.rag.dto.response.CloudinaryUploadResponse;
 import com.philosophy.rag.dto.response.UserResponse;
+import com.philosophy.rag.dto.response.UserDashboardResponse;
+import com.philosophy.rag.dto.response.SessionContentResponse;
 import com.philosophy.rag.entity.User;
+import com.philosophy.rag.entity.LearningProgress;
+import com.philosophy.rag.entity.Document;
 import com.philosophy.rag.repository.itf.UserRepository;
+import com.philosophy.rag.repository.itf.LearningProgressRepository;
+import com.philosophy.rag.repository.itf.DocumentRepository;
 import com.philosophy.rag.service.CloudinaryService;
 import com.philosophy.rag.service.UserService;
+import com.philosophy.rag.service.S3StorageService;
+import com.philosophy.rag.service.SessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
+import java.time.Instant;
 
 @RequiredArgsConstructor
 @Service
@@ -25,6 +34,10 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
+    private final LearningProgressRepository learningProgressRepository;
+    private final DocumentRepository documentRepository;
+    private final S3StorageService s3StorageService;
+    private final SessionService sessionService;
 
     @Override
     public UserResponse getUser(UUID userId) {
@@ -61,6 +74,14 @@ public class UserServiceImpl implements UserService {
 
         if (request.getEmail() != null) {
             user.setEmail(request.getEmail());
+        }
+
+        if (request.getFullName() != null) {
+            user.setFullName(request.getFullName());
+        }
+
+        if (request.getBiography() != null) {
+            user.setBiography(request.getBiography());
         }
 
         userRepository.save(user);
@@ -127,8 +148,67 @@ public class UserServiceImpl implements UserService {
                 .userId(user.getUserId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .fullName(user.getFullName())
+                .biography(user.getBiography())
                 .avatarUrl(user.getAvatarUrl())
                 .totalXp(user.getTotalXp())
+                .streak(user.getStreak())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDashboardResponse getDashboardStats(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        int totalDocs = Math.max(1, s3StorageService.listDocuments().size());
+        int completedDocs = (int) learningProgressRepository.countByUserAndIsCompletedTrue(user);
+        int progressPercent = Math.min(100, (int) Math.round((double) completedDocs / totalDocs * 100));
+
+        return UserDashboardResponse.builder()
+                .learningProgress(progressPercent)
+                .totalXp(user.getTotalXp())
+                .streak(user.getStreak())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void completeFile(String username, String s3Key) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        // 1. Find or create Document
+        Document doc = documentRepository.findByS3Key(s3Key)
+                .orElseGet(() -> {
+                    log.info("Creating new Document record in database for key: {}", s3Key);
+                    SessionContentResponse contentResponse = sessionService.getContent(s3Key);
+                    Document newDoc = Document.builder()
+                            .title(contentResponse.getTitle())
+                            .s3Key(s3Key)
+                            .category("Tài liệu ôn tập")
+                            .fullText(contentResponse.getContent())
+                            .totalSections(1)
+                            .build();
+                    return documentRepository.save(newDoc);
+                });
+
+        // 2. Find or create LearningProgress
+        LearningProgress progress = learningProgressRepository.findByUserAndDocument(user, doc)
+                .orElseGet(() -> LearningProgress.builder()
+                        .user(user)
+                        .document(doc)
+                        .isCompleted(false)
+                        .lastReadPosition(0)
+                        .build());
+
+        // 3. Mark completed and update streak
+        progress.setIsCompleted(true);
+        progress.setLastViewedAt(Instant.now());
+        learningProgressRepository.save(progress);
+
+        user.setStreak(user.getStreak() + 1);
+        userRepository.save(user);
     }
 }
