@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j // Thay đổi 2: Thêm Logging
 @Validated // Thay đổi 3: Kích hoạt validate tham số
@@ -62,10 +63,11 @@ public class RagController {
     })
     @GetMapping("/ask")
     public ResponseEntity<com.philosophy.rag.base.response.ApiResponse<String>> ask(
-            @RequestParam("query") @NotBlank(message = "Query cannot be blank") String query) {
+            @RequestParam("query") @NotBlank(message = "Query cannot be blank") String query,
+            @RequestParam(value = "philosopherId", required = false) UUID philosopherId) {
 
-        log.info("Received RAG query: {}", query);
-        String result = ragService.ask(query);
+        log.info("Received RAG query: {}, PhilosopherID: {}", query, philosopherId);
+        String result = ragService.ask(query, philosopherId);
 
         return ResponseEntity.ok(com.philosophy.rag.base.response.ApiResponse.success(result));
     }

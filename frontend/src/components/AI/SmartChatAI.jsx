@@ -5,6 +5,7 @@ import AudioPlayer from './AudioPlayer.jsx';
 const SmartChatAI = forwardRef(({
                          title = "Trợ Lý Ảo Thông Minh",
                          voiceId = "vi-VN-HoaiMyNeural",
+                         philosopherId = null,
                          autoPlayAudio = true,
                          height = "80vh",
                          welcomeMessage = "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?",
@@ -61,7 +62,8 @@ const SmartChatAI = forwardRef(({
         try {
             const response = await apiVoice.chat({
                 text: finalText,
-                voice: voiceId
+                voice: voiceId,
+                philosopherId: philosopherId
             });
             const data = response.data;
 
@@ -85,7 +87,7 @@ const SmartChatAI = forwardRef(({
             isSendingRef.current = false;
             setIsLoading(false);
         }
-    }, [voiceId]);
+    }, [voiceId, philosopherId]);
 
     useImperativeHandle(ref, () => ({
         handleSendMessage,
@@ -148,7 +150,7 @@ const SmartChatAI = forwardRef(({
                         <span className="typing-indicator">⏳ Đang tổng hợp phản hồi...</span>
                     </div>
                 )}
-                <div ref={messagesEndRef}></div>
+                <div ref={messagesEndRef}></div >
             </div>
 
             {/* Vùng Nhập liệu */}
