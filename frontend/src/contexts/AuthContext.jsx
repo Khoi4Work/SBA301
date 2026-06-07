@@ -21,9 +21,15 @@ export function AuthProvider({ children }) {
                     localStorage.removeItem('accessToken');
                     setUser(null);
                 } else {
-                    setUser({
-                        username: payload.sub || payload.username || 'User'
-                    });
+                    const storedUser = localStorage.getItem("user");
+
+                    if (storedUser) {
+                        setUser(JSON.parse(storedUser));
+                    } else {
+                        setUser({
+                            username: payload.sub || payload.username || 'User'
+                        });
+                    }
                 }
             } catch (e) {
                 localStorage.removeItem('accessToken');
@@ -43,11 +49,28 @@ export function AuthProvider({ children }) {
 
             localStorage.setItem('accessToken', token);
 
-            // Decode username từ token
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            const authData = res.data?.result || res.data;
+
             setUser({
-                username: payload.sub || credentials.username || 'User'
+                id: authData.id,
+                username: authData.username,
+                fullName: authData.fullName,
+                biography: authData.biography,
+                avatarUrl: authData.avatarUrl,
+                email: authData.email
             });
+
+            localStorage.setItem(
+                "user",
+                JSON.stringify({
+                    id: authData.id,
+                    username: authData.username,
+                    fullName: authData.fullName,
+                    biography: authData.biography,
+                    avatarUrl: authData.avatarUrl,
+                    email: authData.email
+                })
+            );
 
             return res;
         } catch (err) {
@@ -62,6 +85,7 @@ export function AuthProvider({ children }) {
             console.warn('Logout API failed:', e);
         } finally {
             localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
             setUser(null);
         }
     }

@@ -19,6 +19,10 @@ public class UserResponse {
 
     private String email;
 
+    private String fullName;
+
+    private String biography;
+
     private String avatarUrl;
 
     private Integer totalXp;

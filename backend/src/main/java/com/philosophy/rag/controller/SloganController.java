@@ -1,9 +1,11 @@
 package com.philosophy.rag.controller;
 
 
+import com.philosophy.rag.base.response.ApiResponse;
 import com.philosophy.rag.entity.Slogan;
 import com.philosophy.rag.service.SloganService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,18 +15,15 @@ public class SloganController {
 
     private final SloganService sloganService;
 
-    @GetMapping("/content")
-    public String getSloganContent() {
-        return sloganService.getRandomSlogan().getContent();
+    @GetMapping("")
+    public ResponseEntity<ApiResponse<Slogan>> getSlogan() {
+        return ResponseEntity.ok(ApiResponse.success(sloganService.getRandomSlogan(), "Successfully retrieved slogan"));
     }
 
-    @GetMapping("/author")
-    public String getSloganAuthor() {
-        return sloganService.getRandomSlogan().getAuthor();
-    }
 
     @PostMapping("")
-    public void addSlogan(@RequestBody Slogan slogan) {
+    public ResponseEntity<ApiResponse<Slogan>> addSlogan(@RequestBody Slogan slogan) {
         sloganService.addSlogan(slogan);
+        return ResponseEntity.ok(ApiResponse.success(slogan, "Slogan added successfully"));
     }
 }

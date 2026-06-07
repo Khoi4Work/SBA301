@@ -76,6 +76,14 @@ public class UserServiceImpl implements UserService {
             user.setEmail(request.getEmail());
         }
 
+        if (request.getFullName() != null) {
+            user.setFullName(request.getFullName());
+        }
+
+        if (request.getBiography() != null) {
+            user.setBiography(request.getBiography());
+        }
+
         userRepository.save(user);
         return toResponse(user);
     }
@@ -140,6 +148,8 @@ public class UserServiceImpl implements UserService {
                 .userId(user.getUserId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .fullName(user.getFullName())
+                .biography(user.getBiography())
                 .avatarUrl(user.getAvatarUrl())
                 .totalXp(user.getTotalXp())
                 .streak(user.getStreak())

@@ -42,6 +42,12 @@ public class User extends BaseEntity {
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
+    @Column(name = "fullName",length = 255)
+    private String fullName;
+
+    @Column(name = "biography",length = 255)
+    private String biography;
+
     /** Mật khẩu đã mã hóa (BCrypt) */
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
