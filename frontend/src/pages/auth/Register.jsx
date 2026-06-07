@@ -44,8 +44,8 @@ export default function Register() {
     const fetchSlogan = async () => {
         try {
             const slogan = await getSlogan() ;
-            setCurrentSloganContent(slogan.result.content);
-            setCurrentSloganAuthor(slogan.result.author);
+            setCurrentSloganContent(slogan.data.result.content);
+            setCurrentSloganAuthor(slogan.data.result.author);
         } catch (error) {
             console.error("Lỗi khi tải slogan:", error);
         }
