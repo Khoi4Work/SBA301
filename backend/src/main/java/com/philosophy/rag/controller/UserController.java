@@ -1,15 +1,21 @@
 package com.philosophy.rag.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
+import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResponse;
 import com.philosophy.rag.dto.request.UserUpdateRequest;
+import com.philosophy.rag.dto.request.CompleteFileRequest;
 import com.philosophy.rag.dto.response.UserResponse;
+import com.philosophy.rag.dto.response.UserDashboardResponse;
 import com.philosophy.rag.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -87,6 +93,36 @@ public class UserController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(response, "Avatar uploaded successfully")
+        );
+    }
+
+    @Operation(summary = "Get user dashboard stats")
+    @GetMapping("/dashboard-stats")
+    public ResponseEntity<ApiResponse<UserDashboardResponse>> getDashboardStats() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");
+        }
+        String username = authentication.getName();
+        log.info("Received request to get dashboard stats for user: {}", username);
+        UserDashboardResponse response = userService.getDashboardStats(username);
+        return ResponseEntity.ok(
+                ApiResponse.success(response, "Dashboard stats retrieved successfully")
+        );
+    }
+
+    @Operation(summary = "Complete a study file")
+    @PostMapping("/complete-file")
+    public ResponseEntity<ApiResponse<Void>> completeFile(@RequestBody CompleteFileRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+            throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");
+        }
+        String username = authentication.getName();
+        log.info("Received request to complete file for user: {}, key: {}", username, request.getKey());
+        userService.completeFile(username, request.getKey());
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "File marked as completed and streak updated")
         );
     }
 }

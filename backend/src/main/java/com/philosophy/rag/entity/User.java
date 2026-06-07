@@ -63,6 +63,15 @@ public class User extends BaseEntity {
     @Builder.Default
     private Integer totalXp = 0;
 
+    /**
+     * Chuỗi ngày học (Streak).
+     * Tăng thêm 1 mỗi khi học xong hoặc làm quiz.
+     * Mặc định = 0.
+     */
+    @Column(name = "streak", nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer streak = 0;
+
 //    /** Ngày tạo tài khoản — tự động gán khi persist */
 //    @CreationTimestamp
 //    @Column(name = "created_at", nullable = false, updatable = false)

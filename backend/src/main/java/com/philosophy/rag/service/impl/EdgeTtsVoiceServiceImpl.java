@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "ai.provider", havingValue = "ollama")
+@ConditionalOnProperty(name = "voice.provider", havingValue = "edge", matchIfMissing = true)
 public class EdgeTtsVoiceServiceImpl implements VoiceService {
     private final RagService ragService;
 
