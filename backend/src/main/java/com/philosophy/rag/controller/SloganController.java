@@ -4,6 +4,7 @@ package com.philosophy.rag.controller;
 import com.philosophy.rag.base.response.ApiResponse;
 import com.philosophy.rag.entity.Slogan;
 import com.philosophy.rag.service.SloganService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
