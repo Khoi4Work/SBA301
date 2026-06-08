@@ -2,6 +2,7 @@ package com.philosophy.rag.entity;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.philosophy.rag.base.persistence.BaseEntity;
+import com.philosophy.rag.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.ArrayList;
@@ -42,23 +43,32 @@ public class User extends BaseEntity {
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(name = "fullName",length = 255)
+    @Column(name = "fullName", length = 255)
     private String fullName;
 
-    @Column(name = "biography",length = 255)
+    @Column(name = "biography", length = 255)
     private String biography;
 
     /** Mật khẩu đã mã hóa (BCrypt) */
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    /** Avatar URL trả về từ cloundinary */
+    /** Avatar URL trả về từ cloudinary */
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
-    /** Public ID của Cloundinary */
+    /** Public ID của Cloudinary */
     @Column(name = "cloudinary_public_id", length = 255)
     private String cloudinaryPublicId;
+
+    /**
+     * Phân quyền người dùng.
+     * Mặc định là LEARNER.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role")
+    @Builder.Default
+    private Role role = Role.LEARNER;
 
     /**
      * Điểm kinh nghiệm tích lũy (TotalXP).
@@ -77,11 +87,6 @@ public class User extends BaseEntity {
     @Column(name = "streak", nullable = false, columnDefinition = "integer default 0")
     @Builder.Default
     private Integer streak = 0;
-
-//    /** Ngày tạo tài khoản — tự động gán khi persist */
-//    @CreationTimestamp
-//    @Column(name = "created_at", nullable = false, updatable = false)
-//    private Instant createdAt;
 
     // ── Quan hệ 1-Nhiều ───────────────────────────────────────────────────────
 

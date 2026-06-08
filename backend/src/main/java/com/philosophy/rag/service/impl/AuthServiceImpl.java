@@ -14,6 +14,7 @@ import com.philosophy.rag.repository.itf.TokenBlacklistRepository;
 import com.philosophy.rag.repository.itf.UserRepository;
 import com.philosophy.rag.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,6 +27,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -57,6 +59,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
+        log.info("Attempting login for user: {}", request.getUsernameOrEmail());
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -64,19 +67,23 @@ public class AuthServiceImpl implements AuthService {
                             request.getPassword()
                     )
             );
+            log.info("Authentication successful for user: {}", request.getUsernameOrEmail());
         } catch (Exception e) {
+            log.error("Authentication failed for user: {}. Error: {}", request.getUsernameOrEmail(), e.getMessage());
             throw new ApiException(ErrorCode.INVALID_INPUT, "Sai tài khoản hoặc mật khẩu");
         }
 
         User user = userRepository
                 .findByUsername(request.getUsernameOrEmail())
                 .or(() -> userRepository.findByEmail(request.getUsernameOrEmail()))
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
+                .orElseThrow(() -> {
+                        log.error("User not found in database after authentication: {}", request.getUsernameOrEmail());
+                        return new UsernameNotFoundException(
                                 "User not found: " + request.getUsernameOrEmail()
-                        )
-                );
+                                );
+                });
 
+        log.info("User {} found with role {}. Generating tokens...", user.getUsername(), user.getRole());
         return generateAuthResponse(user);
     }
 
@@ -111,7 +118,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = refreshToken.getUser();
-        String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
+        String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
@@ -124,8 +131,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private AuthResponse generateAuthResponse(User user) {
+        log.info("Generating auth response for user: {} (Role: {})", user.getUsername(), user.getRole());
         // Create Access Token
-        String accessToken = jwtTokenProvider.createToken(user.getUsername(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
+        String accessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
+        log.debug("Access token generated successfully for user: {}", user.getUsername());
 
         // Create Refresh Token
         String refreshTokenString = UUID.randomUUID().toString();
@@ -135,6 +144,7 @@ public class AuthServiceImpl implements AuthService {
                 .expiresAt(Instant.now().plusMillis(JwtTokenProvider.REFRESH_TOKEN_VALIDITY))
                 .build();
         refreshTokenRepository.save(refreshToken);
+        log.debug("Refresh token generated and saved for user: {}", user.getUsername());
 
         return AuthResponse.builder()
                 .id(user.getUserId())

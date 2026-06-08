@@ -30,6 +30,7 @@ public class Prompt {
             YÊU CẦU QUAN TRỌNG:
             - Mỗi câu phải có đúng 4 lựa chọn (A, B, C, D)
             - Chỉ có 1 đáp án đúng
+            - ĐẶC BIỆT CHÚ Ý: Các phương án nhiễu (đáp án sai) và đáp án đúng phải có độ dài, mức độ chi tiết và cấu trúc ngữ pháp tương tự nhau (chênh lệch không quá 2-3 từ). Tránh tuyệt đối tình trạng đáp án đúng dài hơn, chi tiết hơn hoặc giải thích kỹ càng hơn các đáp án khác, khiến người dùng dễ dàng đoán ra đáp án đúng chỉ dựa trên chiều dài của câu.
             - Câu hỏi phải bám sát nội dung tài liệu
             - Trả lời CHÍNH XÁC theo định dạng JSON sau, không thêm bất kỳ text nào ngoài JSON:
 
@@ -59,12 +60,12 @@ public class Prompt {
             6. Scenario-based Quiz (SCENARIO) - 4 câu
             
             Yêu cầu định dạng chi tiết cho từng loại câu hỏi:
-            - MULTIPLE_CHOICE: "questionText" là câu hỏi. "options" gồm 4 phần tử (chuỗi text đáp án), trong đó chỉ 1 đáp án có "isCorrect": true, các đáp án còn lại có "isCorrect": false.
+            - MULTIPLE_CHOICE: "questionText" là câu hỏi. "options" gồm 4 phần tử (chuỗi text đáp án), trong đó chỉ 1 đáp án có "isCorrect": true, các đáp án còn lại có "isCorrect": false. ĐẶC BIỆT CHÚ Ý: Cả 4 phương án lựa chọn phải có độ dài, mức độ chi tiết và cấu trúc ngữ pháp tương tự nhau (chênh lệch không quá 2-3 từ), không để đáp án đúng dài hơn hay chi tiết hơn các đáp án sai để tránh người học đoán mò dựa trên độ dài.
             - FILL_IN_THE_BLANK: "questionText" là một câu có chứa dấu ba chấm "___" để điền từ/cụm từ còn thiếu. "options" chỉ gồm đúng 1 phần tử (đáp án chính xác để điền vào chỗ trống) với "isCorrect": true, "orderIndex": null.
             - TRUE_FALSE: "questionText" là một nhận định. "options" gồm đúng 2 phần tử: {"optionText": "Đúng", "isCorrect": ...} và {"optionText": "Sai", "isCorrect": ...}, một trong hai có "isCorrect": true.
             - MATCHING: "questionText" là yêu cầu nối thông tin (ví dụ: "Ghép cặp các triết gia sau với học thuyết tương ứng"). "options" gồm 3 đến 4 phần tử. Mỗi phần tử là một cặp tương ứng có dạng "Vế Trái | Vế Phải" (ví dụ: "Karl Marx | Duy vật lịch sử"). Tất cả các phần tử này đều có "isCorrect": true.
             - TIMELINE: "questionText" là yêu cầu sắp xếp các sự kiện theo trình tự thời gian tăng dần. "options" gồm 3 đến 4 phần tử đại diện cho các sự kiện. Mỗi phần tử phải có trường "orderIndex" (0, 1, 2...) tương ứng với thứ tự thời gian đúng của sự kiện đó (từ cũ đến mới). Tất cả các phần tử đều có "isCorrect": true.
-            - SCENARIO: "questionText" bắt đầu bằng một tình huống thực tế/giả định liên quan đến triết học ("Tình huống: ..."), sau đó đưa ra câu hỏi. "options" gồm 4 phần tử lựa chọn, chỉ có 1 đáp án có "isCorrect": true.
+            - SCENARIO: "questionText" bắt đầu bằng một tình huống thực tế/giả định liên quan đến triết học ("Tình huống: ..."), sau đó đưa ra câu hỏi. "options" gồm 4 phần tử lựa chọn, chỉ có 1 đáp án có "isCorrect": true. ĐẶC BIỆT CHÚ Ý: Cả 4 phương án lựa chọn phải có độ dài, mức độ chi tiết và cấu trúc ngữ pháp tương tự nhau (chênh lệch không quá 2-3 từ), không để đáp án đúng dài hơn hay chi tiết hơn các phương án nhiễu khác để tránh lộ đáp án đúng qua chiều dài câu.
             
             Trả lời CHÍNH XÁC theo định dạng JSON sau, không thêm bất kỳ text nào khác ngoài JSON:
             ```json

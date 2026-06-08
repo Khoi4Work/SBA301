@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import apiClient from '@/services/apiClient';
 import { fetchDocuments, getFileTypeInfo, formatFileSize } from '@/services/documentService';
-import { FileText, Award, Calendar, ChevronRight, Sparkles, RefreshCw, Loader2, BookOpen } from 'lucide-react';
+import { FileText, Award, Calendar, ChevronRight, Sparkles, RefreshCw, Loader2, BookOpen, Sword } from 'lucide-react';
 import '@/assets/styles/philoverse-study.css';
 import Footer from "@/components/Footer.jsx"; // Reusing styles
 
@@ -83,16 +83,67 @@ export default function Review() {
             <main className="md:ml-64 min-h-screen bg-surface">
                 <div className="pt-24 px-4 md:px-12 py-12">
                     {/* Page Header */}
-                    <div className="mb-10">
-                        <span className="text-xs uppercase tracking-[0.3em] text-secondary mb-2 block font-medium">
-                            Hệ thống luyện tập
-                        </span>
-                        <h2 className="font-display text-5xl text-on-background font-bold tracking-tight">
-                            Ôn tập học giả
-                        </h2>
-                        <p className="text-on-surface-variant mt-2 text-sm max-w-2xl">
-                            Chọn tài liệu ôn tập để làm bài luyện tập. AI sẽ hỗ trợ biên soạn 20 câu hỏi bao gồm đầy đủ 6 thể loại kiểm tra để kiểm tra toàn diện kiến thức của bạn.
-                        </p>
+                    <div className="mb-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                        <div className="max-w-xl">
+                            <span className="text-xs uppercase tracking-[0.3em] text-secondary mb-2 block font-medium">
+                                Hệ thống luyện tập
+                            </span>
+                            <h2 className="font-display text-5xl text-on-background font-bold tracking-tight">
+                                Ôn tập học giả
+                            </h2>
+                            <p className="text-on-surface-variant mt-2 text-sm max-w-2xl leading-relaxed">
+                                Chọn tài liệu ôn tập để làm bài luyện tập. AI sẽ hỗ trợ biên soạn 20 câu hỏi bao gồm đầy đủ 6 thể loại kiểm tra để kiểm tra toàn diện kiến thức của bạn.
+                            </p>
+                        </div>
+
+                        {/* Immersive Game Banners */}
+                        <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto shrink-0">
+                            {/* Game 1: Consumerist Escape */}
+                            <div className="max-w-sm sm:w-[280px] bg-gradient-to-r from-pink-500/10 via-amber-500/5 to-secondary/10 border border-pink-500/20 rounded-xl p-4.5 relative overflow-hidden shadow-md flex flex-col justify-between gap-3">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-pink-500/5 rounded-full blur-xl pointer-events-none" />
+                                <div className="space-y-1 z-10">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-pink-500/20 text-pink-500 text-[8px] font-bold uppercase tracking-widest rounded-full">
+                                        <Sparkles className="w-2 h-2" />
+                                        Nhập Vai Sinh Tồn
+                                    </span>
+                                    <h3 className="font-display text-sm font-bold text-on-surface leading-tight mt-1">
+                                        Thoát Khỏi Ảo Vọng
+                                    </h3>
+                                    <p className="text-[10px] text-on-surface-variant leading-normal">
+                                        Đo lường độ \"phông bạt\" thời đại số cùng AI Karl Marx.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => navigate('/review/escape')}
+                                    className="self-end flex items-center justify-center w-8 h-8 bg-pink-500 hover:bg-pink-600 active:scale-95 text-white rounded-lg transition-all shadow-md shadow-pink-500/20 z-10 cursor-pointer"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Game 2: Dialectical Debate */}
+                            <div className="max-w-sm sm:w-[280px] bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-secondary/10 border border-emerald-500/20 rounded-xl p-4.5 relative overflow-hidden shadow-md flex flex-col justify-between gap-3">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+                                <div className="space-y-1 z-10">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-500 text-[8px] font-bold uppercase tracking-widest rounded-full">
+                                        <Sword className="w-2 h-2" />
+                                        Đấu Trường Đối Kháng
+                                    </span>
+                                    <h3 className="font-display text-sm font-bold text-on-surface leading-tight mt-1">
+                                        Đấu Trường Biện Chứng
+                                    </h3>
+                                    <p className="text-[10px] text-on-surface-variant leading-normal">
+                                        Đập tan lập luận flex vật chất của KOL phông bạt.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => navigate('/review/debate')}
+                                    className="self-end flex items-center justify-center w-8 h-8 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-lg transition-all shadow-md shadow-emerald-500/20 z-10 cursor-pointer"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">

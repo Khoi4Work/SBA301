@@ -28,8 +28,8 @@ public enum ErrorCode {
     INVALID_REQUEST(4008, "Invalid request", HttpStatus.BAD_REQUEST),
 
     // Security errors
-    UNAUTHENTICATED(4010, "Unauthenticated", HttpStatus.UNAUTHORIZED),
-    FORBIDDEN_ACTION(4030, "Forbidden", HttpStatus.FORBIDDEN),
+    UNAUTHENTICATED(4010, "Authentication failed. Please log in again.", HttpStatus.UNAUTHORIZED),
+    FORBIDDEN_ACTION(4030, "You do not have permission to access this resource. Please contact your administrator.", HttpStatus.FORBIDDEN),
 
     // Resource errors
     RESOURCE_NOT_FOUND(4040, "Not found", HttpStatus.NOT_FOUND),
