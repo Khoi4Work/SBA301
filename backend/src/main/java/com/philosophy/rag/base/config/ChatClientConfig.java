@@ -2,6 +2,7 @@ package com.philosophy.rag.base.config;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,5 +77,33 @@ public class ChatClientConfig {
             }
         }
         return ChatClient.builder(model);
+    }
+
+    /**
+     * Resolves the conflict for EmbeddingModel.
+     * PgVectorStore will use this @Primary bean to embed queries and documents.
+     */
+    @Bean
+    @Primary
+    public EmbeddingModel primaryEmbeddingModel(
+            @Qualifier("googleGenAiTextEmbedding") ObjectProvider<EmbeddingModel> googleProvider,
+            @Qualifier("ollamaEmbeddingModel") ObjectProvider<EmbeddingModel> ollamaProvider,
+            @Value("${ai.provider:google}") String provider) {
+
+        log.info("[EMBEDDING-PROVIDER] {}", provider);
+
+        if ("ollama".equalsIgnoreCase(provider)) {
+            EmbeddingModel model = ollamaProvider.getIfAvailable();
+            if (model == null) {
+                throw new RuntimeException("Ollama provider is selected but Ollama embedding model is not available");
+            }
+            return model;
+        }
+
+        EmbeddingModel model = googleProvider.getIfAvailable();
+        if (model == null) {
+            throw new RuntimeException("Google provider is selected but Google AI embedding model is not available");
+        }
+        return model;
     }
 }
