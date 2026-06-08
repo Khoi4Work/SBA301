@@ -15,10 +15,6 @@ public class HealthController {
     @GetMapping
     public ResponseEntity<ApiResponse<String>> healthCheck() {
         log.info("Health check request received");
-        return ResponseEntity.ok(ApiResponse.<String>builder()
-                .success(true)
-                .message("Server is up and running")
-                .data("UP")
-                .build());
+        return ResponseEntity.ok(ApiResponse.success("UP", "Server is up and running"));
     }
 }
