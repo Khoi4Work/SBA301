@@ -31,6 +31,14 @@ public class UserController {
 
     private final UserService userService;
 
+    @Operation(summary = "Get current authenticated user (Requires authentication)")
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
+        UserResponse response = userService.getCurrentUser();
+        return ResponseEntity.ok(ApiResponse.success(response, "Current user retrieved successfully"));
+    }
+
     @Operation(summary = "Get user by ID")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable UUID id) {
@@ -44,8 +52,9 @@ public class UserController {
         );
     }
 
-    @Operation(summary = "Get all users")
+    @Operation(summary = "Get all users (Requires ADMIN or STAFF)")
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
 
         log.info("Received request to get all users");
@@ -56,11 +65,20 @@ public class UserController {
         );
     }
 
-    @Operation(summary = "Update user")
+    @Operation(summary = "Update user (Requires authentication - Self or Admin/Staff)")
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable UUID id,
             @RequestBody UserUpdateRequest request) {
+
+        UserResponse currentUser = userService.getCurrentUser();
+        boolean isAdminOrStaff = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+
+        if (!isAdminOrStaff && !currentUser.getUserId().equals(id)) {
+            throw new ApiException(ErrorCode.FORBIDDEN_ACTION, "Bạn chỉ có thể cập nhật thông tin của chính mình");
+        }
 
         log.info("Received request to update user with id: {}", id);
         UserResponse response = userService.updateUser(id, request);
@@ -70,8 +88,9 @@ public class UserController {
         );
     }
 
-    @Operation(summary = "Delete user")
+    @Operation(summary = "Delete user (Requires ADMIN)")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
 
         log.info("Received request to delete user with id: {}", id);
@@ -82,12 +101,21 @@ public class UserController {
         );
     }
 
-    @Operation(summary = "Upload user avatar")
+    @Operation(summary = "Upload user avatar (Requires authentication - Self or Admin/Staff)")
     @PostMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserResponse>> uploadAvatar(
             @PathVariable UUID id,
             @RequestPart("file") MultipartFile file)
             throws ApiException {
+
+        UserResponse currentUser = userService.getCurrentUser();
+        boolean isAdminOrStaff = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+
+        if (!isAdminOrStaff && !currentUser.getUserId().equals(id)) {
+            throw new ApiException(ErrorCode.FORBIDDEN_ACTION, "Bạn chỉ có thể cập nhật ảnh đại diện của chính mình");
+        }
 
         log.info("Received request to upload avatar for user: {}", id);
         UserResponse response = userService.uploadAvatar(id, file);
@@ -97,7 +125,7 @@ public class UserController {
         );
     }
 
-    @Operation(summary = "Test Admin Endpoint")
+    @Operation(summary = "Test Admin Endpoint (Requires ADMIN)")
     @GetMapping("/test-admin")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<String>> testAdmin() {

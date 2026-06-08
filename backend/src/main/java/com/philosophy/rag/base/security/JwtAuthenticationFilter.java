@@ -1,6 +1,8 @@
 package com.philosophy.rag.base.security;
 
+import com.philosophy.rag.entity.User;
 import com.philosophy.rag.repository.itf.TokenBlacklistRepository;
+import com.philosophy.rag.repository.itf.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -43,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         jwt = authHeader.substring(7);
         if (tokenBlacklistRepository.existsByToken(jwt)) {
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
@@ -58,6 +61,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.debug("Processing JWT authentication for user: {}", username);
             // Extract role from JWT to avoid database call on every request
             String role = jwtTokenProvider.extractRole(jwt);
+
+            User user = userRepository.findByUsername(username)
+                    .orElse(null);
+
+            if (user == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+
+            Long tokenVersion = jwtTokenProvider.extractTokenVersion(jwt);
+
+            if (tokenVersion == null || !user.getTokenVersion().equals(tokenVersion)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
 
             if (role != null) {
                 log.debug("User {} authenticated with role {} from JWT", username, role);

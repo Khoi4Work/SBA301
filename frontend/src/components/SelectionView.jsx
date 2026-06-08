@@ -9,7 +9,7 @@ export function SelectionView({ onSelect }) {
   useEffect(() => {
     const fetchPhilosophers = async () => {
       try {
-        const response = await apiClient.get("/philosophers/getAll");
+        const response = await apiClient.get("/philosophers/");
         if (response.data?.code === 1000) {
           setPhilosophers(response.data.result || []);
         }

@@ -41,17 +41,17 @@ export default function Register() {
 
     const [focusedField, setFocusedField] = useState(null);
 
-    const fetchSlogan = async () => {
-        try {
-            const slogan = await getSlogan() ;
-            setCurrentSloganContent(slogan.data.result.content);
-            setCurrentSloganAuthor(slogan.data.result.author);
-        } catch (error) {
-            console.error("Lỗi khi tải slogan:", error);
-        }
-    }
+   useEffect(() => { const fetchSlogan = async () => {
+       try {
+           const slogan = await getSlogan() ;
+           setCurrentSloganContent(slogan.data.result.content);
+           setCurrentSloganAuthor(slogan.data.result.author);
+       } catch (error) {
+           console.error("Lỗi khi tải slogan:", error);
+       }
+   }
 
-    fetchSlogan();
+       fetchSlogan();},[])
 
 
     const validateField = (name, value, passwordVal = formData.password) => {

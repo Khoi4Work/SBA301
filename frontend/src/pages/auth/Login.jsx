@@ -202,12 +202,12 @@ export default function Login() {
                     Ghi nhớ tôi
                   </span>
                 </label>
-                <a
-                  className="font-caption text-caption text-on-surface-variant hover:text-secondary underline decoration-secondary/30 transition-all"
-                  href="#"
-                >
-                  Quên mật khẩu?
-                </a>
+                  <Link
+                      to="/forgot-password"
+                      className="font-caption text-caption text-on-surface-variant hover:text-secondary underline decoration-secondary/30 transition-all"
+                  >
+                      Quên mật khẩu?
+                  </Link>
               </div>
 
               {/* Login Button */}

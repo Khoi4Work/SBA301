@@ -17,6 +17,8 @@ import com.philosophy.rag.service.CloudinaryService;
 import com.philosophy.rag.service.UserService;
 import com.philosophy.rag.service.S3StorageService;
 import com.philosophy.rag.service.SessionService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,18 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId).orElseThrow(() ->
                         new ApiException(ErrorCode.USER_NOT_FOUND));
 
+        return toResponse(user);
+    }
+
+    @Override
+    public UserResponse getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            throw new ApiException(ErrorCode.UNAUTHENTICATED);
+        }
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
         return toResponse(user);
     }
 

@@ -58,6 +58,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         log.info("Attempting login for user: {}", request.getUsernameOrEmail());
         try {
@@ -82,6 +83,9 @@ public class AuthServiceImpl implements AuthService {
                                 "User not found: " + request.getUsernameOrEmail()
                                 );
                 });
+        Long currentVersion = user.getTokenVersion() == null ? 0L : user.getTokenVersion();
+        user.setTokenVersion(currentVersion + 1);
+        userRepository.save(user);
 
         log.info("User {} found with role {}. Generating tokens...", user.getUsername(), user.getRole());
         return generateAuthResponse(user);
@@ -118,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = refreshToken.getUser();
-        String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
+        String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name(), user.getTokenVersion(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
@@ -133,7 +137,7 @@ public class AuthServiceImpl implements AuthService {
     private AuthResponse generateAuthResponse(User user) {
         log.info("Generating auth response for user: {} (Role: {})", user.getUsername(), user.getRole());
         // Create Access Token
-        String accessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
+        String accessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name(), user.getTokenVersion(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
         log.debug("Access token generated successfully for user: {}", user.getUsername());
 
         // Create Refresh Token
