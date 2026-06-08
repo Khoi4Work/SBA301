@@ -44,6 +44,10 @@ The project is a RAG (Retrieval-Augmented Generation) application for philosophy
 - **Surgical Changes**: Modify only the lines necessary to satisfy the request. Match existing style and avoid "drive-by refactoring" of unrelated code.
 - **Goal-Driven Execution**: Define verifiable success criteria. Prefer a "test-first" approach (repro-test $\rightarrow$ fix $\rightarrow$ verify) and use checkpoints for multi-step tasks.
 
+### Custom Skills & Workflows
+- Custom agent behaviors and workflows are documented in `.claude/skills/`.
+- Always check these guidelines before completing tasks to ensure compliance with project-specific quality gates (e.g., testing loop).
+
 ### Technical Standards
 - **Strict Execution**: Follow the "Silent Action $\rightarrow$ Verified Result $\rightarrow$ Detailed Report" workflow.
 - **Dependency Inversion**: Inject interfaces rather than concrete implementations.
