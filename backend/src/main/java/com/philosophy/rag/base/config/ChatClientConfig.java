@@ -2,6 +2,7 @@ package com.philosophy.rag.base.config;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -22,11 +23,24 @@ public class ChatClientConfig {
     @Bean
     @Primary
     public ChatModel primaryChatModel(
-            @Qualifier("googleGenAiChatModel") ChatModel googleModel,
-            @Qualifier("ollamaChatModel") ChatModel ollamaModel,
+            @Qualifier("googleGenAiChatModel") ObjectProvider<ChatModel> googleProvider,
+            @Qualifier("ollamaChatModel") ObjectProvider<ChatModel> ollamaProvider,
             @Value("${ai.provider:google}") String provider) {
         log.info("[AI-PROVIDER] {}", provider);
-        return "ollama".equalsIgnoreCase(provider) ? ollamaModel : googleModel;
+
+        if ("ollama".equalsIgnoreCase(provider)) {
+            ChatModel model = ollamaProvider.getIfAvailable();
+            if (model == null) {
+                throw new RuntimeException("Ollama provider is selected but Ollama model is not available");
+            }
+            return model;
+        }
+
+        ChatModel model = googleProvider.getIfAvailable();
+        if (model == null) {
+            throw new RuntimeException("Google provider is selected but Google AI model is not available");
+        }
+        return model;
     }
 
     /**
@@ -45,11 +59,22 @@ public class ChatClientConfig {
      */
     @Bean
     public ChatClient.Builder quizChatClientBuilder(
-            @Qualifier("googleGenAiChatModel") ChatModel googleModel,
-            @Qualifier("ollamaChatModel") ChatModel ollamaModel,
+            @Qualifier("googleGenAiChatModel") ObjectProvider<ChatModel> googleProvider,
+            @Qualifier("ollamaChatModel") ObjectProvider<ChatModel> ollamaProvider,
             @Value("${quiz.ai.provider:google}") String provider) {
 
-        ChatModel model = "ollama".equalsIgnoreCase(provider) ? ollamaModel : googleModel;
+        ChatModel model;
+        if ("ollama".equalsIgnoreCase(provider)) {
+            model = ollamaProvider.getIfAvailable();
+            if (model == null) {
+                throw new RuntimeException("Ollama provider is selected for quizzes but Ollama model is not available");
+            }
+        } else {
+            model = googleProvider.getIfAvailable();
+            if (model == null) {
+                throw new RuntimeException("Google provider is selected for quizzes but Google AI model is not available");
+            }
+        }
         return ChatClient.builder(model);
     }
 }
