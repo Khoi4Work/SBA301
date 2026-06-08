@@ -4,8 +4,9 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy package files and install dependencies
+# Using npm ci for cleaner and more reliable builds in CI/CD environments
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
@@ -17,6 +18,7 @@ RUN npm run build
 FROM nginx:stable-alpine
 
 # Copy the build output from the build stage to the nginx html directory
+# The build output from Vite is in the 'dist' folder
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy custom nginx configuration
