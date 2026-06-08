@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -23,8 +24,9 @@ public class SessionController {
      * Lấy nội dung text của file từ S3 để hiển thị trong phiên học
      * Body: { "key": "documents/2026-05-25/xxx.docx" }
      */
-    @Operation(summary = "Get lesson content from S3 file")
+    @Operation(summary = "Get lesson content from S3 file (Requires authentication)")
     @PostMapping("/content")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<SessionContentResponse>> getContent(
             @RequestBody SessionContentRequest request) {
 
@@ -37,8 +39,9 @@ public class SessionController {
      * Sinh 10 câu quiz từ nội dung file S3 dùng AI
      * Body: { "key": "documents/2026-05-25/xxx.docx" }
      */
-    @Operation(summary = "Generate 10-question quiz from S3 file content using AI")
+    @Operation(summary = "Generate 10-question quiz from S3 file content using AI (Requires authentication)")
     @PostMapping("/quiz")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<QuizGenerateResponse>> generateQuiz(
             @RequestBody SessionContentRequest request) {
 

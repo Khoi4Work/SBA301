@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,13 +32,14 @@ public class RagController {
     // TIÊM INTERFACE: Dependency Inversion Principle (SOLID)
     private final RagService ragService;
 
-    @Operation(summary = "Upload and index a document", description = "Uploads a file (PDF, TXT, etc.), extracts content, and stores it in the vector database for RAG.")
+    @Operation(summary = "Upload and index a document (Requires ADMIN, STAFF or INSTRUCTOR)", description = "Uploads a file (PDF, TXT, etc.), extracts content, and stores it in the vector database for RAG.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "File uploaded and indexed successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid file or empty file uploaded"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error during indexing process")
     })
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
     public ResponseEntity<com.philosophy.rag.base.response.ApiResponse<String>> upload(
             @RequestPart("file") MultipartFile file) {
         if (file.isEmpty()) {
@@ -85,12 +87,13 @@ public class RagController {
         return ResponseEntity.ok(com.philosophy.rag.base.response.ApiResponse.success(result));
     }
 
-    @Operation(summary = "Reset the Vector Store", description = "Completely wipes all indexed documents from the vector store. This operation is irreversible.")
+    @Operation(summary = "Reset the Vector Store (Requires ADMIN)", description = "Completely wipes all indexed documents from the vector store. This operation is irreversible.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Vector store reset successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Failed to reset the vector store")
     })
     @DeleteMapping("/reset")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<com.philosophy.rag.base.response.ApiResponse<String>> resetDatabase() {
         log.warn("Triggered vector store reset");
         ragService.resetVectorStore();

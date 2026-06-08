@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,8 +29,9 @@ public class DocumentController {
 
         private final S3StorageService s3StorageService;
 
-        @Operation(summary = "Upload document to S3")
+        @Operation(summary = "Upload document to S3 (Requires ADMIN, STAFF or INSTRUCTOR)")
         @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
         public ResponseEntity<ApiResponse<DocumentUploadResponse>> uploadDocument(
                         @RequestPart("file") MultipartFile file,
                         @RequestParam(value = "title", required = false) String title,

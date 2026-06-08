@@ -6,6 +6,7 @@ import com.philosophy.rag.entity.Slogan;
 import com.philosophy.rag.service.SloganService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,6 +23,8 @@ public class SloganController {
 
 
     @PostMapping("")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
+    @Operation(summary = "Add new slogan (Requires ADMIN, STAFF or INSTRUCTOR)")
     public ResponseEntity<ApiResponse<Slogan>> addSlogan(@RequestBody Slogan slogan) {
         sloganService.addSlogan(slogan);
         return ResponseEntity.ok(ApiResponse.success(slogan, "Slogan added successfully"));

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,15 +25,16 @@ public class PhilosopherController {
 
     private final PhilosopherService philosopherService;
 
-    @Operation(summary = "Get all philosophers")
+    @Operation(summary = "Get all philosophers (Requires authentication)")
     @GetMapping("/getAll")
     public ResponseEntity<ApiResponse<List<PhilosopherResponse>>> getAllPhilosophers() {
         List<PhilosopherResponse> philosophers = philosopherService.findAllPhilosophers();
         return ResponseEntity.ok(ApiResponse.success(philosophers, "Successfully retrieved philosopher list"));
     }
 
-    @Operation(summary = "Add new philosopher")
+    @Operation(summary = "Add new philosopher (Requires ADMIN, STAFF or INSTRUCTOR)")
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PhilosopherResponse>> createPhilosopher(
             @ModelAttribute @Valid PhilosopherRequest request,
             @RequestParam(value = "file", required = false) MultipartFile file) {
@@ -40,8 +42,9 @@ public class PhilosopherController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Successfully added philosopher"));
     }
 
-    @Operation(summary = "Update philosopher")
+    @Operation(summary = "Update philosopher (Requires ADMIN, STAFF or INSTRUCTOR)")
     @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
     public ResponseEntity<ApiResponse<PhilosopherResponse>> updatePhilosopher(
             @PathVariable java.util.UUID id,
             @ModelAttribute @Valid PhilosopherRequest request,
@@ -50,8 +53,9 @@ public class PhilosopherController {
         return ResponseEntity.ok(ApiResponse.success(response, "Successfully updated philosopher"));
     }
 
-    @Operation(summary = "Delete all philosophers")
+    @Operation(summary = "Delete all philosophers (Requires ADMIN)")
     @DeleteMapping("/deleteAll")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteAllPhilosophers() {
         philosopherService.deleteAllPhilosophers();
         return ResponseEntity.ok(ApiResponse.success(null, "Successfully deleted all philosophers"));
