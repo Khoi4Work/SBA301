@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
                         .requestMatchers("/api/slogan/**").permitAll()
+                        .requestMatchers("/api/health").permitAll()
 
 
                         // Protected APIs - Detailed Permissions
