@@ -35,12 +35,14 @@ public class JwtTokenProvider {
     public String createToken(String username, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        claims.put("tokenVersion", 0L);
         return createToken(claims, username, TOKEN_VALIDITY);
     }
 
-    public String createToken(String username, String role, long validityMillis) {
+    public String createToken(String username, String role, Long tokenVersion, long validityMillis) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        claims.put("tokenVersion", tokenVersion);
         return createToken(claims, username, validityMillis);
     }
 
@@ -82,5 +84,23 @@ public class JwtTokenProvider {
 
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    public Long extractTokenVersion(String token) {
+        return extractClaim(token, claims -> {
+            Object value = claims.get("tokenVersion");
+
+            if (value == null) return null;
+
+            if (value instanceof Integer) {
+                return ((Integer) value).longValue();
+            }
+
+            if (value instanceof Long) {
+                return (Long) value;
+            }
+
+            return Long.valueOf(value.toString());
+        });
     }
 }

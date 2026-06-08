@@ -61,6 +61,10 @@ public class User extends BaseEntity {
     @Column(name = "cloudinary_public_id", length = 255)
     private String cloudinaryPublicId;
 
+    @Column(name = "token_version")
+    @Builder.Default
+    private Long tokenVersion = 0L;
+
     /**
      * Phân quyền người dùng.
      * Mặc định là LEARNER.
