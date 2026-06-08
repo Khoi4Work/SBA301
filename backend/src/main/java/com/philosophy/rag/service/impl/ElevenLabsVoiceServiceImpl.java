@@ -11,6 +11,7 @@ import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 import java.util.Base64;
@@ -36,7 +37,7 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
     @Override
     public ChatResponse chat(TtsRequest request) {
         String chatResponseText = cleanTextForTTS(ragService.ask(request.text(), request.philosopherId()));
-        String audioBase64 = textToSpeak(new TtsRequest(chatResponseText, request.voice(), request.philosopherId()));
+        String audioBase64 = textToSpeak(new TtsRequest(chatResponseText, voiceId, request.philosopherId()));
         return new ChatResponse(chatResponseText, audioBase64);
     }
 
@@ -53,7 +54,7 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
                     .uri("/v1/text-to-speech/{voice_id}", voice)
                     .header("xi-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(new ElevenLabsRequest(text, getVoiceSettings()))
+                    .bodyValue(new ElevenLabsRequest("eleven_turbo_v2_5", text, getVoiceSettings()))
                     .retrieve()
                     .bodyToMono(byte[].class)
                     .block();
@@ -66,14 +67,20 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
             log.info("Tạo giọng nói ElevenLabs và mã hóa Base64 thành công!");
             return base64Audio;
 
+        } catch (WebClientResponseException e) {
+            // ĐÂY LÀ ĐOẠN QUAN TRỌNG NHẤT ĐỂ TÌM LỖI 400
+            String errorBody = e.getResponseBodyAsString();
+            log.error("Lỗi từ ElevenLabs API (HTTP {}): {}", e.getStatusCode(), errorBody);
+
+            throw new RuntimeException("Lỗi cấu hình ElevenLabs: " + errorBody);
         } catch (Exception e) {
-            log.error("Lỗi khi gọi ElevenLabs API: ", e);
-            throw new RuntimeException("Lỗi ElevenLabs TTS: " + e.getMessage());
+            log.error("Lỗi kết nối ElevenLabs API: ", e);
+            throw new RuntimeException("Lỗi hệ thống khi gọi TTS: " + e.getMessage());
         }
     }
 
     private VoiceSettings getVoiceSettings() {
-        return new VoiceSettings(0.5f, 1.0f, "v2");
+        return new VoiceSettings(0.5f, 0.75f, 0.0f);
     }
 
     public String cleanTextForTTS(String rawText) {
@@ -91,6 +98,6 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
     }
 
     // Inner classes for API requests
-    private record ElevenLabsRequest(String text, VoiceSettings voice_settings) {}
-    private record VoiceSettings(float stability, float similarity_boost, String style) {}
+    private record ElevenLabsRequest(String model_id, String text, VoiceSettings voice_settings) {}
+    private record VoiceSettings(float stability, float similarity_boost, float style_exaggeration) {}
 }
