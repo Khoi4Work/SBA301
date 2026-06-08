@@ -17,13 +17,14 @@ import ProtectedRoute from "@/contexts/ProtectedRoute.jsx";
 import Profile from "@/pages/Profile.jsx";
 import ConsumeristEscape from "@/pages/ConsumeristEscape.jsx";
 import DialecticalDebate from "@/pages/DialecticalDebate.jsx";
+import ForgotPassword from "@/pages/auth/ForgotPassword.jsx";
 
 
 function AppLayout() {
     const location = useLocation();
 
     // Ẩn header ở home + login + lesson + quiz play (có header riêng hoặc cần tập trung)
-    const hideHeader = ['/', '/login', '/study/lesson', '/review/escape', '/review/debate'].includes(location.pathname) || location.pathname.startsWith('/review/play');
+    const hideHeader = ['/', '/login', '/forgot-password', '/study/lesson', '/review/escape', '/review/debate'].includes(location.pathname) || location.pathname.startsWith('/review/play');
 
     return (
         <>
@@ -39,6 +40,7 @@ function AppLayout() {
                 <Route path="/review/debate" element={<ProtectedRoute><DialecticalDebate /></ProtectedRoute>} />
                 <Route path="/review/play/:id" element={<QuizPlay />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
 
                 <Route
                     path="/model"
