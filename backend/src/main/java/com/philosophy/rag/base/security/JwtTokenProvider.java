@@ -23,7 +23,7 @@ public class JwtTokenProvider {
     public static final long REFRESH_TOKEN_VALIDITY = 604800000L; // 7 days
     private final long TOKEN_VALIDITY = 86400000L; // 24h (legacy)
     // Spring sẽ truyền giá trị thông qua tham số này khi khởi tạo
-    
+
     public JwtTokenProvider(@Value("${jwt.secret:default-secret-key}") String secretKey) {
         this.SECRET_KEY = secretKey;
     }
@@ -32,14 +32,15 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    public String createToken(String username) {
+    public String createToken(String username, String role) {
         Map<String, Object> claims = new HashMap<>();
-        // TODO: Add roles/permissions here when needed
+        claims.put("role", role);
         return createToken(claims, username, TOKEN_VALIDITY);
     }
 
-    public String createToken(String username, long validityMillis) {
+    public String createToken(String username, String role, long validityMillis) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role);
         return createToken(claims, username, validityMillis);
     }
 
@@ -60,6 +61,10 @@ public class JwtTokenProvider {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

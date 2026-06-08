@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -94,6 +95,13 @@ public class UserController {
         return ResponseEntity.ok(
                 ApiResponse.success(response, "Avatar uploaded successfully")
         );
+    }
+
+    @Operation(summary = "Test Admin Endpoint")
+    @GetMapping("/test-admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> testAdmin() {
+        return ResponseEntity.ok(ApiResponse.success("Hello Admin!", "Success"));
     }
 
     @Operation(summary = "Get user dashboard stats")
