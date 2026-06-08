@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -29,8 +31,8 @@ public class EdgeTtsVoiceServiceImpl implements VoiceService {
 
     @Override
     public ChatResponse chat(TtsRequest request) {
-        String chatResponseText = cleanTextForTTS(ragService.ask(request.text()));
-        TtsRequest newResponse = new TtsRequest(chatResponseText, request.voice());
+        String chatResponseText = cleanTextForTTS(ragService.ask(request.text(), request.philosopherId()));
+        TtsRequest newResponse = new TtsRequest(chatResponseText, request.voice(), request.philosopherId());
         String audioBase64 = textToSpeak(newResponse);
         return new ChatResponse(chatResponseText, audioBase64);
     }

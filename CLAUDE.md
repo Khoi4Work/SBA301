@@ -50,3 +50,4 @@ The project is a RAG (Retrieval-Augmented Generation) application for philosophy
 - **Logging**: Use `@Slf4j` for logging; avoid `System.out.println`.
 - **Validation**: Use `@Validated` and standard constraints (`@NotBlank`, `@NotNull`) in controllers.
 - **Error Flow**: `Service/Controller` $\rightarrow$ `throw new ApiException(ErrorCode.XXX)` $\rightarrow$ `GlobalExceptionHandler` $\rightarrow$ `ApiResponse`.
+- **Git Commits**: Do NOT include "Co-Authored-By" tags in commit messages.
