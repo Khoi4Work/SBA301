@@ -159,6 +159,7 @@ const VirtualAssistant = () => {
                                 micError={micError}
                                 setAiTalking={setIsAiTalking}
                                 setAiThinking={setIsAiThinking}
+                                philosopherId={philosopher?.id}
                             />
                         </ChatPanel>
                     </div>

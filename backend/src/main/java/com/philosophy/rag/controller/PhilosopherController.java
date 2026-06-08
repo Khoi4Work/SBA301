@@ -26,14 +26,14 @@ public class PhilosopherController {
     private final PhilosopherService philosopherService;
 
     @Operation(summary = "Get all philosophers (Requires authentication)")
-    @GetMapping("/getAll")
+    @GetMapping("/")
     public ResponseEntity<ApiResponse<List<PhilosopherResponse>>> getAllPhilosophers() {
         List<PhilosopherResponse> philosophers = philosopherService.findAllPhilosophers();
         return ResponseEntity.ok(ApiResponse.success(philosophers, "Successfully retrieved philosopher list"));
     }
 
     @Operation(summary = "Add new philosopher (Requires ADMIN, STAFF or INSTRUCTOR)")
-    @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PhilosopherResponse>> createPhilosopher(
             @ModelAttribute @Valid PhilosopherRequest request,
@@ -54,7 +54,7 @@ public class PhilosopherController {
     }
 
     @Operation(summary = "Delete all philosophers (Requires ADMIN)")
-    @DeleteMapping("/deleteAll")
+    @DeleteMapping("/")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteAllPhilosophers() {
         philosopherService.deleteAllPhilosophers();
