@@ -15,7 +15,7 @@ public class CorsConfig {
         configuration.setAllowedOriginPatterns(java.util.List.of(
                 "http://localhost:5173",
                 "https://*.vercel.app",
-                "https://philoverse-6gn2.onrender.com"
+                "https://philoverse-lxsa.onrender.com/"
         ));
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(java.util.List.of("*"));
