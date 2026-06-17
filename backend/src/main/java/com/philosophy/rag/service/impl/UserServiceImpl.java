@@ -52,15 +52,25 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse getCurrentUser() {
+        User user = findCurrentUser();
+        return toResponse(user);
+    }
+
+    @Override
+    public UUID getCurrentUserId() {
+        return findCurrentUser().getUserId();
+    }
+
+    private User findCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
             throw new ApiException(ErrorCode.UNAUTHENTICATED);
         }
         String username = authentication.getName();
-        User user = userRepository.findByUsername(username)
+        return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-        return toResponse(user);
     }
+
 
     @Override
     public List<UserResponse> getAllUsers() {

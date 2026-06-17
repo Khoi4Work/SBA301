@@ -14,6 +14,8 @@ public interface UserService {
 
     UserResponse getCurrentUser();
 
+    UUID getCurrentUserId();
+
     List<UserResponse> getAllUsers();
 
     UserResponse updateUser(UUID userId, UserUpdateRequest request);

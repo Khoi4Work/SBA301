@@ -43,7 +43,7 @@ public class PhilosopherController {
     }
 
     @Operation(summary = "Update philosopher (Requires ADMIN, STAFF or INSTRUCTOR)")
-    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
     public ResponseEntity<ApiResponse<PhilosopherResponse>> updatePhilosopher(
             @PathVariable java.util.UUID id,

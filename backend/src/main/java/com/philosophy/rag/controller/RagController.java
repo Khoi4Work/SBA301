@@ -3,7 +3,9 @@ package com.philosophy.rag.controller;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.dto.response.DocumentContent;
+import com.philosophy.rag.service.ChatHistoryService;
 import com.philosophy.rag.service.RagService;
+import com.philosophy.rag.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +33,8 @@ public class RagController {
 
     // TIÊM INTERFACE: Dependency Inversion Principle (SOLID)
     private final RagService ragService;
+    private final ChatHistoryService chatHistoryService;
+    private final UserService userService;
 
     @Operation(summary = "Upload and index a document (Requires ADMIN, STAFF or INSTRUCTOR)", description = "Uploads a file (PDF, TXT, etc.), extracts content, and stores it in the vector database for RAG.")
     @ApiResponses(value = {
@@ -69,7 +73,12 @@ public class RagController {
             @RequestParam(value = "philosopherId", required = false) UUID philosopherId) {
 
         log.info("Received RAG query: {}, PhilosopherID: {}", query, philosopherId);
+
+        java.time.LocalDateTime start = java.time.LocalDateTime.now();
         String result = ragService.ask(query, philosopherId);
+        java.time.LocalDateTime end = java.time.LocalDateTime.now();
+
+        chatHistoryService.saveInteraction(userService.getCurrentUserId(), philosopherId, query, result, start, end);
 
         return ResponseEntity.ok(com.philosophy.rag.base.response.ApiResponse.success(result));
     }
