@@ -30,7 +30,7 @@ public class DocumentController {
         private final S3StorageService s3StorageService;
 
         @Operation(summary = "Upload document to S3 (Requires ADMIN, STAFF or INSTRUCTOR)")
-        @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
         public ResponseEntity<ApiResponse<DocumentUploadResponse>> uploadDocument(
                         @RequestPart("file") MultipartFile file,
@@ -66,27 +66,27 @@ public class DocumentController {
                 return ResponseEntity.ok(ApiResponse.success(documents, "Document list retrieved successfully"));
         }
 
-        @Operation(summary = "Download a document from S3 by key")
-        @GetMapping("/download")
-        public ResponseEntity<byte[]> downloadDocument(
-                        @RequestParam("key") String key) throws ApiException {
-
-                log.info("Downloading document with key: {}", key);
-                byte[] fileBytes = s3StorageService.downloadDocument(key);
-                String contentType = s3StorageService.getContentType(key);
-
-                // Extract readable filename from key (format: documents/date/uuid-filename)
-                String fileName = key.substring(key.lastIndexOf('/') + 1);
-                if (fileName.length() > 37 && fileName.charAt(36) == '-') {
-                        fileName = fileName.substring(37);
-                }
-
-                return ResponseEntity.ok()
-                                .contentType(MediaType.parseMediaType(contentType))
-                                .header(HttpHeaders.CONTENT_DISPOSITION,
-                                                "attachment; filename=\"" + fileName + "\"")
-                                .header("Access-Control-Expose-Headers", HttpHeaders.CONTENT_DISPOSITION)
-                                .body(fileBytes);
-        }
+//        @Operation(summary = "Download a document from S3 by key")
+//        @GetMapping("/download")
+//        public ResponseEntity<byte[]> downloadDocument(
+//                        @RequestParam("key") String key) throws ApiException {
+//
+//                log.info("Downloading document with key: {}", key);
+//                byte[] fileBytes = s3StorageService.downloadDocument(key);
+//                String contentType = s3StorageService.getContentType(key);
+//
+//                // Extract readable filename from key (format: documents/date/uuid-filename)
+//                String fileName = key.substring(key.lastIndexOf('/') + 1);
+//                if (fileName.length() > 37 && fileName.charAt(36) == '-') {
+//                        fileName = fileName.substring(37);
+//                }
+//
+//                return ResponseEntity.ok()
+//                                .contentType(MediaType.parseMediaType(contentType))
+//                                .header(HttpHeaders.CONTENT_DISPOSITION,
+//                                                "attachment; filename=\"" + fileName + "\"")
+//                                .header("Access-Control-Expose-Headers", HttpHeaders.CONTENT_DISPOSITION)
+//                                .body(fileBytes);
+//        }
 
 }

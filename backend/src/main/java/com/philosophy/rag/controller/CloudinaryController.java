@@ -21,7 +21,7 @@ public class CloudinaryController {
     private final CloudinaryService cloudinaryService;
 
     @Operation(summary = "Upload an image to Cloudinary")
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<CloudinaryUploadResponse>> uploadImage(
             @RequestPart("file") MultipartFile file,
             @RequestParam(value = "folder", defaultValue = "philosophy/images") String folder) throws ApiException {
@@ -32,7 +32,7 @@ public class CloudinaryController {
     }
 
     @Operation(summary = "Delete an image from Cloudinary by public ID")
-    @DeleteMapping("/delete")
+    @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> deleteImage(
             @RequestParam("publicId") String publicId) throws ApiException {
 
