@@ -35,6 +35,7 @@ public class RagController {
     private final RagService ragService;
     private final ChatHistoryService chatHistoryService;
     private final UserService userService;
+    private final com.philosophy.rag.service.ChatSessionService chatSessionService;
 
     @Operation(summary = "Upload and index a document (Requires ADMIN, STAFF or INSTRUCTOR)", description = "Uploads a file (PDF, TXT, etc.), extracts content, and stores it in the vector database for RAG.")
     @ApiResponses(value = {
@@ -70,15 +71,22 @@ public class RagController {
     @GetMapping("/ask")
     public ResponseEntity<com.philosophy.rag.base.response.ApiResponse<String>> ask(
             @RequestParam("query") @NotBlank(message = "Query cannot be blank") String query,
-            @RequestParam(value = "philosopherId", required = false) UUID philosopherId) {
+            @RequestParam(value = "philosopherId", required = false) UUID philosopherId,
+            @RequestParam(value = "sessionId", required = false) UUID sessionId) {
 
-        log.info("Received RAG query: {}, PhilosopherID: {}", query, philosopherId);
+        log.info("Received RAG query: {}, PhilosopherID: {}, SessionID: {}", query, philosopherId, sessionId);
+
+        UUID userId = userService.getCurrentUserId();
+        if (sessionId == null) {
+            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
+            log.info("Created new chat session: {}", sessionId);
+        }
 
         java.time.LocalDateTime start = java.time.LocalDateTime.now();
-        String result = ragService.ask(query, philosopherId);
+        String result = ragService.ask(query, philosopherId, sessionId);
         java.time.LocalDateTime end = java.time.LocalDateTime.now();
 
-        chatHistoryService.saveInteraction(userService.getCurrentUserId(), philosopherId, query, result, start, end);
+        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
 
         return ResponseEntity.ok(com.philosophy.rag.base.response.ApiResponse.success(result));
     }

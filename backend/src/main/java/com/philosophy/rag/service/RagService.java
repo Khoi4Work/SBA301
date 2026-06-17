@@ -9,7 +9,7 @@ import java.util.UUID;
 public interface RagService {
     String uploadDocument(MultipartFile file) throws Exception;
 
-    String ask(String query, UUID philosopherId);
+    String ask(String query, UUID philosopherId, UUID sessionId);
 
     List<DocumentContent> listDocuments();
 

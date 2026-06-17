@@ -31,8 +31,8 @@ public class EdgeTtsVoiceServiceImpl implements VoiceService {
 
     @Override
     public ChatResponse chat(TtsRequest request) {
-        String chatResponseText = cleanTextForTTS(ragService.ask(request.text(), request.philosopherId()));
-        TtsRequest newResponse = new TtsRequest(chatResponseText, request.voice(), request.philosopherId());
+        String chatResponseText = cleanTextForTTS(ragService.ask(request.text(), request.philosopherId(), request.sessionId()));
+        TtsRequest newResponse = new TtsRequest(chatResponseText, request.voice(), request.philosopherId(), request.sessionId());
         String audioBase64 = textToSpeak(newResponse);
         return new ChatResponse(chatResponseText, audioBase64);
     }

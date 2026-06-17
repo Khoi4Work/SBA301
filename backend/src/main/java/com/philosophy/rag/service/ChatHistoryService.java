@@ -10,12 +10,17 @@ import java.util.UUID;
 public interface ChatHistoryService {
 
     /**
-     * Lưu thông tin một lượt tương tác vào lịch sử.
+     * Lưu thông tin một lượt tương tác vào lịch sử, gắn với một phiên hội thoại.
      */
-    ChatHistory saveInteraction(UUID userId, UUID philosopherId, String query, String response, LocalDateTime start, LocalDateTime end);
+    ChatHistory saveInteraction(UUID userId, UUID philosopherId, String query, String response, LocalDateTime start, LocalDateTime end, UUID sessionId);
 
     /**
      * Lấy danh sách lịch sử trò chuyện của người dùng.
      */
     List<ChatHistoryResponse> getUserHistory(UUID userId);
+
+    /**
+     * Lấy N lượt tương tác gần nhất của một phiên hội thoại để làm ngữ cảnh.
+     */
+    List<ChatHistory> getRecentHistoryBySession(UUID sessionId, int limit);
 }

@@ -14,4 +14,10 @@ public interface ChatHistoryRepository extends JpaRepository<ChatHistory, UUID> 
      * Lấy danh sách lịch sử trò chuyện của một người dùng, sắp xếp mới nhất trước.
      */
     List<ChatHistory> findByUser_UserIdOrderByCreatedAtDesc(UUID userId);
+
+    /**
+     * Lấy những tin nhắn gần nhất trong một phiên hội thoại.
+     */
+    List<ChatHistory> findBySession_SessionIdOrderByCreatedAtAsc(UUID sessionId);
 }
+

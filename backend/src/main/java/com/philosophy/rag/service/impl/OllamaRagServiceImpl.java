@@ -4,9 +4,11 @@ import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.persistence.Prompt;
 import com.philosophy.rag.dto.response.DocumentContent;
+import com.philosophy.rag.entity.ChatHistory;
 import com.philosophy.rag.entity.Philosopher;
 import com.philosophy.rag.repository.custom.VectorStoreRepository;
 import com.philosophy.rag.repository.itf.PhilosopherRepository;
+import com.philosophy.rag.service.ChatHistoryService;
 import com.philosophy.rag.service.RagService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -44,13 +46,15 @@ public class OllamaRagServiceImpl implements RagService {
     private final VectorStoreRepository vectorStoreRepository;
     private final PhilosopherRepository philosopherRepository;
     private final ChatClient chatClient;
+    private final ChatHistoryService chatHistoryService;
     private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true, java.util.List.of('\n', '\r', ' '));
 
-    public OllamaRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, PhilosopherRepository philosopherRepository, @Qualifier("ollamaChatModel") ChatModel chatModel) {
+    public OllamaRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, PhilosopherRepository philosopherRepository, @Qualifier("ollamaChatModel") ChatModel chatModel, ChatHistoryService chatHistoryService) {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
         this.philosopherRepository = philosopherRepository;
         this.chatClient = ChatClient.builder(chatModel).build();
+        this.chatHistoryService = chatHistoryService;
     }
 
     @Override
@@ -88,14 +92,14 @@ public class OllamaRagServiceImpl implements RagService {
     }
 
     @Override
-    public String ask(String query, UUID philosopherId) {
-        log.info("[Ollama RAG DEBUG] Incoming Query: {}, PhilosopherID: {}", query, philosopherId);
+    public String ask(String query, UUID philosopherId, UUID sessionId) {
+        log.info("[Ollama RAG DEBUG] Incoming Query: {}, PhilosopherID: {}, SessionID: {}", query, philosopherId, sessionId);
 
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
 
         String context = buildContext(prioritizedDocs);
-        String prompt = buildPrompt(query, context, philosopherId);
+        String prompt = buildPrompt(query, context, philosopherId, sessionId);
 
         return chatClient.prompt()
                 .user(prompt)
@@ -160,7 +164,7 @@ public class OllamaRagServiceImpl implements RagService {
         String cleaned = text.replaceAll("[\\p{Cc}&&[^\n]]", " ");
         cleaned = cleaned.replaceAll("-\s*\n", " ");
         cleaned = cleaned.replaceAll("(?<!\n)\n(?!\n)", " ");
-        cleaned = cleaned.replaceAll("\s{2,}", " ").trim();
+        cleaned = cleaned.replaceAll("\\s{2,}", " ").trim();
         return cleaned;
     }
 
@@ -221,7 +225,7 @@ public class OllamaRagServiceImpl implements RagService {
         return sb.toString();
     }
 
-    private String buildPrompt(String query, String context, UUID philosopherId) {
+    private String buildPrompt(String query, String context, UUID philosopherId, UUID sessionId) {
         String systemGuidelines = Prompt.RAG_ACADEMIC_PROFESSOR
                 .replace("You are an expert academic professor.", "") // Remove default persona
                 .trim();
@@ -238,9 +242,23 @@ public class OllamaRagServiceImpl implements RagService {
             finalSystemPrompt = "You are an expert academic professor." + systemGuidelines;
         }
 
+        StringBuilder historyContext = new StringBuilder();
+        if (sessionId != null) {
+            List<ChatHistory> history = chatHistoryService.getRecentHistoryBySession(sessionId, 10);
+            if (!history.isEmpty()) {
+                historyContext.append("\n\n### Conversation History:\n");
+                for (ChatHistory turn : history) {
+                    historyContext.append("User: ").append(turn.getQuery()).append("\n");
+                    historyContext.append("AI: ").append(turn.getResponse()).append("\n");
+                }
+            }
+        }
+
         return finalSystemPrompt
                 .replace("{context}", context)
-                .replace("{query}", query);
+                .replace("{query}", query)
+                + historyContext.toString()
+                + "\n\nUser: " + query;
     }
 
     private void deleteTempFile(Path filePath) {

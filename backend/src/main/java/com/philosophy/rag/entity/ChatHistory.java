@@ -36,6 +36,14 @@ public class ChatHistory extends BaseEntity {
     }
 
     /**
+     * Phiên hội thoại chứa tương tác này.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "session_id",
+                foreignKey = @ForeignKey(name = "fk_chat_history_session"))
+    private ChatSession session;
+
+    /**
      * Người dùng tham gia hội thoại.
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
