@@ -10,6 +10,7 @@ import com.philosophy.rag.repository.custom.VectorStoreRepository;
 import com.philosophy.rag.repository.itf.PhilosopherRepository;
 import com.philosophy.rag.repository.itf.ChatHistoryRepository;
 import com.philosophy.rag.service.ChatHistoryService;
+import com.philosophy.rag.service.CohereRerankService;
 import com.philosophy.rag.service.RagService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;

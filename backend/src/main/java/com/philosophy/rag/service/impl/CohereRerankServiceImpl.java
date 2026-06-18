@@ -21,6 +21,9 @@ public class CohereRerankServiceImpl implements CohereRerankService {
     @Value("${cohere.rerank.model}")
     private String model;
 
+    @Value("${cohere.top.k}")
+    private int topK;
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
@@ -36,7 +39,8 @@ public class CohereRerankServiceImpl implements CohereRerankService {
             CohereRerankRequest request = new CohereRerankRequest(
                     model,
                     query,
-                    candidates.stream().map(Document::getText).collect(Collectors.toList())
+                    candidates.stream().map(Document::getText).collect(Collectors.toList()),
+                    topK
             );
 
             // Set headers
@@ -81,7 +85,8 @@ public class CohereRerankServiceImpl implements CohereRerankService {
     private record CohereRerankRequest(
             String model,
             String query,
-            List<String> documents
+            List<String> documents,
+            int top_n
     ) {}
 
     private record CohereRerankResponse(

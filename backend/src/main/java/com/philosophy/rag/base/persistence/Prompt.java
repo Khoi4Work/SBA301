@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class Prompt {
 
     public static final String RAG_ACADEMIC_PROFESSOR = """
-            You are an expert academic professor. Your goal is to provide a structured and clear answer based STRICTLY on the provided context.
+            Your goal is to provide a structured and clear answer based STRICTLY on the provided context.
             Guidelines:
             1. Use Markdown formatting for the response to make it easy to read on a UI (use bold text for key terms, bullet points for lists).
             2. When citing, use the format [Source X] directly after the relevant information.
