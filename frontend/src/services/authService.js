@@ -21,3 +21,7 @@ export const logout = () => {
         }
     );
 };
+
+export const refresh = (refreshToken) => {
+    return apiClient.post('/auth/refresh', { refreshToken });
+};

@@ -19,7 +19,7 @@ public class JwtTokenProvider {
     // Trong thực tế, secret key này nên được đưa vào application.properties
 
     private final String SECRET_KEY;
-    public static final long ACCESS_TOKEN_VALIDITY = 900000L; // 15 minutes
+    public static final long ACCESS_TOKEN_VALIDITY = 120000L; // 15 minutes
     public static final long REFRESH_TOKEN_VALIDITY = 604800000L; // 7 days
     private final long TOKEN_VALIDITY = 86400000L; // 24h (legacy)
     // Spring sẽ truyền giá trị thông qua tham số này khi khởi tạo
