@@ -98,7 +98,8 @@ export function AuthProvider({ children }) {
                 fullName: authData.fullName,
                 biography: authData.biography,
                 avatarUrl: authData.avatarUrl,
-                email: authData.email
+                email: authData.email,
+                role: authData.role
             });
 
             localStorage.setItem(
@@ -109,7 +110,8 @@ export function AuthProvider({ children }) {
                     fullName: authData.fullName,
                     biography: authData.biography,
                     avatarUrl: authData.avatarUrl,
-                    email: authData.email
+                    email: authData.email,
+                    role: authData.role
                 })
             );
 

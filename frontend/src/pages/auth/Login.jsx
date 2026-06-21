@@ -19,9 +19,28 @@ export default function Login() {
         setLoading(true);
 
         try {
-            await login({ usernameOrEmail, password });
-            // Nếu login thành công, redirect về home
-            navigate('/dashboard');
+            const res = await login({ usernameOrEmail, password });
+          // Lấy role của user sau khi đăng nhập thành công
+          // (Đường dẫn lấy role có thể khác tuỳ vào cấu trúc response res của bạn)
+          const userRole = res.data?.result?.role || res.data?.role;
+
+          // 1. Đọc "bộ nhớ" xem trước đó user đang muốn đi đâu
+          const intendedPath = location.state?.from?.pathname;
+
+          // 2. Chuyển hướng thông minh
+          if (intendedPath) {
+            // Trường hợp A: Bị đá từ /admin (hoặc trang bảo vệ nào đó) ra đây
+            // -> Login xong thì trả về đúng trang người ta đang đi dở
+            navigate(intendedPath, { replace: true });
+          } else {
+            // Trường hợp B: Tự chủ động vào thẳng trang /login
+            // -> Phân luồng dựa trên Role
+            if (userRole === 'ADMIN') {
+              navigate('/admin', { replace: true });
+            } else {
+              navigate('/dashboard', { replace: true }); // Trả về dashboard của user bình thường
+            }
+          }
         } catch (err) {
             const msg =
                 err.response?.data?.message ||

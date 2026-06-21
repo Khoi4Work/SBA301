@@ -1,27 +1,20 @@
 import {
-  Archive,
-  BookMarked,
   BookOpen,
   GraduationCap,
   LayoutDashboard,
   Clapperboard,
-  Medal,
   Sparkles,
 } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
-import {useEffect, useState} from "react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext.jsx";
+
 
 export function Sidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
-  const [user, setUser] = useState(null);
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
+  const { user } = useContext(AuthContext);
 
   const getMenuItemClass = (path, alternativePaths = []) => {
     const isActive = path === "/"
@@ -90,13 +83,13 @@ export function Sidebar() {
       {/*  </button>*/}
       {/*</div>*/}
       <div className="px-4 mb-6 space-y-1">
-        <a
-          className="flex items-center gap-4 px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors"
-          href="#"
-        >
-          <Archive className="w-5 h-5" />
-          <span className="font-label-md text-label-md">Lưu trữ</span>
-        </a>
+        {/*<a*/}
+        {/*  className="flex items-center gap-4 px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors"*/}
+        {/*  href="#"*/}
+        {/*>*/}
+        {/*  <Archive className="w-5 h-5" />*/}
+        {/*  <span className="font-label-md text-label-md">Lưu trữ</span>*/}
+        {/*</a>*/}
         {/*<a*/}
         {/*  className="flex items-center gap-4 px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors"*/}
         {/*  href="#"*/}
