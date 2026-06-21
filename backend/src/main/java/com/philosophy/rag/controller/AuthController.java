@@ -3,10 +3,13 @@ package com.philosophy.rag.controller;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.dto.request.ForgotPasswordRequest;
 import com.philosophy.rag.dto.request.LoginRequest;
 import com.philosophy.rag.dto.request.RegisterRequest;
+import com.philosophy.rag.dto.request.ResetPasswordRequest;
 import com.philosophy.rag.dto.response.AuthResponse;
 import com.philosophy.rag.service.AuthService;
+import com.philosophy.rag.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -15,12 +18,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
@@ -55,5 +61,27 @@ public class AuthController {
         }
         AuthResponse response = authService.refreshAccessToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+        passwordResetService.forgotPassword(request);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "If this email exists, a reset link has been sent"
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+        passwordResetService.resetPassword(request);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Password has been reset successfully"
+        ));
     }
 }

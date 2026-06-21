@@ -1,9 +1,30 @@
+import { useState } from "react";
 import { ArrowRight, ChevronLeft, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { forgotPassword } from "@/services/authService";
 
 export default function ForgotPasswordCard() {
-    const handleSubmit = (e) => {
+    const [email, setEmail] = useState("");
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        setMessage("");
+        setError("");
+        setLoading(true);
+
+        try {
+            await forgotPassword(email);
+
+            setMessage("Nếu email tồn tại, liên kết khôi phục đã được gửi đến hộp thư của bạn.");
+        } catch (err) {
+            setError("Không thể gửi email khôi phục. Vui lòng thử lại sau.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -30,7 +51,10 @@ export default function ForgotPasswordCard() {
                             type="email"
                             id="email"
                             placeholder="name@lyceum.edu"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-transparent border border-outline-variant/60 outline-none text-on-surface placeholder:text-outline-variant px-4 py-3.5 text-sm transition-colors focus:border-secondary/70 focus:bg-primary-container/20"
+                            required
                         />
 
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-secondary/50 transition-colors pointer-events-none">
@@ -39,11 +63,24 @@ export default function ForgotPasswordCard() {
                     </div>
                 </div>
 
+                {message && (
+                    <p className="mb-4 text-[13px] text-secondary/80 leading-relaxed text-center">
+                        {message}
+                    </p>
+                )}
+
+                {error && (
+                    <p className="mb-4 text-[13px] text-red-400 leading-relaxed text-center">
+                        {error}
+                    </p>
+                )}
+
                 <button
                     type="submit"
-                    className="w-full bg-transparent border border-secondary/60 text-secondary text-[11px] font-bold tracking-[0.15em] uppercase py-4 mt-2 hover:bg-secondary/10 transition-colors flex items-center justify-center gap-3"
+                    disabled={loading}
+                    className="w-full bg-transparent border border-secondary/60 text-secondary text-[11px] font-bold tracking-[0.15em] uppercase py-4 mt-2 hover:bg-secondary/10 transition-colors flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Khôi phục mật mã
+                    {loading ? "Đang gửi..." : "Khôi phục mật mã"}
                     <ArrowRight size={14} strokeWidth={2} />
                 </button>
             </form>

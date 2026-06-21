@@ -1,11 +1,11 @@
 import React from 'react';
-import {BrowserRouter as Router, Route, Routes, useLocation} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Login from './pages/auth/Login.jsx';
 import Karl_Marx from "./Avatar3D/Karl_Marx.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
-import {AuthProvider} from "@/contexts/AuthContext.jsx";
+import { AuthProvider } from "@/contexts/AuthContext.jsx";
 import Register from "@/pages/auth/Register.jsx";
 import VirtualAssistant from "@/pages/ai-chatting/VirtualAssistant.jsx";
 import Chat from "@/pages/ai-chatting/Chat.jsx";
@@ -18,6 +18,7 @@ import Profile from "@/pages/Profile.jsx";
 import ConsumeristEscape from "@/pages/ConsumeristEscape.jsx";
 import DialecticalDebate from "@/pages/DialecticalDebate.jsx";
 import ForgotPassword from "@/pages/auth/ForgotPassword.jsx";
+import ResetPassword from "@/pages/auth/ResetPassword.jsx";
 import AdminLayout from "@/components/AdminLayout.jsx";
 import AdminDashboard from "@/pages/admin/AdminDashboard.jsx";
 import AIPhilosophersManagement from "@/pages/admin/AIPhilosophersManagement.jsx";
@@ -48,6 +49,7 @@ function AppRoutes() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             <Route path="/study/lesson" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
             <Route path="/review/escape" element={<ProtectedRoute><ConsumeristEscape /></ProtectedRoute>} />

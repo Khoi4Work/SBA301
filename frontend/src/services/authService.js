@@ -25,3 +25,14 @@ export const logout = () => {
 export const refresh = (refreshToken) => {
     return apiClient.post('/auth/refresh', { refreshToken });
 };
+
+export const forgotPassword = (email) => {
+    return apiClient.post('/auth/forgot-password', { email });
+};
+
+export const resetPassword = (token, newPassword) => {
+    return apiClient.post('/auth/reset-password', {
+        token,
+        newPassword,
+    });
+};
