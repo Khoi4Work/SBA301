@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import apiClient from "@/services/apiClient";
 import { getChatSessions } from "@/services/sessionService.js";
+import { useSession } from '@/contexts/SessionContext.jsx';
 import {
   Book,
   Brain,
@@ -19,6 +21,8 @@ import { QuickLinkItem } from "./QuickLinkItem";
 import { StatCard } from "./StatCard";
 
 export function Dashboard() {
+  const navigate = useNavigate();
+  const { switchSession } = useSession();
   const [stats, setStats] = useState({
     learningProgress: 0,
     totalXp: 0,
@@ -82,7 +86,7 @@ export function Dashboard() {
         />
         <StatCard
           icon={<Clock className="w-5 h-5" />}
-          title="5.5"
+          title={loading ? "..." : stats.totalChatTime?.toFixed(1) || "0.0"}
           postfix="h"
           subtitle="Giờ đàm đạo"
           colorClass="text-tertiary"
@@ -104,9 +108,9 @@ export function Dashboard() {
             <h2 className="font-display-lg text-2xl text-on-surface">
               Các cuộc đàm đạo đang diễn ra
             </h2>
-            <button className="text-xs font-label-md text-primary uppercase tracking-widest hover:underline">
-              Xem tất cả
-            </button>
+            {/*<button className="text-xs font-label-md text-primary uppercase tracking-widest hover:underline">*/}
+            {/*  Xem tất cả*/}
+            {/*</button>*/}
           </div>
           <div className="bg-surface-container-low rounded-xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden">
             {sessions.length === 0 ? (
@@ -128,8 +132,21 @@ export function Dashboard() {
                     statusLabel={index === 0 ? "Đang đàm đạo" : "Đã lưu"}
                     isActive={index === 0}
                     colorClass={colors[index % colors.length]}
+                    onClick={() => {
+                      switchSession(session.sessionId, session.philosopherId);
+                      navigate("/ai", {
+                        state: {
+                          philosopher: {
+                            id: session.philosopherId,
+                            name: session.philosopherName
+                          },
+                          openChat: true
+                        }
+                      });
+                    }}
                   />
                 );
+
               })
             )}
           </div>

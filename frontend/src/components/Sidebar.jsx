@@ -9,7 +9,7 @@ import {
   Pencil,
   Archive
 } from "lucide-react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/contexts/AuthContext.jsx";
 import { useSession } from "@/contexts/SessionContext.jsx";
@@ -17,22 +17,23 @@ import { getChatSessions, deleteChatSession, updateChatSessionTitle } from "@/se
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
-  const { currentSessionId, setSessionId, clearSession } = useSession();
+  const { currentSessionId, switchSession, clearSession, currentPhilosopherId } = useSession();
   const [sessions, setSessions] = useState([]);
   const { user } = useContext(AuthContext);
 
     useEffect(() => {
         const fetchSessions = async () => {
             try {
-                const data = await getChatSessions();
+                const data = await getChatSessions(currentPhilosopherId);
                 setSessions(data);
             } catch (error) {
                 console.error("Lỗi tải lịch sử hội thoại:", error);
             }
         };
         fetchSessions();
-    }, []);
+    }, [currentPhilosopherId]);
 
     const handleDeleteSession = async (e, id) => {
         e.stopPropagation();
@@ -121,7 +122,7 @@ export function Sidebar() {
           <span className="font-label-md text-label-md">Ôn tập</span >
         </Link>
 
-        {(currentPath.startsWith("/chat") || currentPath.startsWith("/ai")) && (
+        {currentPath.startsWith("/ai") && (
           <div className="pt-6 pb-2 px-4">
             <p className="text-[10px] uppercase tracking-widest text-on-surface-variant/60 font-semibold mb-3">
               Lịch sử luận đàm
@@ -135,7 +136,18 @@ export function Sidebar() {
                 sessions.map(session => (
                   <div
                     key={session.sessionId}
-                    onClick={() => setSessionId(session.sessionId)}
+                    onClick={() => {
+                      switchSession(session.sessionId, session.philosopherId);
+                      navigate("/ai", {
+                        state: {
+                          philosopher: {
+                            id: session.philosopherId,
+                            name: session.philosopherName
+                          },
+                          openChat: true
+                        }
+                      });
+                    }}
                     className={`group flex items-center justify-between px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
                       currentSessionId === session.sessionId
                       ? "bg-primary/10 text-primary"
@@ -171,7 +183,7 @@ export function Sidebar() {
           </div >
         )}
       </div >
-      {(currentPath.startsWith("/chat") || currentPath.startsWith("/ai")) && (
+      {currentPath.startsWith("/ai") && (
         <div className="px-6 mb-8">
           <button
             onClick={clearSession}

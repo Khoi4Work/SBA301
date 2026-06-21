@@ -7,6 +7,10 @@ export const SessionProvider = ({ children }) => {
         return localStorage.getItem('chatSessionId');
     });
 
+    const [currentPhilosopherId, setCurrentPhilosopherId] = useState(() => {
+        return localStorage.getItem('chatPhilosopherId');
+    });
+
     const setSessionId = (id) => {
         setCurrentSessionId(id);
         if (id) {
@@ -16,13 +20,34 @@ export const SessionProvider = ({ children }) => {
         }
     };
 
+    const setPhilosopherId = (id) => {
+        setCurrentPhilosopherId(id);
+        if (id) {
+            localStorage.setItem('chatPhilosopherId', id);
+        } else {
+            localStorage.removeItem('chatPhilosopherId');
+        }
+    };
+
+    const switchSession = (sessionId, philosopherId) => {
+        setSessionId(sessionId);
+        setPhilosopherId(philosopherId);
+    };
+
     const clearSession = () => {
         setCurrentSessionId(null);
         localStorage.removeItem('chatSessionId');
     };
 
     return (
-        <SessionContext.Provider value={{ currentSessionId, setSessionId, clearSession }}>
+        <SessionContext.Provider value={{
+            currentSessionId,
+            setSessionId,
+            currentPhilosopherId,
+            setPhilosopherId,
+            switchSession,
+            clearSession
+        }}>
             {children}
         </SessionContext.Provider>
     );

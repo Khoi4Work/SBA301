@@ -32,10 +32,11 @@ public class ChatSessionController {
     @Operation(summary = "List all chat sessions for the current user")
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<ChatSessionResponse>>> listSessions() {
+    public ResponseEntity<ApiResponse<List<ChatSessionResponse>>> listSessions(
+            @RequestParam(value = "philosopherId", required = false) UUID philosopherId) {
         UUID userId = userService.getCurrentUserId();
-        log.info("Fetching chat sessions for user: {}", userId);
-        List<ChatSessionResponse> sessions = chatSessionService.listUserSessions(userId);
+        log.info("Fetching chat sessions for user: {}, philosopherId: {}", userId, philosopherId);
+        List<ChatSessionResponse> sessions = chatSessionService.listUserSessions(userId, philosopherId);
         return ResponseEntity.ok(ApiResponse.success(sessions));
     }
 

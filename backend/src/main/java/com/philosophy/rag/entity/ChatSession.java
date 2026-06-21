@@ -44,10 +44,10 @@ public class ChatSession extends BaseEntity {
     private User user;
 
     /**
-     * Triết gia được chọn cho phiên hội thoại này (Có thể null).
+     * Triết gia được chọn cho phiên hội thoại này (Bắt buộc).
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "philosopher_id",
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "philosopher_id", nullable = false,
                 foreignKey = @ForeignKey(name = "fk_session_philosopher"))
     private Philosopher philosopher;
 

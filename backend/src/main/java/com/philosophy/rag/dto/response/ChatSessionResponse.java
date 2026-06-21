@@ -11,5 +11,6 @@ import java.util.UUID;
 public class ChatSessionResponse {
     private UUID sessionId;
     private String title;
+    private UUID philosopherId;
     private String philosopherName;
 }

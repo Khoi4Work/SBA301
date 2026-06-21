@@ -7,14 +7,17 @@ import { DialogueView } from "@/components/DialogueView.jsx";
 import "@/assets/styles/philoverse-chat.css";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import { useSession } from '@/contexts/SessionContext.jsx';
 
 export default function  Chat() {
     const navigate = useNavigate();
+    const { setPhilosopherId } = useSession();
     const [view, setView] = useState("selection");
     const [selectedPhilosopher, setSelectedPhilosopher] = useState(null);
 
     const handleSelect = (philosopher) => {
         setSelectedPhilosopher(philosopher);
+        setPhilosopherId(philosopher.id);
         navigate("/ai", { state: { philosopher } });
     };
 

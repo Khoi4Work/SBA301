@@ -30,9 +30,12 @@ export async function speakText(text, voice = 'vi-VN-HoaiMyNeural') {
 
 /**
  * Lấy danh sách các phiên hội thoại chat
+ * @param {string} philosopherId - (Tùy chọn) Lọc phiên theo triết gia
  */
-export async function getChatSessions() {
-    const response = await apiClient.get('/chat-sessions');
+export async function getChatSessions(philosopherId = null) {
+    const response = await apiClient.get('/chat-sessions', {
+        params: { philosopherId }
+    });
     return response.data?.result || [];
 }
 

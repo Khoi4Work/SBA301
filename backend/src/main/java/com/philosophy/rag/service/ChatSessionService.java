@@ -15,8 +15,10 @@ public interface ChatSessionService {
 
     /**
      * Lấy danh sách phiên hội thoại của người dùng.
+     * @param userId ID người dùng
+     * @param philosopherId (Tùy chọn) ID triết gia để lọc lịch sử
      */
-    List<ChatSessionResponse> listUserSessions(UUID userId);
+    List<ChatSessionResponse> listUserSessions(UUID userId, UUID philosopherId);
 
     /**
      * Xóa một phiên hội thoại.
