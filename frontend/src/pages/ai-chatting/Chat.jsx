@@ -11,12 +11,13 @@ import { useSession } from '@/contexts/SessionContext.jsx';
 
 export default function  Chat() {
     const navigate = useNavigate();
-    const { setPhilosopherId } = useSession();
+    const { setPhilosopherId, clearSession } = useSession();
     const [view, setView] = useState("selection");
     const [selectedPhilosopher, setSelectedPhilosopher] = useState(null);
 
     const handleSelect = (philosopher) => {
         setSelectedPhilosopher(philosopher);
+        clearSession();
         setPhilosopherId(philosopher.id);
         navigate("/ai", { state: { philosopher } });
     };
