@@ -3,6 +3,7 @@ package com.philosophy.rag.service.impl;
 import com.philosophy.rag.entity.ChatSession;
 import com.philosophy.rag.entity.Philosopher;
 import com.philosophy.rag.entity.User;
+import com.philosophy.rag.dto.response.ChatSessionResponse;
 import com.philosophy.rag.repository.itf.ChatSessionRepository;
 import com.philosophy.rag.repository.itf.PhilosopherRepository;
 import com.philosophy.rag.repository.itf.UserRepository;
@@ -48,8 +49,14 @@ public class ChatSessionServiceImpl implements ChatSessionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ChatSession> listUserSessions(UUID userId) {
-        return chatSessionRepository.findByUser_UserId(userId);
+    public List<ChatSessionResponse> listUserSessions(UUID userId) {
+        return chatSessionRepository.findByUser_UserId(userId).stream()
+                .map(session -> ChatSessionResponse.builder()
+                        .sessionId(session.getSessionId())
+                        .title(session.getTitle())
+                        .philosopherName(session.getPhilosopher() != null ? session.getPhilosopher().getName() : "Unknown")
+                        .build())
+                .toList();
     }
 
     @Override

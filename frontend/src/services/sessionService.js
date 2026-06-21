@@ -27,3 +27,38 @@ export async function speakText(text, voice = 'vi-VN-HoaiMyNeural') {
     const response = await apiClient.post('/voice/speak', { text, voice });
     return response.data?.result; // Base64 MP3
 }
+
+/**
+ * Lấy danh sách các phiên hội thoại chat
+ */
+export async function getChatSessions() {
+    const response = await apiClient.get('/chat-sessions');
+    return response.data?.result || [];
+}
+
+/**
+ * Xóa một phiên hội thoại chat
+ * @param {string} sessionId - ID của phiên hội thoại cần xóa
+ */
+export async function deleteChatSession(sessionId) {
+    const response = await apiClient.delete(`/chat-sessions/${sessionId}`);
+    return response.data;
+}
+
+/**
+ * Tạo mới một phiên hội thoại chat (nếu cần khởi tạo thủ công)
+ */
+export async function createChatSession() {
+    const response = await apiClient.post('/chat-sessions');
+    return response.data?.result;
+}
+
+/**
+ * Cập nhật tiêu đề của phiên hội thoại
+ * @param {string} sessionId - ID của phiên hội thoại
+ * @param {string} title - Tiêu đề mới
+ */
+export async function updateChatSessionTitle(sessionId, title) {
+    const response = await apiClient.patch(`/chat-sessions/${sessionId}/title`, { title });
+    return response.data;
+}

@@ -1,6 +1,7 @@
 package com.philosophy.rag.service;
 
 import com.philosophy.rag.entity.ChatSession;
+import com.philosophy.rag.dto.response.ChatSessionResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +16,7 @@ public interface ChatSessionService {
     /**
      * Lấy danh sách phiên hội thoại của người dùng.
      */
-    List<ChatSession> listUserSessions(UUID userId);
+    List<ChatSessionResponse> listUserSessions(UUID userId);
 
     /**
      * Xóa một phiên hội thoại.

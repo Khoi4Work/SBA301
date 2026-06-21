@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import apiClient from "@/services/apiClient";
+import { getChatSessions } from "@/services/sessionService.js";
 import {
   Book,
   Brain,
@@ -23,22 +24,31 @@ export function Dashboard() {
     totalXp: 0,
     streak: 0,
   });
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchData() {
       try {
-        const res = await apiClient.get("/users/dashboard-stats");
-        if (res.data?.result) {
-          setStats(res.data.result);
+        const [statsRes, sessionsRes] = await Promise.all([
+          apiClient.get("/users/dashboard-stats"),
+          getChatSessions()
+        ]);
+
+        if (statsRes.data?.result) {
+          setStats(statsRes.data.result);
+        }
+
+        if (sessionsRes) {
+          setSessions(sessionsRes);
         }
       } catch (err) {
-        console.error("Failed to fetch dashboard stats", err);
+        console.error("Failed to fetch dashboard data", err);
       } finally {
         setLoading(false);
       }
     }
-    fetchStats();
+    fetchData();
   }, []);
 
   return (
@@ -99,33 +109,29 @@ export function Dashboard() {
             </button>
           </div>
           <div className="bg-surface-container-low rounded-xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden">
-            <DialogueItem
-              icon={<Brain className="w-6 h-6" />}
-              title="Bản chất của Đức hạnh"
-              description="Vấn tin Socratic về các nền tảng đạo đức trong AI hiện đại."
-              time="2 giờ trước"
-              statusLabel="Đang đàm đạo"
-              isActive={true}
-              colorClass="text-secondary"
-            />
-            <DialogueItem
-              icon={<Book className="w-6 h-6" />}
-              title="Chủ nghĩa Khắc kỷ trong Kỷ nguyên Số"
-              description="Phân tích so sánh giữa Enchiridion và sự chú ý theo thuật toán."
-              time="Hôm qua"
-              statusLabel="Đã lưu"
-              isActive={false}
-              colorClass="text-primary"
-            />
-            <DialogueItem
-              icon={<Landmark className="w-6 h-6" />}
-              title="Khế ước Xã hội Tái hiện"
-              description="Khám phá tư tưởng Rousseau trong bối cảnh quản trị phi tập trung."
-              time="4 ngày trước"
-              statusLabel="Đã lưu"
-              isActive={false}
-              colorClass="text-tertiary"
-            />
+            {sessions.length === 0 ? (
+              <div className="p-8 text-center text-on-surface-variant opacity-50 italic">
+                Chưa có cuộc đàm đạo nào được ghi lại...
+              </div>
+            ) : (
+              sessions.slice(0, 3).map((session, index) => {
+                const icons = [<Brain className="w-6 h-6" />, <Book className="w-6 h-6" />, <Landmark className="w-6 h-6" />];
+                const colors = ["text-secondary", "text-primary", "text-tertiary"];
+
+                return (
+                  <DialogueItem
+                    key={session.sessionId}
+                    icon={icons[index % icons.length]}
+                    title={session.title || `Phiên đàm đạo ${index + 1}`}
+                    description="Hành trình khám phá tri thức thông qua đối thoại biện chứng."
+                    time="Gần đây"
+                    statusLabel={index === 0 ? "Đang đàm đạo" : "Đã lưu"}
+                    isActive={index === 0}
+                    colorClass={colors[index % colors.length]}
+                  />
+                );
+              })
+            )}
           </div>
         </div>
 

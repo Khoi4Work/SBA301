@@ -6,7 +6,7 @@ import Login from './pages/auth/Login.jsx';
 import Karl_Marx from "./Avatar3D/Karl_Marx.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
 import { AuthProvider } from "@/contexts/AuthContext.jsx";
-import Register from "@/pages/auth/Register.jsx";
+import { SessionProvider } from "@/contexts/SessionContext.jsx";
 import VirtualAssistant from "@/pages/ai-chatting/VirtualAssistant.jsx";
 import Chat from "@/pages/ai-chatting/Chat.jsx";
 import Study from "@/pages/Study.jsx";
@@ -19,6 +19,7 @@ import ConsumeristEscape from "@/pages/ConsumeristEscape.jsx";
 import DialecticalDebate from "@/pages/DialecticalDebate.jsx";
 import ForgotPassword from "@/pages/auth/ForgotPassword.jsx";
 import ResetPassword from "@/pages/auth/ResetPassword.jsx";
+import Register from "@/pages/auth/Register.jsx";
 import AdminLayout from "@/components/AdminLayout.jsx";
 import AdminDashboard from "@/pages/admin/AdminDashboard.jsx";
 import AIPhilosophersManagement from "@/pages/admin/AIPhilosophersManagement.jsx";
@@ -88,7 +89,9 @@ function App() {
     return (
         <Router>
             <AuthProvider>
-                <AppRoutes />
+                <SessionProvider>
+                    <AppRoutes />
+                </SessionProvider>
             </AuthProvider>
         </Router>
     );

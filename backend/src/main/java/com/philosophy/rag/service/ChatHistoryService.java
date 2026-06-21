@@ -23,4 +23,9 @@ public interface ChatHistoryService {
      * Lấy N lượt tương tác gần nhất của một phiên hội thoại để làm ngữ cảnh.
      */
     List<ChatHistory> getRecentHistoryBySession(UUID sessionId, int limit);
+
+    /**
+     * Lấy toàn bộ lịch sử trò chuyện của một phiên hội thoại.
+     */
+    List<ChatHistoryResponse> getHistoryBySession(UUID sessionId);
 }
