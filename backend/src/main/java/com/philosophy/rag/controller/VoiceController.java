@@ -59,9 +59,12 @@ public class VoiceController {
         ChatResponse response = voiceService.chat(sessionRequest);
         java.time.LocalDateTime end = java.time.LocalDateTime.now();
 
+        // Cập nhật sessionId vào response để Frontend có thể lưu lại
+        ChatResponse finalResponse = new ChatResponse(response.text(), response.audioBase64(), sessionId);
+
         chatHistoryService.saveInteraction(userId, request.philosopherId(), request.text(), response.text(), start, end, sessionId);
 
-        return ApiResponse.success(response, "Chat response successfully");
+        return ApiResponse.success(finalResponse, "Chat response successfully");
     }
 
 }

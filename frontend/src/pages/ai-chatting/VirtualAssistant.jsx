@@ -7,19 +7,36 @@ import MicButton from "@/components/AI/MicButton.jsx";
 import ChatPanel from "@/components/AI/ChatPanel.jsx";
 import { useSpeechToText } from '@/services/hooks/useSpeechToText.js';
 import { Sidebar } from "@/components/Sidebar.jsx";
+import { useSession } from '@/contexts/SessionContext.jsx';
 import "@/assets/styles/philoverse-chat.css";
 
 const VirtualAssistant = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const philosopher = location.state?.philosopher;
+    const { currentPhilosopherId, setPhilosopherId, clearSession } = useSession();
 
     const [isAiTalking, setIsAiTalking] = useState(false);
     const [isAiThinking, setIsAiThinking] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
 
+    useEffect(() => {
+        if (location.state?.openChat) {
+            setIsChatOpen(true);
+        }
+    }, [location.state]);
+
     const chatRef = useRef(null);
     const autoSendTimerRef = useRef(null);
+
+    useEffect(() => {
+        if (philosopher?.id) {
+            if (currentPhilosopherId && currentPhilosopherId !== philosopher.id) {
+                clearSession();
+            }
+            setPhilosopherId(philosopher.id);
+        }
+    }, [philosopher?.id, currentPhilosopherId, setPhilosopherId, clearSession]);
 
     // Voice Recognition Hook
     const { isListening, toggleListening, stopListening, error: micError } = useSpeechToText({
@@ -151,7 +168,8 @@ const VirtualAssistant = () => {
                             onToggle={() => setIsChatOpen(!isChatOpen)}
                         >
                             <SmartChatAI
-                                ref={chatRef}
+                                title={philosopher?.name || "Trợ Lý Ảo Thông Minh"}
+                            ref={chatRef}
                                 visible={isChatOpen}
                                 isListening={isListening}
                                 toggleListening={toggleListening}

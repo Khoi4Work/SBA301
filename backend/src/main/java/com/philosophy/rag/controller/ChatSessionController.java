@@ -3,6 +3,7 @@ package com.philosophy.rag.controller;
 import com.philosophy.rag.base.response.ApiResponse;
 import com.philosophy.rag.entity.ChatSession;
 import com.philosophy.rag.entity.ChatHistory;
+import com.philosophy.rag.dto.response.ChatSessionResponse;
 import com.philosophy.rag.service.ChatSessionService;
 import com.philosophy.rag.service.ChatHistoryService;
 import com.philosophy.rag.service.UserService;
@@ -31,10 +32,11 @@ public class ChatSessionController {
     @Operation(summary = "List all chat sessions for the current user")
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<ChatSession>>> listSessions() {
+    public ResponseEntity<ApiResponse<List<ChatSessionResponse>>> listSessions(
+            @RequestParam(value = "philosopherId", required = false) UUID philosopherId) {
         UUID userId = userService.getCurrentUserId();
-        log.info("Fetching chat sessions for user: {}", userId);
-        List<ChatSession> sessions = chatSessionService.listUserSessions(userId);
+        log.info("Fetching chat sessions for user: {}, philosopherId: {}", userId, philosopherId);
+        List<ChatSessionResponse> sessions = chatSessionService.listUserSessions(userId, philosopherId);
         return ResponseEntity.ok(ApiResponse.success(sessions));
     }
 
@@ -56,6 +58,21 @@ public class ChatSessionController {
         log.info("Deleting chat session: {}", sessionId);
         chatSessionService.deleteSession(sessionId);
         return ResponseEntity.ok(ApiResponse.success("Session deleted successfully"));
+    }
+
+    @Operation(summary = "Update chat session title")
+    @PatchMapping("/{sessionId}/title")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<String>> updateTitle(
+            @PathVariable UUID sessionId,
+            @RequestBody java.util.Map<String, String> request) {
+        String newTitle = request.get("title");
+        if (newTitle == null || newTitle.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Title cannot be empty"));
+        }
+        log.info("Updating title for session: {} to {}", sessionId, newTitle);
+        chatSessionService.updateSessionTitle(sessionId, newTitle);
+        return ResponseEntity.ok(ApiResponse.success("Title updated successfully"));
     }
 
     @Operation(summary = "Get all messages in a session")

@@ -45,4 +45,12 @@ public class ChatHistoryController {
 
         return ResponseEntity.ok(ApiResponse.success(interaction, "Successfully retrieved interaction details"));
     }
+
+    @Operation(summary = "Get chat history for a specific session")
+    @GetMapping("/session/{sessionId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<ChatHistoryResponse>>> getSessionHistory(@PathVariable UUID sessionId) {
+        List<ChatHistoryResponse> history = chatHistoryService.getHistoryBySession(sessionId);
+        return ResponseEntity.ok(ApiResponse.success(history, "Successfully retrieved session history"));
+    }
 }

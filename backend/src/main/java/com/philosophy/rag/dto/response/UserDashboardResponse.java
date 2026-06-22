@@ -13,4 +13,5 @@ public class UserDashboardResponse {
     private Integer learningProgress;
     private Integer totalXp;
     private Integer streak;
+    private Double totalChatTime;
 }

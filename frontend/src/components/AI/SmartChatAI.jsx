@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { apiVoice } from "@/services/apiVoice.js";
+import { apiChatHistory } from "@/services/chatHistoryService.js";
 import AudioPlayer from './AudioPlayer.jsx';
+import { useSession } from '@/contexts/SessionContext.jsx';
 
 const SmartChatAI = forwardRef(({
                          title = "Trợ Lý Ảo Thông Minh",
@@ -21,6 +23,10 @@ const SmartChatAI = forwardRef(({
     const [isLoading, setIsLoading] = useState(false);
     const [isAISpeaking, setIsAISpeaking] = useState(false);
 
+    const { currentSessionId, setSessionId } = useSession();
+    const prevSessionIdRef = useRef(null);
+    const justReceivedResponseRef = useRef(false);
+
     const messagesEndRef = useRef(null);
     const isSendingRef = useRef(false);
     const latestInputRef = useRef(inputValue);
@@ -32,6 +38,48 @@ const SmartChatAI = forwardRef(({
     useEffect(() => {
         setAiThinking(isLoading);
     }, [isLoading, setAiThinking]);
+
+    useEffect(() => {
+        const loadHistory = async () => {
+            if (!currentSessionId) return;
+
+            try {
+                const response = await apiChatHistory.getSessionHistory(currentSessionId);
+                const data = response.data;
+
+                if (data.code === 1000 && data.result) {
+                    const history = data.result;
+                    if (history.length === 0) {
+                        setMessages([{role: 'ai', type: 'text', content: welcomeMessage}]);
+                    } else {
+                        const formattedMessages = [];
+                        history.forEach(item => {
+                            formattedMessages.push({role: 'user', type: 'text', content: item.query});
+                            formattedMessages.push({role: 'ai', type: 'text', content: item.response});
+                        });
+                        setMessages(formattedMessages);
+                    }
+                } else {
+                    setMessages([{role: 'ai', type: 'text', content: welcomeMessage}]);
+                }
+            } catch (error) {
+                console.error("Lỗi tải lịch sử hội thoại:", error);
+                setMessages([{role: 'ai', type: 'text', content: welcomeMessage}]);
+            }
+        };
+
+        if (!currentSessionId) {
+            setMessages([{role: 'ai', type: 'text', content: welcomeMessage}]);
+        } else if (prevSessionIdRef.current !== currentSessionId) {
+            if (justReceivedResponseRef.current) {
+                justReceivedResponseRef.current = false;
+            } else {
+                loadHistory();
+            }
+        }
+
+        prevSessionIdRef.current = currentSessionId;
+    }, [currentSessionId]);
 
     useEffect(() => {
         latestInputRef.current = inputValue;
@@ -63,11 +111,17 @@ const SmartChatAI = forwardRef(({
             const response = await apiVoice.chat({
                 text: finalText,
                 voice: voiceId,
-                philosopherId: philosopherId
+                philosopherId: philosopherId,
+                sessionId: currentSessionId
             });
             const data = response.data;
 
             if (data.code === 1000 && data.result) {
+                // Lưu lại sessionId mới từ backend (hoặc session hiện tại)
+                if (data.result.sessionId) {
+                    justReceivedResponseRef.current = true;
+                    setSessionId(data.result.sessionId);
+                }
                 setMessages(prev => [
                     ...prev,
                     {
@@ -87,7 +141,7 @@ const SmartChatAI = forwardRef(({
             isSendingRef.current = false;
             setIsLoading(false);
         }
-    }, [voiceId, philosopherId]);
+    }, [voiceId, philosopherId, currentSessionId]);
 
     useImperativeHandle(ref, () => ({
         handleSendMessage,

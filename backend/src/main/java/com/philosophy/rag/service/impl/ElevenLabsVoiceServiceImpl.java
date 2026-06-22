@@ -38,7 +38,7 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
     public ChatResponse chat(TtsRequest request) {
         String chatResponseText = cleanTextForTTS(ragService.ask(request.text(), request.philosopherId(), request.sessionId()));
         String audioBase64 = textToSpeak(new TtsRequest(chatResponseText, voiceId, request.philosopherId(), request.sessionId()));
-        return new ChatResponse(chatResponseText, audioBase64);
+        return new ChatResponse(chatResponseText, audioBase64, request.sessionId());
     }
 
     @Override

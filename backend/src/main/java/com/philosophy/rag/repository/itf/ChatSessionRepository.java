@@ -14,4 +14,9 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, UUID> 
      * Lấy tất cả các phiên hội thoại của một người dùng.
      */
     List<ChatSession> findByUser_UserId(UUID userId);
+
+    /**
+     * Lấy các phiên hội thoại của một người dùng với một triết gia cụ thể.
+     */
+    List<ChatSession> findByUser_UserIdAndPhilosopher_PhilosopherId(UUID userId, UUID philosopherId);
 }

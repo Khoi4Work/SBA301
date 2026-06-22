@@ -6,7 +6,7 @@ import Login from './pages/auth/Login.jsx';
 import Karl_Marx from "./Avatar3D/Karl_Marx.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
 import { AuthProvider } from "@/contexts/AuthContext.jsx";
-import Register from "@/pages/auth/Register.jsx";
+import { SessionProvider } from "@/contexts/SessionContext.jsx";
 import VirtualAssistant from "@/pages/ai-chatting/VirtualAssistant.jsx";
 import Chat from "@/pages/ai-chatting/Chat.jsx";
 import Study from "@/pages/Study.jsx";
@@ -18,85 +18,70 @@ import Profile from "@/pages/Profile.jsx";
 import ConsumeristEscape from "@/pages/ConsumeristEscape.jsx";
 import DialecticalDebate from "@/pages/DialecticalDebate.jsx";
 import ForgotPassword from "@/pages/auth/ForgotPassword.jsx";
+import ResetPassword from "@/pages/auth/ResetPassword.jsx";
+import Register from "@/pages/auth/Register.jsx";
+import AdminLayout from "@/components/AdminLayout.jsx";
+import AdminDashboard from "@/pages/admin/AdminDashboard.jsx";
+import AIPhilosophersManagement from "@/pages/admin/AIPhilosophersManagement.jsx";
+import UserManagement from "@/pages/admin/UserManagement.jsx";
+import AcademyChaptersManagement from "@/pages/admin/AcademyChaptersManagement.jsx";
 
 
-function AppLayout() {
-    const location = useLocation();
+const MainLayout = ({ children }) => (
+    <>
+        <Header />
+        {children}
+    </>
+);
 
-    // Ẩn header ở home + login + lesson + quiz play (có header riêng hoặc cần tập trung)
-    const hideHeader = ['/', '/login', '/forgot-password', '/study/lesson', '/review/escape', '/review/debate'].includes(location.pathname) || location.pathname.startsWith('/review/play');
-
+function AppRoutes() {
     return (
-        <>
-            {!hideHeader && <Header />}
+        <Routes>
+            {/* ==========================================
+                GROUP 1: CÁC TRANG CÓ HEADER CƠ BẢN
+                ========================================== */}
+            <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+            <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
 
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/review" element={<Review />} />
-                <Route path="/review/escape" element={<ProtectedRoute><ConsumeristEscape /></ProtectedRoute>} />
-                <Route path="/review/debate" element={<ProtectedRoute><DialecticalDebate /></ProtectedRoute>} />
-                <Route path="/review/play/:id" element={<QuizPlay />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* ==========================================
+                GROUP 2: CÁC TRANG KHÔNG CÓ HEADER
+                (Tự render toàn màn hình hoặc có UI riêng)
+                ========================================== */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-                <Route
-                    path="/model"
-                    element={
-                        <ProtectedRoute>
-                            <Karl_Marx />
-                        </ProtectedRoute>
-                    }
-                />
+            <Route path="/study/lesson" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
+            <Route path="/review/escape" element={<ProtectedRoute><ConsumeristEscape /></ProtectedRoute>} />
+            <Route path="/review/debate" element={<ProtectedRoute><DialecticalDebate /></ProtectedRoute>} />
+            <Route path="/review/play/:id" element={<QuizPlay />} />
 
-                <Route
-                    path="/dashboard"
-                    element={
-                        <ProtectedRoute>
-                            <PhiloVerse />
-                        </ProtectedRoute>
-                    }
-                />
+            {/* ==========================================
+                GROUP 3: CÁC TRANG PROTECTED DÙNG MAIN LAYOUT
+                ========================================== */}
+            <Route path="/model" element={<ProtectedRoute><MainLayout><Karl_Marx /></MainLayout></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><MainLayout><PhiloVerse /></MainLayout></ProtectedRoute>} />
+            <Route path="/study" element={<ProtectedRoute><MainLayout><Study /></MainLayout></ProtectedRoute>} />
+            <Route path="/ai" element={<ProtectedRoute><MainLayout><VirtualAssistant /></MainLayout></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><MainLayout><Chat /></MainLayout></ProtectedRoute>} />
+            <Route path="/review" element={<ProtectedRoute><MainLayout><Review /></MainLayout></ProtectedRoute>} />
 
-                <Route
-                    path="/Study"
-                    element={
-                        <ProtectedRoute>
-                            <Study />
-                        </ProtectedRoute>
-                    }
-                />
+            {/* ==========================================
+                GROUP 4: ADMIN ROUTES (NESTED ROUTING)
+                ========================================== */}
+            {/* Thêm requireRole="ADMIN" vào ProtectedRoute nếu bạn có hỗ trợ */}
+            <Route path="/admin" element={ <ProtectedRoute requireRole="ADMIN"><AdminLayout /></ProtectedRoute>}>
+                {/* Các route con này sẽ được render vào bên trong <Outlet /> của AdminLayout */}
+                <Route index element={<AdminDashboard />} /> {/* path: /admin */}
+                <Route path="philosophers" element={<AIPhilosophersManagement />} /> {/* path: /admin/philosophers */}
+                <Route path="users" element={<UserManagement />} /> {/* path: /admin/users */}
+                <Route path="chapters" element={<AcademyChaptersManagement />} />
+            </Route>
 
-                <Route
-                    path="/study/lesson"
-                    element={
-                        <ProtectedRoute>
-                            <LessonPage />
-                        </ProtectedRoute>
-                    }
-                />
 
-                <Route
-                    path="/ai"
-                    element={
-                        <ProtectedRoute>
-                            <VirtualAssistant />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/chat"
-                    element={
-                        <ProtectedRoute>
-                            <Chat />
-                        </ProtectedRoute>
-                    }
-                />
-            </Routes>
-        </>
+            <Route path="*" element={<div>404 - Không tìm thấy trang</div>} />
+        </Routes>
     );
 }
 
@@ -104,7 +89,9 @@ function App() {
     return (
         <Router>
             <AuthProvider>
-                <AppLayout />
+                <SessionProvider>
+                    <AppRoutes />
+                </SessionProvider>
             </AuthProvider>
         </Router>
     );

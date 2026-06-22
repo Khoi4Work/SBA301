@@ -86,6 +86,16 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
         return history.subList(size - limit, size);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ChatHistoryResponse> getHistoryBySession(UUID sessionId) {
+        log.info("Fetching chat history for session: {}", sessionId);
+        return chatHistoryRepository.findBySession_SessionIdOrderByCreatedAtAsc(sessionId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     private ChatHistoryResponse toResponse(ChatHistory history) {
         return ChatHistoryResponse.builder()
                 .historyId(history.getHistoryId())

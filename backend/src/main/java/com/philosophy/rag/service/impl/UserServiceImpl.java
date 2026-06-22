@@ -13,6 +13,7 @@ import com.philosophy.rag.entity.Document;
 import com.philosophy.rag.repository.itf.UserRepository;
 import com.philosophy.rag.repository.itf.LearningProgressRepository;
 import com.philosophy.rag.repository.itf.DocumentRepository;
+import com.philosophy.rag.repository.itf.ChatHistoryRepository;
 import com.philosophy.rag.service.CloudinaryService;
 import com.philosophy.rag.service.UserService;
 import com.philosophy.rag.service.S3StorageService;
@@ -38,6 +39,7 @@ public class UserServiceImpl implements UserService {
     private final CloudinaryService cloudinaryService;
     private final LearningProgressRepository learningProgressRepository;
     private final DocumentRepository documentRepository;
+    private final ChatHistoryRepository chatHistoryRepository;
     private final S3StorageService s3StorageService;
     private final SessionService sessionService;
 
@@ -190,10 +192,13 @@ public class UserServiceImpl implements UserService {
         int completedDocs = (int) learningProgressRepository.countByUserAndIsCompletedTrue(user);
         int progressPercent = Math.min(100, (int) Math.round((double) completedDocs / totalDocs * 100));
 
+        Double totalChatTime = chatHistoryRepository.calculateTotalChatHours(user.getUserId());
+
         return UserDashboardResponse.builder()
                 .learningProgress(progressPercent)
                 .totalXp(user.getTotalXp())
                 .streak(user.getStreak())
+                .totalChatTime(totalChatTime != null ? totalChatTime : 0.0)
                 .build();
     }
 

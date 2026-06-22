@@ -10,6 +10,7 @@ import com.philosophy.rag.repository.custom.VectorStoreRepository;
 import com.philosophy.rag.repository.itf.PhilosopherRepository;
 import com.philosophy.rag.repository.itf.ChatHistoryRepository;
 import com.philosophy.rag.service.ChatHistoryService;
+import com.philosophy.rag.service.CohereRerankService;
 import com.philosophy.rag.service.RagService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -48,14 +49,16 @@ public class GeminiRagServiceImpl implements RagService {
     private final PhilosopherRepository philosopherRepository;
     private final ChatClient chatClient;
     private final ChatHistoryService chatHistoryService;
+    private final CohereRerankService cohereRerankService;
     private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true, java.util.List.of('\n', '\r', ' '));
 
-    public GeminiRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, PhilosopherRepository philosopherRepository, @Qualifier("googleGenAiChatModel") ChatModel chatModel, ChatHistoryService chatHistoryService) {
+    public GeminiRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, PhilosopherRepository philosopherRepository, @Qualifier("googleGenAiChatModel") ChatModel chatModel, ChatHistoryService chatHistoryService, CohereRerankService cohereRerankService) {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
         this.philosopherRepository = philosopherRepository;
         this.chatClient = ChatClient.builder(chatModel).build();
         this.chatHistoryService = chatHistoryService;
+        this.cohereRerankService = cohereRerankService;
     }
 
     @Override
@@ -180,42 +183,21 @@ public class GeminiRagServiceImpl implements RagService {
 
     private List<Document> retrieveCandidates(String query) {
         String keywordQuery = query.replaceAll("(?i)c?\s+kh?ng|c?\s+ph?i\s+l?|l?\s+g?|t?i\s+sao", " ").trim();
-        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.builder().query(query).topK(500).build());
-        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.builder().query(keywordQuery).topK(500).build());
+        List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.builder().query(query).topK(150).build());
+        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.builder().query(keywordQuery).topK(150).build());
         return Stream.concat(queryDocs.stream(), keywordDocs.stream())
                 .distinct()
                 .collect(Collectors.toList());
     }
 
     private List<Document> rankDocuments(String query, List<Document> candidates) {
-        String[] keywords = query.split("\s+");
-        List<Document> highPriority = new java.util.ArrayList<>();
-        List<Document> lowPriority = new java.util.ArrayList<>();
-
-        for (Document doc : candidates) {
-            boolean isMatch = false;
-            String text = doc.getText().toLowerCase();
-            for (String kw : keywords) {
-                if (kw.length() > 2 && text.contains(kw.toLowerCase())) {
-                    isMatch = true;
-                    break;
-                }
-            }
-            if (isMatch) highPriority.add(doc); else lowPriority.add(doc);
+        try {
+            log.info("[Gemini RAG] Reranking {} candidates with Cohere...", candidates.size());
+            return cohereRerankService.rerank(query, candidates);
+        } catch (Exception e) {
+            log.error("[Gemini RAG] Cohere Rerank failed, falling back to basic top-K: {}", e.getMessage());
+            return candidates.stream().limit(30).collect(Collectors.toList());
         }
-
-        List<Document> result = new java.util.ArrayList<>();
-        int highLimit = 295;
-        for (int i = 0; i < Math.min(highPriority.size(), highLimit); i++) {
-            result.add(highPriority.get(i));
-        }
-
-        int totalLimit = 300;
-        for (int i = 0; i < Math.min(lowPriority.size(), totalLimit - result.size()); i++) {
-            result.add(lowPriority.get(i));
-        }
-
-        return result;
     }
 
     private String buildContext(List<Document> docs) {
@@ -237,10 +219,10 @@ public class GeminiRagServiceImpl implements RagService {
             if (philosopher.isPresent()) {
                 finalSystemPrompt = philosopher.get().getSystemPrompt() + "\n\n" + systemGuidelines;
             } else {
-                finalSystemPrompt = "You are an expert academic professor." + systemGuidelines;
+                finalSystemPrompt = "You are an expert academic professor. " + systemGuidelines;
             }
         } else {
-            finalSystemPrompt = "You are an expert academic professor." + systemGuidelines;
+            finalSystemPrompt = "You are an expert academic professor. " + systemGuidelines;
         }
 
         StringBuilder historyContext = new StringBuilder();

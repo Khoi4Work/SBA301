@@ -6,6 +6,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface ChatHistoryRepository extends JpaRepository<ChatHistory, UUID> {
@@ -19,5 +21,14 @@ public interface ChatHistoryRepository extends JpaRepository<ChatHistory, UUID> 
      * Lấy những tin nhắn gần nhất trong một phiên hội thoại.
      */
     List<ChatHistory> findBySession_SessionIdOrderByCreatedAtAsc(UUID sessionId);
+
+    @Query(value = "SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (max_end - min_start)) / 3600.0), 0) " +
+                   "FROM ( " +
+                   "    SELECT MIN(start_time) as min_start, MAX(end_time) as max_end " +
+                   "    FROM chat_histories " +
+                   "    WHERE user_id = :userId " +
+                   "    GROUP BY session_id " +
+                   ") as session_durations", nativeQuery = true)
+    Double calculateTotalChatHours(@Param("userId") UUID userId);
 }
 

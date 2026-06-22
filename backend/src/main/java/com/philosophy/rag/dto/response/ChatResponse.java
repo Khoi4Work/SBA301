@@ -1,3 +1,5 @@
 package com.philosophy.rag.dto.response;
 
-public record ChatResponse(String text, String audioBase64) {}
+import java.util.UUID;
+
+public record ChatResponse(String text, String audioBase64, UUID sessionId) {}

@@ -8,9 +8,10 @@ export function DialogueItem({
   statusLabel,
   isActive,
   colorClass,
+  onClick,
 }) {
   return (
-    <div className="p-6 hover:bg-surface-container transition-colors flex items-center gap-6 cursor-pointer">
+    <div className="p-6 hover:bg-surface-container transition-colors flex items-center gap-6 cursor-pointer" onClick={onClick}>
       <div className="w-12 h-12 rounded-lg bg-surface flex items-center justify-center border border-outline-variant/10">
         <div className={colorClass}>{icon}</div>
       </div>
