@@ -9,7 +9,6 @@ import com.philosophy.rag.dto.request.RegisterRequest;
 import com.philosophy.rag.dto.request.ResetPasswordRequest;
 import com.philosophy.rag.dto.response.AuthResponse;
 import com.philosophy.rag.service.AuthService;
-import com.philosophy.rag.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
