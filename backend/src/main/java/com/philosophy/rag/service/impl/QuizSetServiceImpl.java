@@ -135,15 +135,44 @@ public class QuizSetServiceImpl implements QuizSetService {
                     .build();
 
             List<QuizOption> options = new ArrayList<>();
-            for (AiQuizOptionDto oDto : qDto.getOptions()) {
-                QuizOption option = QuizOption.builder()
-                        .quiz(quiz)
-                        .optionText(oDto.getOptionText())
-                        .isCorrect(oDto.getIsCorrect() != null ? oDto.getIsCorrect() : false)
-                        .orderIndex(oDto.getOrderIndex())
-                        .build();
-                options.add(option);
+            int optIdx = 0;
+            if (qDto.getOptions() != null) {
+                for (AiQuizOptionDto oDto : qDto.getOptions()) {
+                    QuizOption option = QuizOption.builder()
+                            .quiz(quiz)
+                            .optionText(oDto.getOptionText())
+                            .isCorrect(oDto.getParsedIsCorrect())
+                            .orderIndex(oDto.getOrderIndex() != null ? oDto.getOrderIndex() : optIdx)
+                            .build();
+                    options.add(option);
+                    optIdx++;
+                }
             }
+
+            // Fallback: If no option is marked correct, check correctIndex or correctText from question DTO
+            boolean hasCorrect = options.stream().anyMatch(QuizOption::getIsCorrect);
+            if (!hasCorrect) {
+                if (qDto.getCorrectIndex() != null && qDto.getCorrectIndex() >= 0 && qDto.getCorrectIndex() < options.size()) {
+                    options.get(qDto.getCorrectIndex()).setIsCorrect(true);
+                } else if (qDto.getCorrectText() != null && !qDto.getCorrectText().isEmpty()) {
+                    String cleanCorrect = cleanText(qDto.getCorrectText());
+                    for (QuizOption opt : options) {
+                        if (cleanText(opt.getOptionText()).equals(cleanCorrect)) {
+                            opt.setIsCorrect(true);
+                            break;
+                        }
+                    }
+                } else if (qDto.getCorrectAnswer() != null && !qDto.getCorrectAnswer().isEmpty()) {
+                    String cleanCorrect = cleanText(qDto.getCorrectAnswer());
+                    for (QuizOption opt : options) {
+                        if (cleanText(opt.getOptionText()).equals(cleanCorrect)) {
+                            opt.setIsCorrect(true);
+                            break;
+                        }
+                    }
+                }
+            }
+
             quiz.setOptions(options);
             quizzes.add(quiz);
         }
@@ -240,10 +269,23 @@ public class QuizSetServiceImpl implements QuizSetService {
                         }
                         if (answer.getSelectedOptionId() != null) {
                             Optional<QuizOption> selectedOpt = quiz.getOptions().stream()
-                                    .filter(o -> o.getOptionId().equals(answer.getSelectedOptionId()))
+                                    .filter(o -> o.getOptionId() != null && 
+                                            o.getOptionId().toString().equalsIgnoreCase(answer.getSelectedOptionId().toString()))
                                     .findFirst();
-                            if (selectedOpt.isPresent() && selectedOpt.get().getIsCorrect()) {
-                                isCorrect = true;
+                            if (selectedOpt.isPresent()) {
+                                QuizOption userOpt = selectedOpt.get();
+                                if (userOpt.getIsCorrect()) {
+                                    isCorrect = true;
+                                } else {
+                                    // Text-based fallback: Check if userOpt text matches any correct option text
+                                    String cleanUserOptText = cleanText(userOpt.getOptionText());
+                                    boolean textMatch = quiz.getOptions().stream()
+                                            .filter(QuizOption::getIsCorrect)
+                                            .anyMatch(correctOpt -> cleanText(correctOpt.getOptionText()).equals(cleanUserOptText));
+                                    if (textMatch) {
+                                        isCorrect = true;
+                                    }
+                                }
                             }
                         }
                         break;
@@ -259,7 +301,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                         if (blankOpt != null) {
                             correctText = blankOpt.getOptionText();
                             if (answer.getBlankText() != null &&
-                                    answer.getBlankText().trim().equalsIgnoreCase(correctText.trim())) {
+                                    cleanText(answer.getBlankText()).equals(cleanText(correctText))) {
                                 isCorrect = true;
                             }
                         }
@@ -276,12 +318,11 @@ public class QuizSetServiceImpl implements QuizSetService {
                         if (answer.getMatches() != null && !answer.getMatches().isEmpty()) {
                             boolean allMatched = true;
                             for (QuizSubmitRequest.MatchingPair pair : answer.getMatches()) {
-                                String userPairString = pair.getLeft().trim() + " | " + pair.getRight().trim();
                                 boolean found = dbPairs.stream().anyMatch(dbPair -> {
                                     String[] parts = dbPair.split("\\|");
                                     if (parts.length == 2) {
-                                        return parts[0].trim().equalsIgnoreCase(pair.getLeft().trim()) &&
-                                                parts[1].trim().equalsIgnoreCase(pair.getRight().trim());
+                                        return cleanText(parts[0]).equals(cleanText(pair.getLeft())) &&
+                                                cleanText(parts[1]).equals(cleanText(pair.getRight()));
                                     }
                                     return false;
                                 });
@@ -409,6 +450,24 @@ public class QuizSetServiceImpl implements QuizSetService {
         }
     }
 
+    private String cleanText(String text) {
+        if (text == null) {
+            return "";
+        }
+        // Normalize Unicode to NFC
+        String cleaned = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
+        // Lowercase
+        cleaned = cleaned.toLowerCase().trim();
+        // Remove markdown bold/italic asterisks and underscores
+        cleaned = cleaned.replaceAll("\\*+", "");
+        cleaned = cleaned.replaceAll("_+", "");
+        // Remove quotes (standard, curly, smart)
+        cleaned = cleaned.replaceAll("^[\"\'“‘’”]+|[\"\'“‘’”]+$", "");
+        // Remove trailing punctuation like dots
+        cleaned = cleaned.replaceAll("[\\.\\,\\!\\?\\;]+$", "");
+        return cleaned.trim();
+    }
+
     // ── Helper DTOs cho việc parse AI response ────────────────────────────────
 
     @lombok.Data
@@ -417,12 +476,34 @@ public class QuizSetServiceImpl implements QuizSetService {
         private String questionText;
         private String explanation;
         private List<AiQuizOptionDto> options;
+        private Integer correctIndex;
+        private String correctText;
+        private String correctAnswer;
     }
 
     @lombok.Data
     public static class AiQuizOptionDto {
         private String optionText;
-        private Boolean isCorrect;
+        private Object isCorrect;
+        private Boolean correct;
         private Integer orderIndex;
+
+        public boolean getParsedIsCorrect() {
+            if (isCorrect instanceof Boolean) {
+                return (Boolean) isCorrect;
+            }
+            if (isCorrect instanceof String) {
+                return "true".equalsIgnoreCase(((String) isCorrect).trim()) 
+                        || "1".equals(((String) isCorrect).trim())
+                        || "yes".equalsIgnoreCase(((String) isCorrect).trim());
+            }
+            if (isCorrect instanceof Number) {
+                return ((Number) isCorrect).intValue() == 1;
+            }
+            if (correct != null) {
+                return correct;
+            }
+            return false;
+        }
     }
 }

@@ -215,39 +215,41 @@ public class S3StorageServiceImpl implements S3StorageService {
 
             String imageUrl = metadata.get("image-url");
 
-            return new DocumentDistributionResponse(
-                    title,
-                    description,
-                    fileName,
-                    bucketName,
-                    object.key(),
-                    null,
-                    object.size(),
-                    inferContentType(fileName),
-                    object.lastModified() != null
+            return DocumentDistributionResponse.builder()
+                    .title(title)
+                    .description(description)
+                    .fileName(fileName)
+                    .bucket(bucketName)
+                    .key(object.key())
+                    .downloadUrl(null)
+                    .fileSize(object.size())
+                    .contentType(inferContentType(fileName))
+                    .lastModified(object.lastModified() != null
                             ? object.lastModified().atZone(ZoneId.systemDefault())
                                     .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                            : null,
-                    imageUrl,
-                    category);
+                            : null)
+                    .imageUrl(imageUrl)
+                    .category(category)
+                    .build();
         } catch (Exception e) {
             log.warn("Unable to read metadata for S3 object {}: {}", object.key(), e.getMessage());
             String fileName = extractFileNameFromKey(object.key());
-            return new DocumentDistributionResponse(
-                    fileName,
-                    "",
-                    fileName,
-                    bucketName,
-                    object.key(),
-                    null,
-                    object.size(),
-                    inferContentType(fileName),
-                    object.lastModified() != null
+            return DocumentDistributionResponse.builder()
+                    .title(fileName)
+                    .description("")
+                    .fileName(fileName)
+                    .bucket(bucketName)
+                    .key(object.key())
+                    .downloadUrl(null)
+                    .fileSize(object.size())
+                    .contentType(inferContentType(fileName))
+                    .lastModified(object.lastModified() != null
                             ? object.lastModified().atZone(ZoneId.systemDefault())
                                     .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                            : null,
-                    null,
-                    "");
+                            : null)
+                    .imageUrl(null)
+                    .category("")
+                    .build();
         }
     }
 

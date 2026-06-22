@@ -20,6 +20,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import com.philosophy.rag.repository.itf.UserRepository;
+import com.philosophy.rag.repository.itf.LearningProgressRepository;
+import com.philosophy.rag.entity.LearningProgress;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 
 @Slf4j
 @RestController
@@ -28,6 +34,8 @@ import java.util.List;
 public class DocumentController {
 
         private final S3StorageService s3StorageService;
+        private final UserRepository userRepository;
+        private final LearningProgressRepository learningProgressRepository;
 
         @Operation(summary = "Upload document to S3 (Requires ADMIN, STAFF or INSTRUCTOR)")
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -62,6 +70,32 @@ public class DocumentController {
                 documents.forEach(document -> document.setDownloadUrl(
                                 downloadBaseUrl + "?key="
                                                 + URLEncoder.encode(document.getKey(), StandardCharsets.UTF_8)));
+
+                // Check completed files if user is logged in
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                log.info("=== listDocuments Authentication: {} ===", authentication);
+                if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)) {
+                        String username = authentication.getName();
+                        log.info("=== listDocuments Logged in user: {} ===", username);
+                        userRepository.findByUsername(username).ifPresent(user -> {
+                                List<LearningProgress> progresses = learningProgressRepository.findByUser(user);
+                                log.info("=== listDocuments Progresses size: {} ===", progresses.size());
+                                for (DocumentDistributionResponse doc : documents) {
+                                        boolean isCompleted = progresses.stream()
+                                                        .anyMatch(p -> {
+                                                                boolean keyMatch = p.getDocument().getS3Key().equals(doc.getKey());
+                                                                boolean completed = p.getIsCompleted();
+                                                                log.info("=== DB Key: '{}' | S3 Key: '{}' | Match: {} | Completed: {} ===", 
+                                                                        p.getDocument().getS3Key(), doc.getKey(), keyMatch, completed);
+                                                                return keyMatch && completed;
+                                                        });
+                                        doc.setIsCompleted(isCompleted);
+                                }
+                        });
+                } else {
+                        log.info("=== listDocuments User is not logged in / Anonymous ===");
+                        documents.forEach(doc -> doc.setIsCompleted(false));
+                }
 
                 return ResponseEntity.ok(ApiResponse.success(documents, "Document list retrieved successfully"));
         }

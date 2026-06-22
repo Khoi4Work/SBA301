@@ -133,7 +133,7 @@ public class SessionServiceImpl implements SessionService {
             for (XWPFParagraph para : doc.getParagraphs()) {
                 String text = para.getText();
                 if (text != null && !text.isBlank()) {
-                    sb.append(text).append("\n");
+                    sb.append(text).append("\n\n");
                 }
             }
             return sb.toString().trim();

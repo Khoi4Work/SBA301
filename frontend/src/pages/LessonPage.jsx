@@ -107,10 +107,16 @@ function ReadingStage({ lesson, onComplete }) {
                         </span>
                     </div>
                     <div className="p-8 max-h-[65vh] overflow-y-auto custom-scrollbar">
-                        <div className="prose prose-invert max-w-none">
-                            <pre className="whitespace-pre-wrap font-body text-base leading-relaxed text-on-surface-variant">
-                                {content || 'Không có nội dung.'}
-                            </pre>
+                        <div className="prose prose-invert max-w-none space-y-4">
+                            {content ? (
+                                content.split(/\n\s*\n/).map((para, idx) => (
+                                    <p key={idx} className="font-body text-base leading-relaxed text-on-surface-variant text-justify whitespace-pre-line" style={{ textAlign: 'justify' }}>
+                                        {para.trim()}
+                                    </p>
+                                ))
+                            ) : (
+                                <p className="text-on-surface-variant italic">Không có nội dung.</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -495,10 +501,6 @@ export default function LessonPage() {
                     <ArrowLeft size={16} />
                     Thư viện
                 </button>
-                <div className="w-px h-5 bg-outline-variant/40" />
-                <span className="font-display text-lg text-secondary truncate max-w-md">
-                    {lesson?.title ?? 'Đang tải...'}
-                </span>
 
                 {/* Stage indicator */}
                 <div className="ml-auto flex items-center gap-2">
@@ -506,16 +508,38 @@ export default function LessonPage() {
                         { id: STAGES.READING, label: 'Bài học' },
                         { id: STAGES.QUIZ, label: 'Ôn tập' },
                         { id: STAGES.RESULT, label: 'Kết quả' },
-                    ].map((s, i) => (
-                        <div key={s.id} className="flex items-center gap-2">
-                            <div className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full transition-all
-                                ${stage === s.id ? 'bg-secondary text-on-secondary' : 'text-on-surface-variant'}`}>
-                                <span className="opacity-60">{i + 1}.</span>
-                                {s.label}
+                    ].map((s, i) => {
+                        const isClickable = s.id === STAGES.READING || 
+                                            (s.id === STAGES.QUIZ && lesson) || 
+                                            (s.id === STAGES.RESULT && answers.length > 0);
+                        
+                        const handleStageClick = () => {
+                            if (!isClickable) return;
+                            if (s.id === STAGES.READING) {
+                                setStage(STAGES.READING);
+                            } else if (s.id === STAGES.QUIZ) {
+                                handleCompleteLesson();
+                            } else if (s.id === STAGES.RESULT) {
+                                setStage(STAGES.RESULT);
+                            }
+                        };
+
+                        return (
+                            <div key={s.id} className="flex items-center gap-2">
+                                <button
+                                    onClick={handleStageClick}
+                                    disabled={!isClickable}
+                                    className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full transition-all
+                                        ${stage === s.id ? 'bg-secondary text-on-secondary' : 'text-on-surface-variant hover:text-secondary'}
+                                        ${isClickable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                                >
+                                    <span className="opacity-60">{i + 1}.</span>
+                                    {s.label}
+                                </button>
+                                {i < 2 && <ChevronRight size={12} className="text-outline-variant" />}
                             </div>
-                            {i < 2 && <ChevronRight size={12} className="text-outline-variant" />}
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </header>
 
