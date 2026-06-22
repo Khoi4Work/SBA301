@@ -4,6 +4,7 @@ import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.dto.response.DocumentContent;
 import com.philosophy.rag.service.ChatHistoryService;
+import com.philosophy.rag.service.ChatSessionService;
 import com.philosophy.rag.service.RagService;
 import com.philosophy.rag.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,20 +23,18 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
-@Slf4j // Thay đổi 2: Thêm Logging
-@Validated // Thay đổi 3: Kích hoạt validate tham số
+@Slf4j
+@Validated
 @RestController
 @RequestMapping("/api/rag")
 @RequiredArgsConstructor
-@Tag(name = "RAG Operations", description = "APIs for interacting with Document Vector Store") // Thay đổi 4:
-                                                                                               // OpenAPI/Swagger
+@Tag(name = "RAG Operations", description = "APIs for interacting with Document Vector Store")
 public class RagController {
 
-    // TIÊM INTERFACE: Dependency Inversion Principle (SOLID)
     private final RagService ragService;
     private final ChatHistoryService chatHistoryService;
     private final UserService userService;
-    private final com.philosophy.rag.service.ChatSessionService chatSessionService;
+    private final ChatSessionService chatSessionService;
 
     @Operation(summary = "Upload and index a document (Requires ADMIN, STAFF or INSTRUCTOR)", description = "Uploads a file (PDF, TXT, etc.), extracts content, and stores it in the vector database for RAG.")
     @ApiResponses(value = {

@@ -78,6 +78,14 @@ export function Sidebar() {
       : "flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors";
   };
 
+    const fallbackSidebarAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuC-oK0dsp_C3vIjE4vXMXguDKTcYSJV_GbLTg1U8QdDvz0BE_MMpaa-IRRRpZQj-cMH4shRhuPcvsiGKI_D1MPkHDpcffkI0yix7TWuk5iLRSHX0WcTx0EB60i9zGNDWQKSecrxLOlkjFTAg6wt-xEUUnMbxKeLUhti-qJ6fNYL79V29FsTcWGuTEenzTrwLTZON1_8bC4KaG-0Son1-gGnKRMAVVt4drFWfozCx82870IJgk2NEnFzJBWOwpQYcK6VOriIiBmgAJw";
+
+    const sidebarAvatarSrc = user?.avatarUrl
+        ? user.avatarUrl.startsWith("blob:")
+            ? user.avatarUrl
+            : `${user.avatarUrl}?v=${user?.avatarVersion || ""}`
+        : fallbackSidebarAvatar;
+
   return (
     <nav className="hidden md:flex flex-col h-screen py-8 bg-surface-container-low border-r border-outline-variant/10 fixed left-0 top-0 w-64 z-50">
       <div className="px-10 mb-6 text-center">
@@ -215,9 +223,10 @@ export function Sidebar() {
         >
             <div className="w-10 h-10 rounded-full bg-primary-container overflow-hidden">
                 <img
+                    key={`${user?.avatarUrl || "default"}-${user?.avatarVersion || ""}`}
                     alt="Hồ sơ Học giả"
                     className="w-full h-full object-cover grayscale contrast-110"
-                    src={user?.avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuC-oK0dsp_C3vIjE4vXMXguDKTcYSJV_GbLTg1U8QdDvz0BE_MMpaa-IRRRpZQj-cMH4shRhuPcvsiGKI_D1MPkHDpcffkI0yix7TWuk5iLRSHX0WcTx0EB60i9zGNDWQKSecrxLOlkjFTAg6wt-xEUUnMbxKeLUhti-qJ6fNYL79V29FsTcWGuTEenzTrwLTZON1_8bC4KaG-0Son1-gGnKRMAVVt4drFWfozCx82870IJgk2NEnFzJBWOwpQYcK6VOriIiBmgAJw"}
+                    src={sidebarAvatarSrc}
                 />
             </div >
 

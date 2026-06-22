@@ -1,24 +1,56 @@
 import { Pen } from 'lucide-react';
-import { useRef } from 'react';
+import {useEffect, useRef, useState} from 'react';
 import apiClient from "@/services/apiClient.js";
 
 export default function ProfileHeader({ user, setUser }) {
     const fileInputRef = useRef(null);
+    const fallbackAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuAPr_HnWKcvijj_O608atbbSwJ3WOe9UJG0OkAbvJhu31B0ugnn1U-cWrVH_-DP120u6Cl_abBaazaG9S8JMa0rqpRsHLnPd6omXNoQ4QNu6SDVe8x5_q7FuAR8eoqn2JjY_wEgKn9e4eX4lalHYp9S6t7F2DxJrWk_nErx26Iz5BuWzQ0JZQV1j629aW99M__r-UDZ07gI-ZrLHQ7dssSng1RaKBAGBZoec6G_S5_3tsVloFtCW44qLmYvL-zgzO3aa1USAY0ARmA";
 
     const handleFileChange = async (e) => {
-        const file = e.target.files[0];
-        if (!file || !user?.userId) return;
+        let localPreviewUrl = null;
 
-        const formData = new FormData();
-        formData.append("file", file);
+        try {
+            const file = e.target.files[0];
+            const userId = user?.userId || user?.id;
 
-        const res = await apiClient.post(`/users/${user.userId}/avatar`, formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        });
+            if (!file || !userId) return;
 
-        setUser(res.data.data);
+            localPreviewUrl = URL.createObjectURL(file);
+
+            // Đổi ngay Profile + Sidebar bằng ảnh tạm
+            setUser({
+                ...user,
+                avatarUrl: localPreviewUrl,
+                avatarVersion: Date.now(),
+                isAvatarPreview: true
+            });
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await apiClient.post(`/users/${userId}/avatar`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            const updatedUser = res.data?.result || res.data?.data || res.data;
+
+            // Đổi lại thành URL thật từ Cloudinary
+            setUser({
+                ...updatedUser,
+                avatarVersion: Date.now(),
+                isAvatarPreview: false
+            });
+
+            e.target.value = "";
+        } catch (error) {
+            console.error("Upload avatar failed:", error);
+        } finally {
+            if (localPreviewUrl) {
+                setTimeout(() => URL.revokeObjectURL(localPreviewUrl), 1000);
+            }
+        }
     };
 
     return (
@@ -26,11 +58,12 @@ export default function ProfileHeader({ user, setUser }) {
             <div className="relative group">
                 <div className="w-48 h-64 bg-surface-container-high ink-border overflow-hidden relative">
                     <img
+                        key={`${user?.avatarUrl || "default"}-${user?.avatarVersion || ""}`}
                         alt="Avatar"
                         className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 transition-all duration-700"
-                        src={user?.avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuAPr_HnWKcvijj_O608atbbSwJ3WOe9UJG0OkAbvJhu31B0ugnn1U-cWrVH_-DP120u6Cl_abBaazaG9S8JMa0rqpRsHLnPd6omXNoQ4QNu6SDVe8x5_q7FuAR8eoqn2JjY_wEgKn9e4eX4lalHYp9S6t7F2DxJrWk_nErx26Iz5BuWzQ0JZQV1j629aW99M__r-UDZ07gI-ZrLHQ7dssSng1RaKBAGBZoec6G_S5_3tsVloFtCW44qLmYvL-zgzO3aa1USAY0ARmA"}
+                        src={user?.avatarUrl || fallbackAvatar}
                         onError={(e) => {
-                            e.currentTarget.src = "https://lh3.googleusercontent.com/aida-public/AB6AXuAPr_HnWKcvijj_O608atbbSwJ3WOe9UJG0OkAbvJhu31B0ugnn1U-cWrVH_-DP120u6Cl_abBaazaG9S8JMa0rqpRsHLnPd6omXNoQ4QNu6SDVe8x5_q7FuAR8eoqn2JjY_wEgKn9e4eX4lalHYp9S6t7F2DxJrWk_nErx26Iz5BuWzQ0JZQV1j629aW99M__r-UDZ07gI-ZrLHQ7dssSng1RaKBAGBZoec6G_S5_3tsVloFtCW44qLmYvL-zgzO3aa1USAY0ARmA";
+                            e.currentTarget.src = fallbackAvatar;
                         }}
                     />
                     <div className="absolute inset-0 border-[0.5px] border-secondary/20"></div>

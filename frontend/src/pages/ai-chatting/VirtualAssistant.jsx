@@ -1,11 +1,11 @@
 import React, {useState, useRef, useEffect} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Ph_Annghen from '../../Avatar3D/Ph_Annghen.jsx';
-import Karl_Marx from '../../Avatar3D/Karl_Marx.jsx';
+import Ph_Annghen from '../../avatar3D/Ph_Annghen.jsx';
+import Karl_Marx from '../../avatar3D/Karl_Marx.jsx';
 import SmartChatAI from "@/components/AI/SmartChatAI.jsx";
 import MicButton from "@/components/AI/MicButton.jsx";
 import ChatPanel from "@/components/AI/ChatPanel.jsx";
-import { useSpeechToText } from '@/services/hooks/useSpeechToText.js';
+import { useSpeechToText } from '@/hooks/useSpeechToText.js';
 import { Sidebar } from "@/components/Sidebar.jsx";
 import { useSession } from '@/contexts/SessionContext.jsx';
 import "@/assets/styles/philoverse-chat.css";

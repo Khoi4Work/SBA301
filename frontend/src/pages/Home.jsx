@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../assets/styles/philoverse.css';
 import {AuthContext} from "@/contexts/AuthContext.jsx";
-import {getSlogan} from "@/services/SloganService.js";
+import {getSlogan} from "@/services/sloganService.js";
 
 export default function Home() {
     const [isModalOpen, setIsModalOpen] = useState(false);

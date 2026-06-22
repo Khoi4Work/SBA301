@@ -93,7 +93,8 @@ export function AuthProvider({ children }) {
             const authData = res.data?.result || res.data;
 
             setUser({
-                id: authData.id,
+                id: authData.id || authData.userId,
+                userId: authData.userId || authData.id,
                 username: authData.username,
                 fullName: authData.fullName,
                 biography: authData.biography,
@@ -142,13 +143,28 @@ export function AuthProvider({ children }) {
         }
     }
 
+    async function updateUser(updatedUser) {
+        setUser(prevUser => {
+            const mergedUser = {
+                ...prevUser,
+                ...updatedUser,
+                id: updatedUser?.id || updatedUser?.userId || prevUser?.id,
+                userId: updatedUser?.userId || updatedUser?.id || prevUser?.userId
+            };
+
+            localStorage.setItem("user", JSON.stringify(mergedUser));
+            return mergedUser;
+        });
+    }
+
     return (
         <AuthContext.Provider value={{
             user,
             loading,
             login: doLogin,
             logout: doLogout,
-            register: doRegister
+            register: doRegister,
+            updateUser: updateUser,
         }}>
             {children}
         </AuthContext.Provider>

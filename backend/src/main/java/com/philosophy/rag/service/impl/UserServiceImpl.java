@@ -135,15 +135,18 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId).orElseThrow(() ->
                         new ApiException(ErrorCode.USER_NOT_FOUND));
 
-        if (user.getCloudinaryPublicId() != null) {
-            cloudinaryService.deleteImage(user.getCloudinaryPublicId());
-        }
+        String oldPublicId = user.getCloudinaryPublicId();
 
         CloudinaryUploadResponse uploadResult = cloudinaryService.uploadImage(file,"philosophy/avatars");
         user.setAvatarUrl(uploadResult.getSecureUrl());
         user.setCloudinaryPublicId(uploadResult.getPublicId());
 
         userRepository.save(user);
+
+        if (oldPublicId != null) {
+            cloudinaryService.deleteImage(oldPublicId);
+        }
+
         return toResponse(user);
     }
 

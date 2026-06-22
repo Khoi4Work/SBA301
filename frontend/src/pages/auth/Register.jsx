@@ -6,7 +6,7 @@ import {useContext, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {AuthContext} from "@/contexts/AuthContext.jsx";
 import Footer from "@/components/Footer.jsx";
-import {getSlogan} from "@/services/SloganService.js";
+import {getSlogan} from "@/services/sloganService.js";
 // import '../assets/styles/philoverse.css';
 
 export default function Register() {

@@ -26,7 +26,6 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
@@ -67,7 +66,7 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request
     ) {
-        passwordResetService.forgotPassword(request);
+        authService.forgotPassword(request);
 
         return ResponseEntity.ok(Map.of(
                 "message", "If this email exists, a reset link has been sent"
@@ -78,7 +77,7 @@ public class AuthController {
     public ResponseEntity<?> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request
     ) {
-        passwordResetService.resetPassword(request);
+        authService.resetPassword(request);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Password has been reset successfully"

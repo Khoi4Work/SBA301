@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-route
 import Header from './components/Header';
 import Home from './pages/Home';
 import Login from './pages/auth/Login.jsx';
-import Karl_Marx from "./Avatar3D/Karl_Marx.jsx";
+import Karl_Marx from "./avatar3D/Karl_Marx.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
 import { AuthProvider } from "@/contexts/AuthContext.jsx";
 import { SessionProvider } from "@/contexts/SessionContext.jsx";

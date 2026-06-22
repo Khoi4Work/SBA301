@@ -1,4 +1,4 @@
-package com.philosophy.rag.repository;
+package com.philosophy.rag.repository.custom;
 
 import com.philosophy.rag.entity.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;
