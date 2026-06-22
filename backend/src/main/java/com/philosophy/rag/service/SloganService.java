@@ -1,5 +1,7 @@
 package com.philosophy.rag.service;
 
+import com.philosophy.rag.dto.request.SloganRequest;
+import com.philosophy.rag.dto.response.SloganResponse;
 import com.philosophy.rag.entity.Slogan;
 
 import java.util.Optional;
@@ -10,5 +12,5 @@ public interface SloganService {
 
     Slogan getRandomSlogan();
 
-    void addSlogan(Slogan slogan);
+    SloganResponse addSlogan(SloganRequest request);
 }

@@ -1,4 +1,4 @@
-package com.philosophy.rag.repository.itf;
+package com.philosophy.rag.repository;
 
 import com.philosophy.rag.entity.ChatSession;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,12 +11,12 @@ import java.util.UUID;
 public interface ChatSessionRepository extends JpaRepository<ChatSession, UUID> {
 
     /**
-     * Lấy tất cả các phiên hội thoại của một người dùng.
+     * Retrieve all conversation sessions for a user.
      */
     List<ChatSession> findByUser_UserId(UUID userId);
 
     /**
-     * Lấy các phiên hội thoại của một người dùng với một triết gia cụ thể.
+     * Retrieve conversation sessions for a user with a specific philosopher.
      */
     List<ChatSession> findByUser_UserIdAndPhilosopher_PhilosopherId(UUID userId, UUID philosopherId);
 }

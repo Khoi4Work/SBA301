@@ -3,16 +3,14 @@ package com.philosophy.rag.controller;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResponse;
-import com.philosophy.rag.dto.request.ForgotPasswordRequest;
-import com.philosophy.rag.dto.request.LoginRequest;
-import com.philosophy.rag.dto.request.RegisterRequest;
-import com.philosophy.rag.dto.request.ResetPasswordRequest;
+import com.philosophy.rag.dto.request.*;
 import com.philosophy.rag.dto.response.AuthResponse;
 import com.philosophy.rag.service.AuthService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -52,12 +51,8 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@RequestBody java.util.Map<String, String> request) {
-        String refreshToken = request.get("refreshToken");
-        if (refreshToken == null || refreshToken.isBlank()) {
-            throw new ApiException(ErrorCode.INVALID_INPUT, "Refresh token is required");
-        }
-        AuthResponse response = authService.refreshAccessToken(refreshToken);
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authService.refreshAccessToken(request.refreshToken());
         return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
     }
 

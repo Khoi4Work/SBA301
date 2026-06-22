@@ -7,8 +7,10 @@ import com.philosophy.rag.dto.response.DocumentContent;
 import com.philosophy.rag.entity.ChatHistory;
 import com.philosophy.rag.entity.Philosopher;
 import com.philosophy.rag.repository.custom.VectorStoreRepository;
-import com.philosophy.rag.repository.itf.PhilosopherRepository;
+import com.philosophy.rag.repository.PhilosopherRepository;
+import com.philosophy.rag.dto.response.RagAskResponse;
 import com.philosophy.rag.service.ChatHistoryService;
+import com.philosophy.rag.service.ChatSessionService;
 import com.philosophy.rag.service.RagService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -47,14 +49,16 @@ public class OllamaRagServiceImpl implements RagService {
     private final PhilosopherRepository philosopherRepository;
     private final ChatClient chatClient;
     private final ChatHistoryService chatHistoryService;
+    private final ChatSessionService chatSessionService;
     private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true, java.util.List.of('\n', '\r', ' '));
 
-    public OllamaRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, PhilosopherRepository philosopherRepository, @Qualifier("ollamaChatModel") ChatModel chatModel, ChatHistoryService chatHistoryService) {
+    public OllamaRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, PhilosopherRepository philosopherRepository, @Qualifier("ollamaChatModel") ChatModel chatModel, ChatHistoryService chatHistoryService, ChatSessionService chatSessionService) {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
         this.philosopherRepository = philosopherRepository;
         this.chatClient = ChatClient.builder(chatModel).build();
         this.chatHistoryService = chatHistoryService;
+        this.chatSessionService = chatSessionService;
     }
 
     @Override
@@ -92,8 +96,15 @@ public class OllamaRagServiceImpl implements RagService {
     }
 
     @Override
-    public String ask(String query, UUID philosopherId, UUID sessionId) {
-        log.info("[Ollama RAG DEBUG] Incoming Query: {}, PhilosopherID: {}, SessionID: {}", query, philosopherId, sessionId);
+    public RagAskResponse ask(UUID userId, String query, UUID philosopherId, UUID sessionId) {
+        log.info("[Ollama RAG] Processing query: {}, UserID: {}, PhilosopherID: {}, SessionID: {}", query, userId, philosopherId, sessionId);
+
+        if (sessionId == null) {
+            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
+            log.info("[Ollama RAG] Created new chat session: {}", sessionId);
+        }
+
+        java.time.LocalDateTime start = java.time.LocalDateTime.now();
 
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
@@ -101,10 +112,19 @@ public class OllamaRagServiceImpl implements RagService {
         String context = buildContext(prioritizedDocs);
         String prompt = buildPrompt(query, context, philosopherId, sessionId);
 
-        return chatClient.prompt()
+        String result = chatClient.prompt()
                 .user(prompt)
                 .call()
                 .content();
+
+        java.time.LocalDateTime end = java.time.LocalDateTime.now();
+
+        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
+
+        return RagAskResponse.builder()
+                .answer(result)
+                .sessionId(sessionId)
+                .build();
     }
 
     @Override

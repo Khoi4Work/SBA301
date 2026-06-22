@@ -1,4 +1,4 @@
-package com.philosophy.rag.repository.custom;
+package com.philosophy.rag.repository;
 
 import com.philosophy.rag.entity.Slogan;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,10 +11,10 @@ import java.util.UUID;
 @Repository
 public interface SloganRepository extends JpaRepository<Slogan, UUID> {
 
-    // Nếu dùng cờ is_active
+    // Find the active slogan
     Optional<Slogan> findByIsActiveTrue();
 
-    // Hoặc nếu muốn lấy random bằng query native
+    // Get a random slogan using native query
     @Query(value = "SELECT * FROM slogans ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
     Slogan findRandomSlogan();
 }

@@ -12,10 +12,11 @@ import com.philosophy.rag.dto.response.QuizSetResponse;
 import com.philosophy.rag.dto.response.QuizSubmitResponse;
 import com.philosophy.rag.dto.response.SessionContentResponse;
 import com.philosophy.rag.entity.*;
-import com.philosophy.rag.repository.itf.*;
+import com.philosophy.rag.repository.*;
 import com.philosophy.rag.service.QuizSetService;
 import com.philosophy.rag.service.RagService;
 import com.philosophy.rag.service.SessionService;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -82,7 +83,7 @@ public class QuizSetServiceImpl implements QuizSetService {
     public QuizSetResponse generateQuizSet(QuizSetGenerateRequest request) {
         log.info("Generating quiz set using AI for key: {}", request.getS3Key());
 
-        // 1. Lấy nội dung file và kiểm tra/tạo Document trong database
+        // 1. Receive file và check/create Document in database
         SessionContentResponse contentResponse = sessionService.getContent(request.getS3Key());
         Document doc = documentRepository.findByS3Key(request.getS3Key())
                 .orElseGet(() -> {
@@ -97,7 +98,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                     return documentRepository.save(newDoc);
                 });
 
-        // 2. Tạo QuizSet có đánh số thứ tự
+        // 2. Create QuizSet have marked order
         long existingCount = quizSetRepository.findByDocumentS3Key(request.getS3Key()).size();
         String title = "Bộ đề số " + (existingCount + 1) + ": " + contentResponse.getTitle();
         
@@ -107,7 +108,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                 .build();
         quizSet = quizSetRepository.save(quizSet);
 
-        // 3. Chuẩn bị prompt gửi AI sinh 20 câu hỏi
+        // 3. Prepare prompt send to AI for generating 20 question
         String context = contentResponse.getContent();
         if (context.length() > 15000) {
             context = context.substring(0, 15000);
@@ -120,7 +121,7 @@ public class QuizSetServiceImpl implements QuizSetService {
 
         log.debug("Raw quiz generation response: {}", rawResponse);
 
-        // 4. Parse JSON và lưu vào CSDL
+        // 4. Parse JSON và save it in CSDL
         List<AiQuizQuestionDto> questionsDto = parseAiResponse(rawResponse);
         List<Quiz> quizzes = new ArrayList<>();
 
@@ -131,7 +132,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                     .questionText(qDto.getQuestionText())
                     .explanation(qDto.getExplanation())
                     .quizType(Quiz.QuizType.valueOf(qDto.getQuizType()))
-                    .xpReward(10) // cộng 10 khi trả lời đúng
+                    .xpReward(10)
                     .build();
 
             List<QuizOption> options = new ArrayList<>();
@@ -163,7 +164,7 @@ public class QuizSetServiceImpl implements QuizSetService {
 
         List<QuizSetDetailResponse.QuizQuestionItem> questions = quizSet.getQuizzes().stream()
                 .map(q -> {
-                    // Trộn các option để tăng độ tương tác và tránh lộ đáp án đúng
+                    // Randomize option for increasing interaction and preventing correct answer
                     List<QuizOption> shuffledOptions = new ArrayList<>(q.getOptions());
                     Collections.shuffle(shuffledOptions);
 
@@ -195,7 +196,7 @@ public class QuizSetServiceImpl implements QuizSetService {
     public QuizSubmitResponse gradeQuizSet(UUID quizSetId, QuizSubmitRequest request) {
         log.info("Grading quiz set submission for id: {}", quizSetId);
 
-        // 1. Lấy thông tin user
+        // 1. Retrieve user info
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
@@ -205,7 +206,7 @@ public class QuizSetServiceImpl implements QuizSetService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy người dùng"));
 
-        // 2. Lấy quiz set
+        // 2. Retrieve quiz set
         QuizSet quizSet = quizSetRepository.findById(quizSetId)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy bộ đề ôn tập"));
 
@@ -221,7 +222,7 @@ public class QuizSetServiceImpl implements QuizSetService {
             QuizSubmitRequest.AnswerItem answer = userAnswers.get(quiz.getQuizId());
             boolean isCorrect = false;
 
-            // Phân loại đáp án chính xác để phản hồi cho UI
+            // Filter corrected answer to response to  FE
             List<UUID> correctOptionIds = new ArrayList<>();
             String correctText = "";
             List<String> correctPairs = new ArrayList<>();
@@ -232,7 +233,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                     case MULTIPLE_CHOICE:
                     case TRUE_FALSE:
                     case SCENARIO:
-                        // Lấy đáp án đúng từ database
+                        // Retrieve corrected answer from database
                         for (QuizOption opt : quiz.getOptions()) {
                             if (opt.getIsCorrect()) {
                                 correctOptionIds.add(opt.getOptionId());
@@ -249,8 +250,8 @@ public class QuizSetServiceImpl implements QuizSetService {
                         break;
 
                     case FILL_IN_THE_BLANK:
-                        // Trong fill-in-the-blank, QuizOption đầu tiên (hoặc có isCorrect = true) chứa
-                        // kết quả đúng
+                        // In fill-in-the-blank, first QuizOption (or have isCorrect = true) store
+                        // answer correct
                         QuizOption blankOpt = quiz.getOptions().stream()
                                 .filter(QuizOption::getIsCorrect)
                                 .findFirst()
@@ -266,8 +267,8 @@ public class QuizSetServiceImpl implements QuizSetService {
                         break;
 
                     case MATCHING:
-                        // So sánh các cặp vế trái | vế phải
-                        // Đáp án đúng là toàn bộ options trong DB có định dạng "Vế Trái | Vế Phải"
+                        // Compare left and right pairs
+                        // Corrected answer ís all options in DB have format "Vế Trái | Vế Phải"
                         List<String> dbPairs = quiz.getOptions().stream()
                                 .map(QuizOption::getOptionText)
                                 .collect(Collectors.toList());
@@ -290,7 +291,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                                     break;
                                 }
                             }
-                            // Đồng thời số lượng cặp phải khớp hoàn toàn
+                            // Apparently quantity right pairs is totally matched
                             if (allMatched && answer.getMatches().size() == dbPairs.size()) {
                                 isCorrect = true;
                             }
@@ -298,7 +299,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                         break;
 
                     case TIMELINE:
-                        // Sắp xếp theo orderIndex tăng dần
+                        // Rearrange orderIndex in ASC order
                         List<QuizOption> sortedDbOpts = quiz.getOptions().stream()
                                 .sorted(Comparator
                                         .comparing(opt -> opt.getOrderIndex() != null ? opt.getOrderIndex() : 0))
@@ -330,7 +331,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                 xpGained -= 5;
             }
 
-            // Ghi nhận kết quả
+            // Save the result
             UserQuizResult quizResult = UserQuizResult.builder()
                     .user(user)
                     .quiz(quiz)
@@ -349,10 +350,10 @@ public class QuizSetServiceImpl implements QuizSetService {
                     .build());
         }
 
-        // Lưu kết quả làm bài
+        // Save all results
         userQuizResultRepository.saveAll(resultsToSave);
 
-        // Cập nhật điểm XP của User (không âm) và tăng chuỗi ngày học (streak) thêm 1
+        // Update XP's User (not negative) and increase streak by one
         int newTotalXp = Math.max(0, user.getTotalXp() + xpGained);
         user.setTotalXp(newTotalXp);
         user.setStreak(user.getStreak() + 1);
@@ -399,7 +400,7 @@ public class QuizSetServiceImpl implements QuizSetService {
             List<AiQuizQuestionDto> questions = objectMapper.readValue(
                     jsonStr, new TypeReference<List<AiQuizQuestionDto>>() {
                     });
-            // Giới hạn đúng 20 câu
+            // Limit exactly 20 question
             return questions.size() > 20 ? questions.subList(0, 20) : questions;
         } catch (Exception e) {
             log.error("Failed to parse AI generated quiz JSON: {}", e.getMessage(), e);
@@ -411,7 +412,7 @@ public class QuizSetServiceImpl implements QuizSetService {
 
     // ── Helper DTOs cho việc parse AI response ────────────────────────────────
 
-    @lombok.Data
+    @Data
     public static class AiQuizQuestionDto {
         private String quizType;
         private String questionText;
@@ -419,7 +420,7 @@ public class QuizSetServiceImpl implements QuizSetService {
         private List<AiQuizOptionDto> options;
     }
 
-    @lombok.Data
+    @Data
     public static class AiQuizOptionDto {
         private String optionText;
         private Boolean isCorrect;

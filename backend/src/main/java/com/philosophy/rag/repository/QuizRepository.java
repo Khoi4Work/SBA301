@@ -1,4 +1,4 @@
-package com.philosophy.rag.repository.itf;
+package com.philosophy.rag.repository;
 
 import com.philosophy.rag.entity.Quiz;
 import org.springframework.data.jpa.repository.JpaRepository;

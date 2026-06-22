@@ -2,7 +2,10 @@ package com.philosophy.rag.service.impl;
 
 import com.philosophy.rag.dto.request.TtsRequest;
 import com.philosophy.rag.dto.response.ChatResponse;
+import com.philosophy.rag.dto.response.RagAskResponse;
+import com.philosophy.rag.dto.response.UserResponse;
 import com.philosophy.rag.service.RagService;
+import com.philosophy.rag.service.UserService;
 import com.philosophy.rag.service.VoiceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +25,7 @@ import java.util.Base64;
 public class ElevenLabsVoiceServiceImpl implements VoiceService {
     private final RagService ragService;
     private final WebClient webClient;
+    private final UserService userService;
 
     @Value("${elevenlabs.api-key}")
     private String apiKey;
@@ -29,14 +33,16 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
     @Value("${elevenlabs.voice-id}")
     private String voiceId;
 
-    public ElevenLabsVoiceServiceImpl(RagService ragService, WebClient.Builder webClientBuilder) {
+    public ElevenLabsVoiceServiceImpl(RagService ragService, WebClient.Builder webClientBuilder, UserService userService) {
         this.ragService = ragService;
         this.webClient = webClientBuilder.baseUrl("https://api.elevenlabs.io").build();
+        this.userService = userService;
     }
 
     @Override
     public ChatResponse chat(TtsRequest request) {
-        String chatResponseText = cleanTextForTTS(ragService.ask(request.text(), request.philosopherId(), request.sessionId()));
+        UserResponse userResponse = userService.getCurrentUser();
+        String chatResponseText = cleanTextForTTS(ragService.ask(userResponse.getUserId(), request.text(), request.philosopherId(), request.sessionId()));
         String audioBase64 = textToSpeak(new TtsRequest(chatResponseText, voiceId, request.philosopherId(), request.sessionId()));
         return new ChatResponse(chatResponseText, audioBase64, request.sessionId());
     }
@@ -83,11 +89,11 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
         return new VoiceSettings(0.5f, 0.75f, 0.0f);
     }
 
-    public String cleanTextForTTS(String rawText) {
-        if (rawText == null || rawText.isEmpty()) {
+    public String cleanTextForTTS(RagAskResponse rawText) {
+        if (rawText.getAnswer() == null || rawText.getAnswer().isEmpty()) {
             return "";
         }
-        return rawText
+        return rawText.getAnswer()
                 .replaceAll("\\[Source\\s+\\d+\\]", "")
                 .replaceAll("\\*", "")
                 .replaceAll("(?m)^\\s*-\\s+", "")

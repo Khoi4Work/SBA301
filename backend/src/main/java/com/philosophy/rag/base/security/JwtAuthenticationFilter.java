@@ -1,8 +1,8 @@
 package com.philosophy.rag.base.security;
 
 import com.philosophy.rag.entity.User;
-import com.philosophy.rag.repository.itf.TokenBlacklistRepository;
-import com.philosophy.rag.repository.itf.UserRepository;
+import com.philosophy.rag.repository.TokenBlacklistRepository;
+import com.philosophy.rag.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

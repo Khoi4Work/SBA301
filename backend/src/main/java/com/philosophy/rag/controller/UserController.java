@@ -9,6 +9,7 @@ import com.philosophy.rag.dto.response.UserResponse;
 import com.philosophy.rag.dto.response.UserDashboardResponse;
 import com.philosophy.rag.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -70,7 +71,7 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable UUID id,
-            @RequestBody UserUpdateRequest request) {
+            @Valid @RequestBody UserUpdateRequest request) {
 
         UserResponse currentUser = userService.getCurrentUser();
         boolean isAdminOrStaff = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
@@ -149,7 +150,7 @@ public class UserController {
 
     @Operation(summary = "Complete a study file")
     @PostMapping("/complete-file")
-    public ResponseEntity<ApiResponse<Void>> completeFile(@RequestBody CompleteFileRequest request) {
+    public ResponseEntity<ApiResponse<Void>> completeFile(@Valid @RequestBody CompleteFileRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");

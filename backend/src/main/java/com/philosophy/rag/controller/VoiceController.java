@@ -6,6 +6,7 @@ import com.philosophy.rag.dto.response.ChatResponse;
 import com.philosophy.rag.service.ChatHistoryService;
 import com.philosophy.rag.service.UserService;
 import com.philosophy.rag.service.VoiceService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -28,14 +29,14 @@ public class VoiceController {
     private final com.philosophy.rag.service.ChatSessionService chatSessionService;
 
     @PostMapping("/speak")
-    public ApiResponse<String> textToSpeak(@RequestBody TtsRequest request) {
+    public ApiResponse<String> textToSpeak(@Valid @RequestBody TtsRequest request) {
         return ApiResponse.success(
                 voiceService.textToSpeak(request),
                 "Tạo giọng nói thành công");
     }
 
     @PostMapping("/chat")
-    public ApiResponse<ChatResponse> chat(@RequestBody TtsRequest request) {
+    public ApiResponse<ChatResponse> chat(@Valid @RequestBody TtsRequest request) {
         UUID userId = userService.getCurrentUserId();
         UUID sessionId = request.sessionId();
 
@@ -59,7 +60,7 @@ public class VoiceController {
         ChatResponse response = voiceService.chat(sessionRequest);
         java.time.LocalDateTime end = java.time.LocalDateTime.now();
 
-        // Cập nhật sessionId vào response để Frontend có thể lưu lại
+        // Update sessionId in response so Frontend can save it
         ChatResponse finalResponse = new ChatResponse(response.text(), response.audioBase64(), sessionId);
 
         chatHistoryService.saveInteraction(userId, request.philosopherId(), request.text(), response.text(), start, end, sessionId);

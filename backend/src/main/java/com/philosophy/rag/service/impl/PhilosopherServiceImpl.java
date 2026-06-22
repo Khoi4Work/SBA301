@@ -3,7 +3,7 @@ package com.philosophy.rag.service.impl;
 import com.philosophy.rag.dto.request.PhilosopherRequest;
 import com.philosophy.rag.dto.response.PhilosopherResponse;
 import com.philosophy.rag.entity.Philosopher;
-import com.philosophy.rag.repository.itf.PhilosopherRepository;
+import com.philosophy.rag.repository.PhilosopherRepository;
 import com.philosophy.rag.service.CloudinaryService;
 import com.philosophy.rag.service.PhilosopherService;
 import lombok.RequiredArgsConstructor;

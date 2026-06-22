@@ -2,7 +2,11 @@ package com.philosophy.rag.service.impl;
 
 import com.philosophy.rag.dto.request.TtsRequest;
 import com.philosophy.rag.dto.response.ChatResponse;
+import com.philosophy.rag.dto.response.RagAskResponse;
+import com.philosophy.rag.dto.response.UserResponse;
+import com.philosophy.rag.entity.User;
 import com.philosophy.rag.service.RagService;
+import com.philosophy.rag.service.UserService;
 import com.philosophy.rag.service.VoiceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,17 +28,20 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(name = "voice.provider", havingValue = "edge", matchIfMissing = true)
 public class EdgeTtsVoiceServiceImpl implements VoiceService {
     private final RagService ragService;
+    private final UserService userService;
 
-    public EdgeTtsVoiceServiceImpl(RagService ragService) {
+    public EdgeTtsVoiceServiceImpl(RagService ragService, UserService userService) {
         this.ragService = ragService;
+        this.userService = userService;
     }
 
     @Override
     public ChatResponse chat(TtsRequest request) {
-        String chatResponseText = cleanTextForTTS(ragService.ask(request.text(), request.philosopherId(), request.sessionId()));
-        TtsRequest newResponse = new TtsRequest(chatResponseText, request.voice(), request.philosopherId(), request.sessionId());
+        UserResponse user = userService.getCurrentUser();
+        String chatResponse= cleanTextForTTS(ragService.ask(user.getUserId(),request.text(), request.philosopherId(), request.sessionId()));
+        TtsRequest newResponse = new TtsRequest(chatResponse, request.voice(), request.philosopherId(), request.sessionId());
         String audioBase64 = textToSpeak(newResponse);
-        return new ChatResponse(chatResponseText, audioBase64, request.sessionId());
+        return new ChatResponse(chatResponse, audioBase64, request.sessionId());
     }
 
     @Override
@@ -92,11 +99,11 @@ public class EdgeTtsVoiceServiceImpl implements VoiceService {
         }
     }
 
-    public String cleanTextForTTS(String rawText) {
-        if (rawText == null || rawText.isEmpty()) {
+    public String cleanTextForTTS(RagAskResponse rawText) {
+        if (rawText.getAnswer() == null || rawText.getAnswer().isEmpty()) {
             return "";
         }
-        return rawText
+        return rawText.getAnswer()
                 .replaceAll("\\[Source\\s+\\d+\\]", "")
                 .replaceAll("\\*", "")
                 .replaceAll("(?m)^\\s*-\\s+", "")

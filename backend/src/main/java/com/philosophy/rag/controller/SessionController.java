@@ -6,6 +6,7 @@ import com.philosophy.rag.dto.response.QuizGenerateResponse;
 import com.philosophy.rag.dto.response.SessionContentResponse;
 import com.philosophy.rag.service.SessionService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +22,14 @@ public class SessionController {
     private final SessionService sessionService;
 
     /**
-     * Lấy nội dung text của file từ S3 để hiển thị trong phiên học
+     * Retrieve text content of a file from S3 for display in the study session.
      * Body: { "key": "documents/2026-05-25/xxx.docx" }
      */
     @Operation(summary = "Get lesson content from S3 file (Requires authentication)")
     @PostMapping("/content")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<SessionContentResponse>> getContent(
-            @RequestBody SessionContentRequest request) {
+            @Valid @RequestBody SessionContentRequest request) {
 
         log.info("Session content request for key: {}", request.key());
         SessionContentResponse content = sessionService.getContent(request.key());
@@ -36,14 +37,14 @@ public class SessionController {
     }
 
     /**
-     * Sinh 10 câu quiz từ nội dung file S3 dùng AI
+     * Generate 10 quiz questions from S3 file content using AI.
      * Body: { "key": "documents/2026-05-25/xxx.docx" }
      */
     @Operation(summary = "Generate 10-question quiz from S3 file content using AI (Requires authentication)")
     @PostMapping("/quiz")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<QuizGenerateResponse>> generateQuiz(
-            @RequestBody SessionContentRequest request) {
+            @Valid @RequestBody SessionContentRequest request) {
 
         log.info("Quiz generation request for key: {}", request.key());
         QuizGenerateResponse quiz = sessionService.generateQuiz(request.key());

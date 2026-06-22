@@ -1,4 +1,4 @@
-package com.philosophy.rag.repository.itf;
+package com.philosophy.rag.repository;
 
 import com.philosophy.rag.entity.ChatHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,12 +13,12 @@ import org.springframework.data.repository.query.Param;
 public interface ChatHistoryRepository extends JpaRepository<ChatHistory, UUID> {
 
     /**
-     * Lấy danh sách lịch sử trò chuyện của một người dùng, sắp xếp mới nhất trước.
+     * Retrieve chat history for a user, sorted by newest first.
      */
     List<ChatHistory> findByUser_UserIdOrderByCreatedAtDesc(UUID userId);
 
     /**
-     * Lấy những tin nhắn gần nhất trong một phiên hội thoại.
+     * Retrieve the most recent messages in a specific conversation session.
      */
     List<ChatHistory> findBySession_SessionIdOrderByCreatedAtAsc(UUID sessionId);
 

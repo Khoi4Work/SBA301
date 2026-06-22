@@ -2,7 +2,9 @@ package com.philosophy.rag.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
+import com.philosophy.rag.base.response.ApiResponse;
 import com.philosophy.rag.dto.response.DocumentContent;
+import com.philosophy.rag.dto.response.RagAskResponse;
 import com.philosophy.rag.service.ChatHistoryService;
 import com.philosophy.rag.service.ChatSessionService;
 import com.philosophy.rag.service.RagService;
@@ -44,7 +46,7 @@ public class RagController {
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
-    public ResponseEntity<com.philosophy.rag.base.response.ApiResponse<String>> upload(
+    public ResponseEntity<ApiResponse<String>> upload(
             @RequestPart("file") MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file cannot be empty");
@@ -53,11 +55,11 @@ public class RagController {
         log.info("Uploading file to RAG system: {}", file.getOriginalFilename());
         try {
             String result = ragService.uploadDocument(file);
-            return ResponseEntity.ok(com.philosophy.rag.base.response.ApiResponse.success(result,
-                    "Document uploaded and indexed successfully"));
+            return ResponseEntity.ok(ApiResponse.success(result,
+                    "Tải lên và lập chỉ mục tài liệu thành công"));
         } catch (Exception e) {
             log.error("RAG upload failed: {}", e.getMessage());
-            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to index document: " + e.getMessage());
+            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Lỗi lập chỉ mục tài liệu: " + e.getMessage());
         }
     }
 
@@ -68,7 +70,7 @@ public class RagController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error occurred during retrieval or generation")
     })
     @GetMapping("/ask")
-    public ResponseEntity<com.philosophy.rag.base.response.ApiResponse<String>> ask(
+    public ResponseEntity<ApiResponse<RagAskResponse>> ask(
             @RequestParam("query") @NotBlank(message = "Query cannot be blank") String query,
             @RequestParam(value = "philosopherId", required = false) UUID philosopherId,
             @RequestParam(value = "sessionId", required = false) UUID sessionId) {
@@ -76,18 +78,9 @@ public class RagController {
         log.info("Received RAG query: {}, PhilosopherID: {}, SessionID: {}", query, philosopherId, sessionId);
 
         UUID userId = userService.getCurrentUserId();
-        if (sessionId == null) {
-            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
-            log.info("Created new chat session: {}", sessionId);
-        }
+        RagAskResponse response = ragService.ask(userId, query, philosopherId, sessionId);
 
-        java.time.LocalDateTime start = java.time.LocalDateTime.now();
-        String result = ragService.ask(query, philosopherId, sessionId);
-        java.time.LocalDateTime end = java.time.LocalDateTime.now();
-
-        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
-
-        return ResponseEntity.ok(com.philosophy.rag.base.response.ApiResponse.success(result));
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Operation(summary = "List all indexed documents", description = "Retrieves a list of all documents currently stored in the vector database.")
@@ -96,11 +89,11 @@ public class RagController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error occurred while fetching documents")
     })
     @GetMapping("/documents")
-    public ResponseEntity<com.philosophy.rag.base.response.ApiResponse<List<DocumentContent>>> listDocuments() {
+    public ResponseEntity<ApiResponse<List<DocumentContent>>> listDocuments() {
         log.info("Fetching document list");
         List<DocumentContent> result = ragService.listDocuments();
 
-        return ResponseEntity.ok(com.philosophy.rag.base.response.ApiResponse.success(result));
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @Operation(summary = "Reset the Vector Store (Requires ADMIN)", description = "Completely wipes all indexed documents from the vector store. This operation is irreversible.")
@@ -110,11 +103,11 @@ public class RagController {
     })
     @DeleteMapping("/reset")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<com.philosophy.rag.base.response.ApiResponse<String>> resetDatabase() {
+    public ResponseEntity<ApiResponse<String>> resetDatabase() {
         log.warn("Triggered vector store reset");
         ragService.resetVectorStore();
 
         return ResponseEntity
-                .ok(com.philosophy.rag.base.response.ApiResponse.success("Vector store has been reset successfully!"));
+                .ok(ApiResponse.success("Vector store has been reset successfully!"));
     }
 }

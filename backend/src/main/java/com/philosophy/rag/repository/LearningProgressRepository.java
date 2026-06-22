@@ -1,4 +1,4 @@
-package com.philosophy.rag.repository.itf;
+package com.philosophy.rag.repository;
 
 import com.philosophy.rag.entity.LearningProgress;
 import com.philosophy.rag.entity.User;

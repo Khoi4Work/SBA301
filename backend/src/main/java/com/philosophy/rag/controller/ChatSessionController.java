@@ -1,6 +1,7 @@
 package com.philosophy.rag.controller;
 
 import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.dto.request.UpdateTitleRequest;
 import com.philosophy.rag.entity.ChatSession;
 import com.philosophy.rag.entity.ChatHistory;
 import com.philosophy.rag.dto.response.ChatSessionResponse;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -65,11 +67,8 @@ public class ChatSessionController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<String>> updateTitle(
             @PathVariable UUID sessionId,
-            @RequestBody java.util.Map<String, String> request) {
-        String newTitle = request.get("title");
-        if (newTitle == null || newTitle.isBlank()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Title cannot be empty"));
-        }
+            @RequestBody UpdateTitleRequest request) {
+        String newTitle = request.title();
         log.info("Updating title for session: {} to {}", sessionId, newTitle);
         chatSessionService.updateSessionTitle(sessionId, newTitle);
         return ResponseEntity.ok(ApiResponse.success("Title updated successfully"));
