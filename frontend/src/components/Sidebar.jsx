@@ -19,7 +19,7 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
-  const { currentSessionId, switchSession, clearSession, currentPhilosopherId } = useSession();
+  const { currentSessionId, switchSession, clearSession, currentPhilosopherId, refreshSignal } = useSession();
   const [sessions, setSessions] = useState([]);
   const { user } = useContext(AuthContext);
 
@@ -33,7 +33,7 @@ export function Sidebar() {
             }
         };
         fetchSessions();
-    }, [currentPhilosopherId]);
+    }, [currentPhilosopherId, refreshSignal]);
 
     const handleDeleteSession = async (e, id) => {
         e.stopPropagation();
