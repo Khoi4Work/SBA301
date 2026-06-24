@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/philosophers")
@@ -48,7 +49,7 @@ public class PhilosopherController {
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
     public ResponseEntity<ApiResponse<PhilosopherResponse>> updatePhilosopher(
-            @PathVariable java.util.UUID id,
+            @PathVariable UUID id,
             @ModelAttribute @Valid PhilosopherRequest request,
             @RequestParam(value = "file", required = false) MultipartFile file) {
         PhilosopherResponse response = philosopherService.updatePhilosopher(id, request, file);

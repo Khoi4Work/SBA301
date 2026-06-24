@@ -1,18 +1,14 @@
 package com.philosophy.rag.features.ai.dto;
 
-import lombok.*;
-
+import lombok.Builder;
 import java.util.UUID;
 
-@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class PhilosopherResponse {
-    private UUID id;
-    private String name;
-    private String category;
-    private String quote;
-    private String core;
-    private String imageUrl;
-}
+public record PhilosopherResponse(
+    UUID id,
+    String name,
+    String category,
+    String quote,
+    String core,
+    String imageUrl
+) {}

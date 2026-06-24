@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Slf4j
 @RestController
@@ -45,7 +46,7 @@ public class VoiceController {
             log.info("Created new chat session for voice chat: {}", sessionId);
         }
 
-        java.time.LocalDateTime start = java.time.LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.now();
 
         // We need to pass the sessionId to voiceService.chat if we want the AI to have context
         // But VoiceService.chat takes TtsRequest. TtsRequest is a record (immutable).
@@ -58,7 +59,7 @@ public class VoiceController {
         );
 
         ChatResponse response = voiceService.chat(sessionRequest);
-        java.time.LocalDateTime end = java.time.LocalDateTime.now();
+        LocalDateTime end = LocalDateTime.now();
 
         // Update sessionId in response so Frontend can save it
         ChatResponse finalResponse = new ChatResponse(response.text(), response.audioBase64(), sessionId);

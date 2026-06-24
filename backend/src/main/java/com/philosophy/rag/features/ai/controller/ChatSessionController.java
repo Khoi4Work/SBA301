@@ -78,10 +78,7 @@ public class ChatSessionController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<ChatHistory>>> getMessages(@PathVariable UUID sessionId) {
         log.info("Fetching messages for session: {}", sessionId);
-        // We fetch all history for the session.
-        // Since ChatHistoryService currently has getRecentHistoryBySession,
-        // we might need a method for all messages or just use a high limit.
-        // For now, let's use getRecentHistoryBySession with a large limit or assume we can add a method.
+
         List<ChatHistory> messages = chatHistoryService.getRecentHistoryBySession(sessionId, 100);
         return ResponseEntity.ok(ApiResponse.success(messages));
     }

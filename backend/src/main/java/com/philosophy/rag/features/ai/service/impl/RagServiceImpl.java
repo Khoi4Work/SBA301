@@ -31,6 +31,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +121,7 @@ public class RagServiceImpl implements RagService {
             log.info("[Gemini RAG] Created new chat session: {}", sessionId);
         }
 
-        java.time.LocalDateTime start = java.time.LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.now();
 
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
@@ -132,7 +134,7 @@ public class RagServiceImpl implements RagService {
                 .call()
                 .content();
 
-        java.time.LocalDateTime end = java.time.LocalDateTime.now();
+        LocalDateTime end = LocalDateTime.now();
 
         chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
 
@@ -182,7 +184,7 @@ public class RagServiceImpl implements RagService {
             String suffix = dotIndex > 0 ? originalName.substring(dotIndex) : "";
             Path tempFile = Files.createTempFile(prefix + "_", suffix);
             Files.copy(file.getInputStream(), tempFile,
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    StandardCopyOption.REPLACE_EXISTING);
             return tempFile;
         } catch (Exception e) {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to save temporary file");
