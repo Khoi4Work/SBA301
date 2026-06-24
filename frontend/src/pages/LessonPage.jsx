@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
     BookOpen, Volume2, VolumeX, CheckCircle2, XCircle,
     ChevronRight, ChevronLeft, Trophy, RotateCcw,
-    Loader2, ArrowLeft, Pause, Play, AlertTriangle
+    Loader2, ArrowLeft, Pause, Play, AlertTriangle, Pencil
 } from 'lucide-react';
 import { fetchLessonContent, generateQuiz, speakText } from '@/services/sessionService';
 import apiClient from '@/services/apiClient';
@@ -14,7 +14,7 @@ const CHUNK_SIZE = 1800; // ký tự mỗi chunk TTS
 const STAGES = { READING: 'reading', QUIZ: 'quiz', RESULT: 'result' };
 
 // ─── READING STAGE ────────────────────────────────────────────────────────────
-function ReadingStage({ lesson, onComplete }) {
+function ReadingStage({ lesson, s3Key, onComplete }) {
     const [audioChunks, setAudioChunks] = useState([]);
     const [currentChunk, setCurrentChunk] = useState(0);
     const [isLoadingAudio, setIsLoadingAudio] = useState(false);
@@ -22,6 +22,27 @@ function ReadingStage({ lesson, onComplete }) {
     const [audioError, setAudioError] = useState(null);
     const [ttsStarted, setTtsStarted] = useState(false);
     const audioRef = useRef(null);
+
+    // Notes and selection states
+    const [notes, setNotes] = useState([]);
+    const [showSelectionMenu, setShowSelectionMenu] = useState(false);
+    const [selectionCoords, setSelectionCoords] = useState({ top: 0, left: 0 });
+    const [selectedText, setSelectedText] = useState('');
+    const [showNoteForm, setShowNoteForm] = useState(false);
+    const [noteText, setNoteText] = useState('');
+    const [editingNote, setEditingNote] = useState(null);
+
+    // AI Chat states
+    const [activeTab, setActiveTab] = useState('notes');
+    const [philosophers, setPhilosophers] = useState([]);
+    const [selectedPhilosopherId, setSelectedPhilosopherId] = useState(null);
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatHighlightContext, setChatHighlightContext] = useState('');
+    const [chatInput, setChatInput] = useState('');
+    const [isGeneratingResponse, setIsGeneratingResponse] = useState(false);
+    const [chatSessionId, setChatSessionId] = useState(null);
+    const chatInputRef = useRef(null);
+    const chatEndRef = useRef(null);
 
     // Chia text thành chunks
     const chunks = [];
@@ -95,37 +116,289 @@ function ReadingStage({ lesson, onComplete }) {
         ? Math.round(((currentChunk + 1) / Math.max(chunks.length, 1)) * 100)
         : 0;
 
+    // Load notes for document
+    const fetchNotes = useCallback(async () => {
+        try {
+            const res = await apiClient.get(`/notes?s3Key=${encodeURIComponent(s3Key)}`);
+            setNotes(res.data?.result || []);
+        } catch (err) {
+            console.error("Failed to load notes:", err);
+        }
+    }, [s3Key]);
+
+    useEffect(() => {
+        if (s3Key) {
+            fetchNotes();
+        }
+    }, [s3Key, fetchNotes]);
+
+    // Fetch philosophers list
+    useEffect(() => {
+        const loadPhilosophers = async () => {
+            try {
+                const res = await apiClient.get('/philosophers/');
+                const list = res.data?.result || [];
+                setPhilosophers(list);
+                if (list.length > 0) {
+                    setSelectedPhilosopherId(list[0].id);
+                }
+            } catch (err) {
+                console.error("Failed to fetch philosophers:", err);
+            }
+        };
+        loadPhilosophers();
+    }, []);
+
+    // Load active session and chat history when philosopher selection changes
+    useEffect(() => {
+        if (!selectedPhilosopherId) return;
+
+        const loadSessionAndHistory = async () => {
+            try {
+                const res = await apiClient.get(`/chat-sessions?philosopherId=${selectedPhilosopherId}`);
+                const sessions = res.data?.result || [];
+                if (sessions.length > 0) {
+                    const latestSession = sessions[0];
+                    setChatSessionId(latestSession.sessionId);
+                    const histRes = await apiClient.get(`/chat-history/session/${latestSession.sessionId}`);
+                    const history = histRes.data?.result || [];
+                    const msgs = [];
+                    history.forEach(h => {
+                        msgs.push({ role: 'user', content: h.query });
+                        msgs.push({ role: 'assistant', content: h.response });
+                    });
+                    setChatMessages(msgs);
+                } else {
+                    setChatSessionId(null);
+                    setChatMessages([]);
+                }
+            } catch (err) {
+                console.error("Failed to load session/history:", err);
+                setChatSessionId(null);
+                setChatMessages([]);
+            }
+        };
+
+        loadSessionAndHistory();
+    }, [selectedPhilosopherId]);
+
+    // Auto-scroll chat window to bottom
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages, isGeneratingResponse]);
+
+    // Handle text selection
+    const handleTextSelection = (e) => {
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+        if (text.length > 0) {
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            const container = e.currentTarget.getBoundingClientRect();
+
+            setSelectionCoords({
+                top: rect.top - container.top + e.currentTarget.scrollTop - 40,
+                left: rect.left - container.left + rect.width / 2
+            });
+            setSelectedText(text);
+            setShowSelectionMenu(true);
+        } else {
+            setShowSelectionMenu(false);
+        }
+    };
+
+    const handleCreateNoteClick = () => {
+        setEditingNote(null);
+        setNoteText('');
+        setShowNoteForm(true);
+        setShowSelectionMenu(false);
+        window.getSelection()?.removeAllRanges();
+    };
+
+    const handleStartAiChatClick = () => {
+        setActiveTab('chat');
+        setChatHighlightContext(selectedText);
+        setShowSelectionMenu(false);
+        window.getSelection()?.removeAllRanges();
+        setTimeout(() => {
+            chatInputRef.current?.focus();
+        }, 100);
+    };
+
+    const handleSendChatMessage = async () => {
+        if (!chatInput.trim() || isGeneratingResponse || !selectedPhilosopherId) return;
+
+        const query = chatInput.trim();
+        setChatInput('');
+
+        // Add user message locally
+        const userMsg = { role: 'user', content: query };
+        setChatMessages(prev => [...prev, userMsg]);
+        setIsGeneratingResponse(true);
+
+        try {
+            // Build query params
+            const params = new URLSearchParams();
+            params.append('query', query);
+            if (s3Key) {
+                params.append('s3Key', s3Key);
+            }
+            if (chatHighlightContext) {
+                params.append('selectedText', chatHighlightContext);
+            }
+            if (selectedPhilosopherId) {
+                params.append('philosopherId', selectedPhilosopherId);
+            }
+            if (chatSessionId) {
+                params.append('sessionId', chatSessionId);
+            }
+
+            const res = await apiClient.get(`/rag/ask-contextual?${params.toString()}`);
+            const data = res.data?.result;
+            
+            if (data) {
+                if (!chatSessionId && data.sessionId) {
+                    setChatSessionId(data.sessionId);
+                }
+                setChatMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
+            }
+            setChatHighlightContext('');
+        } catch (err) {
+            console.error("Failed to fetch AI response:", err);
+            setChatMessages(prev => [...prev, { role: 'assistant', content: "Có lỗi xảy ra khi luận đàm với Triết gia AI. Vui lòng thử lại sau." }]);
+        } finally {
+            setIsGeneratingResponse(false);
+        }
+    };
+
+    const handleSaveNote = async () => {
+        try {
+            if (editingNote) {
+                await apiClient.put(`/notes/${editingNote.noteId}`, {
+                    documentS3Key: s3Key,
+                    selectedText: selectedText,
+                    noteText: noteText
+                });
+            } else {
+                await apiClient.post('/notes', {
+                    documentS3Key: s3Key,
+                    selectedText: selectedText,
+                    noteText: noteText
+                });
+            }
+            setShowNoteForm(false);
+            setEditingNote(null);
+            setNoteText('');
+            fetchNotes();
+        } catch (err) {
+            console.error("Failed to save note:", err);
+        }
+    };
+
+    const handleDeleteNote = async (noteId) => {
+        try {
+            await apiClient.delete(`/notes/${noteId}`);
+            fetchNotes();
+        } catch (err) {
+            console.error("Failed to delete note:", err);
+        }
+    };
+
+    const handleEditNoteClick = (note) => {
+        setEditingNote(note);
+        setSelectedText(note.selectedText || '');
+        setNoteText(note.noteText || '');
+        setShowNoteForm(true);
+    };
+
+    // Render HTML content with highlights
+    const renderParagraph = (para, idx) => {
+        let escaped = para.trim()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+        notes.forEach(note => {
+            if (note.selectedText && escaped.includes(note.selectedText)) {
+                const highlighted = `<span class="bg-yellow-500/20 border-b border-yellow-500 cursor-pointer hover:bg-yellow-500/35 transition-colors relative group" title="${note.noteText}">${note.selectedText}</span>`;
+                escaped = escaped.replaceAll(note.selectedText, highlighted);
+            }
+        });
+
+        return (
+            <p
+                key={idx}
+                className="font-body text-base leading-relaxed text-on-surface-variant text-justify whitespace-pre-line"
+                style={{ textAlign: 'justify' }}
+                dangerouslySetInnerHTML={{ __html: escaped }}
+            />
+        );
+    };
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full overflow-hidden">
             {/* Content Panel */}
-            <div className="lg:col-span-2">
-                <div className="bg-surface-container-low border border-outline-variant/20 rounded-lg overflow-hidden">
+            <div className="lg:col-span-2 flex flex-col h-full overflow-hidden">
+                <div className="bg-surface-container-low border border-outline-variant/20 rounded-lg overflow-hidden flex flex-col h-full">
                     <div className="px-8 py-5 border-b border-outline-variant/20 flex items-center gap-3">
                         <BookOpen size={18} className="text-secondary" />
                         <span className="text-sm font-bold tracking-wider uppercase text-secondary">
                             Nội dung bài học
                         </span>
                     </div>
-                    <div className="p-8 max-h-[65vh] overflow-y-auto custom-scrollbar">
+                    <div 
+                        className="p-8 flex-1 overflow-y-auto custom-scrollbar relative"
+                        onMouseUp={handleTextSelection}
+                    >
                         <div className="prose prose-invert max-w-none space-y-4">
                             {content ? (
-                                content.split(/\n\s*\n/).map((para, idx) => (
-                                    <p key={idx} className="font-body text-base leading-relaxed text-on-surface-variant text-justify whitespace-pre-line" style={{ textAlign: 'justify' }}>
-                                        {para.trim()}
-                                    </p>
-                                ))
+                                content.split(/\n\s*\n/).map((para, idx) => renderParagraph(para, idx))
                             ) : (
                                 <p className="text-on-surface-variant italic">Không có nội dung.</p>
                             )}
                         </div>
+
+                        {/* Floating Selection Menu */}
+                        {showSelectionMenu && (
+                            <div
+                                className="absolute z-50 bg-surface-container-high border border-outline-variant/30 p-1.5 rounded-lg shadow-xl flex items-center gap-2"
+                                style={{
+                                    top: `${selectionCoords.top}px`,
+                                    left: `${selectionCoords.left}px`,
+                                    transform: 'translateX(-50%)'
+                                }}
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                                onMouseUp={(e) => {
+                                    e.stopPropagation();
+                                }}
+                            >
+                                <button
+                                    onClick={handleCreateNoteClick}
+                                    className="bg-secondary text-on-secondary px-2.5 py-1.5 rounded-md hover:brightness-110 active:scale-95 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer flex items-center gap-1"
+                                >
+                                    <Pencil size={11} />
+                                    Ghi chú
+                                </button>
+                                <button
+                                    onClick={handleStartAiChatClick}
+                                    className="bg-primary text-on-primary px-2.5 py-1.5 rounded-md hover:brightness-110 active:scale-95 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer flex items-center gap-1"
+                                >
+                                    <BookOpen size={11} />
+                                    Luận đàm AI
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Audio Panel */}
-            <div className="lg:col-span-1">
-                <div className="sticky top-28 space-y-4">
-                    <div className="bg-surface-container-low border border-outline-variant/20 rounded-lg overflow-hidden">
+            {/* Sticky Audio & Notes Panel Column */}
+            <div className="lg:col-span-1 flex flex-col h-full overflow-hidden gap-4">
+                    {/* Audio Box */}
+                    <div className="bg-surface-container-low border border-outline-variant/20 rounded-lg overflow-hidden shrink-0">
                         <div className="px-6 py-5 border-b border-outline-variant/20">
                             <span className="text-sm font-bold tracking-wider uppercase text-secondary flex items-center gap-2">
                                 <Volume2 size={16} />
@@ -133,10 +406,8 @@ function ReadingStage({ lesson, onComplete }) {
                             </span>
                         </div>
                         <div className="p-6 space-y-5">
-                            {/* Audio element (ẩn) */}
                             <audio ref={audioRef} onEnded={handleAudioEnded} className="hidden" />
 
-                            {/* Error */}
                             {audioError && (
                                 <div className="flex items-start gap-2 text-sm text-on-surface-variant bg-surface-container-high p-3 rounded">
                                     <AlertTriangle size={14} className="text-secondary mt-0.5 shrink-0" />
@@ -144,7 +415,6 @@ function ReadingStage({ lesson, onComplete }) {
                                 </div>
                             )}
 
-                            {/* Start button */}
                             {!ttsStarted ? (
                                 <button
                                     onClick={handleStartAudio}
@@ -156,7 +426,6 @@ function ReadingStage({ lesson, onComplete }) {
                                 </button>
                             ) : (
                                 <>
-                                    {/* Progress */}
                                     <div className="space-y-2">
                                         <div className="flex justify-between text-xs text-on-surface-variant">
                                             <span>Đoạn {currentChunk + 1}/{chunks.length}</span>
@@ -170,7 +439,6 @@ function ReadingStage({ lesson, onComplete }) {
                                         </div>
                                     </div>
 
-                                    {/* Controls */}
                                     {isLoadingAudio ? (
                                         <div className="flex items-center justify-center gap-2 py-3 text-sm text-on-surface-variant">
                                             <Loader2 size={16} className="animate-spin text-secondary" />
@@ -187,22 +455,288 @@ function ReadingStage({ lesson, onComplete }) {
                                 </>
                             )}
 
-                            {/* Tip */}
                             <p className="text-xs text-outline leading-relaxed">
                                 🎙️ Giọng đọc tiếng Việt tự nhiên. Bài học sẽ được đọc liên tục từng đoạn.
                             </p>
                         </div>
                     </div>
 
+                    {/* Tabs Panel: Notes & AI Chat */}
+                    <div className="bg-surface-container-low border border-outline-variant/20 rounded-lg overflow-hidden flex flex-col flex-1 min-h-0">
+                        {/* Tab Headers */}
+                        <div className="flex border-b border-outline-variant/20 bg-surface-container-lowest shrink-0">
+                            <button
+                                onClick={() => setActiveTab('notes')}
+                                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer border-b-2
+                                    ${activeTab === 'notes' 
+                                        ? 'border-secondary text-secondary bg-surface-container-low/30' 
+                                        : 'border-transparent text-outline hover:text-on-surface-variant'}`}
+                            >
+                                <Pencil size={13} />
+                                Sổ tay Ghi chú ({notes.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('chat')}
+                                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer border-b-2
+                                    ${activeTab === 'chat' 
+                                        ? 'border-primary text-primary bg-surface-container-low/30' 
+                                        : 'border-transparent text-outline hover:text-on-surface-variant'}`}
+                            >
+                                <BookOpen size={13} />
+                                Luận đàm AI
+                            </button>
+                        </div>
+
+                        {/* Tab Content */}
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            {activeTab === 'notes' ? (
+                                <div className="p-5 flex-1 overflow-y-auto custom-scrollbar space-y-4">
+                                    {showNoteForm ? (
+                                        <div className="space-y-3">
+                                            <div className="text-xs text-outline leading-tight">
+                                                Ghi chú cho: <span className="italic text-on-surface-variant font-medium">"{selectedText.length > 50 ? selectedText.substring(0, 50) + '...' : selectedText}"</span>
+                                            </div>
+                                            <textarea
+                                                value={noteText}
+                                                onChange={(e) => setNoteText(e.target.value)}
+                                                placeholder="Nhập suy ngẫm của bạn..."
+                                                className="w-full p-3 bg-surface-container-high border border-outline-variant/30 rounded text-sm text-on-surface focus:outline-none focus:border-secondary h-24 resize-none"
+                                            />
+                                            <div className="flex gap-2 justify-end">
+                                                <button
+                                                    onClick={() => { setShowNoteForm(false); setEditingNote(null); }}
+                                                    className="px-3 py-1.5 text-xs border border-outline-variant/30 rounded text-on-surface hover:bg-surface-container-highest cursor-pointer"
+                                                >
+                                                    Hủy
+                                                </button>
+                                                <button
+                                                    onClick={handleSaveNote}
+                                                    disabled={!noteText.trim()}
+                                                    className="px-3 py-1.5 text-xs bg-secondary text-on-secondary rounded font-bold hover:brightness-110 disabled:opacity-50 cursor-pointer"
+                                                >
+                                                    Lưu
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {notes.length === 0 ? (
+                                                <p className="text-xs text-outline text-center py-4 leading-relaxed">
+                                                    Chưa có ghi chú nào. Hãy bôi đen một cụm từ/câu trong bài học và chọn "Tạo ghi chú" để ghi lại suy nghĩ của bạn!
+                                                </p>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {notes.map((note) => (
+                                                        <div key={note.noteId} className="border-l-2 border-secondary/50 pl-3 py-1 space-y-1 relative group/note">
+                                                            {note.selectedText && (
+                                                                <div className="text-xs italic text-outline leading-tight">
+                                                                    "{note.selectedText}"
+                                                                </div>
+                                                            )}
+                                                            <div className="text-sm text-on-surface-variant font-body">
+                                                                {note.noteText}
+                                                            </div>
+                                                            <div className="flex gap-2 opacity-0 group-hover/note:opacity-100 transition-opacity justify-end text-[10px] text-outline">
+                                                                <button
+                                                                    onClick={() => handleEditNoteClick(note)}
+                                                                    className="hover:text-secondary flex items-center gap-0.5 cursor-pointer"
+                                                                >
+                                                                    Sửa
+                                                                </button>
+                                                                <span>•</span>
+                                                                <button
+                                                                    onClick={() => handleDeleteNote(note.noteId)}
+                                                                    className="hover:text-red-400 flex items-center gap-0.5 cursor-pointer"
+                                                                >
+                                                                    Xóa
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    {/* Philosopher Row */}
+                                    <div className="px-4 py-2 border-b border-outline-variant/10 bg-surface-container-lowest flex items-center gap-2 overflow-x-auto scrollbar-hide shrink-0">
+                                        <span className="text-[10px] uppercase font-bold tracking-wider text-outline shrink-0 mr-1">Triết gia:</span>
+                                        <div className="flex gap-2.5">
+                                            {philosophers.map((p) => {
+                                                const isSelected = p.id === selectedPhilosopherId;
+                                                return (
+                                                    <button
+                                                        key={p.id}
+                                                        onClick={() => setSelectedPhilosopherId(p.id)}
+                                                        className={`relative flex-shrink-0 group focus:outline-none cursor-pointer rounded-full transition-all duration-300 p-0.5
+                                                            ${isSelected ? 'ring-2 ring-primary scale-110 shadow-lg shadow-primary/20' : 'hover:scale-105 opacity-60 hover:opacity-100'}`}
+                                                        title={`${p.name} - ${p.category}`}
+                                                    >
+                                                        {p.imageUrl ? (
+                                                            <img 
+                                                                src={p.imageUrl} 
+                                                                alt={p.name} 
+                                                                className="w-7 h-7 rounded-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-7 h-7 rounded-full bg-primary-container text-primary flex items-center justify-center text-xs font-bold">
+                                                                {p.name ? p.name.charAt(0) : 'P'}
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-surface-container-highest border border-outline-variant/30 text-on-surface text-[10px] py-1 px-2 rounded whitespace-nowrap z-50 shadow-md">
+                                                            <p className="font-bold">{p.name}</p>
+                                                            <p className="text-outline text-[9px]">{p.category}</p>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Conversation Controls */}
+                                    <div className="flex justify-between items-center px-4 py-1.5 border-b border-outline-variant/10 bg-surface-container/30 shrink-0 text-[10px]">
+                                        <span className="text-outline">
+                                            {chatSessionId ? 'Đang tiếp tục mạch đối thoại' : 'Luận đàm mới'}
+                                        </span>
+                                        {chatSessionId && (
+                                            <button
+                                                onClick={() => {
+                                                    setChatSessionId(null);
+                                                    setChatMessages([]);
+                                                }}
+                                                className="text-primary hover:text-secondary font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                            >
+                                                <RotateCcw size={10} />
+                                                Hội thoại mới
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Message List */}
+                                    <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-surface/20">
+                                        {chatMessages.length === 0 ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                                                <BookOpen size={24} className="text-primary/30 mb-2" />
+                                                <p className="text-xs text-outline leading-relaxed max-w-[200px]">
+                                                    Hãy đặt câu hỏi thảo luận về bài học, hoặc bôi đen một đoạn trích và chọn <strong>Luận đàm AI</strong>.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {chatMessages.map((msg, index) => {
+                                                    const isUser = msg.role === 'user';
+                                                    const philosopher = philosophers.find(p => p.id === selectedPhilosopherId);
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            className={`flex gap-2.5 max-w-[85%] ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}
+                                                        >
+                                                            {!isUser && (
+                                                                <div className="shrink-0">
+                                                                    {philosopher?.imageUrl ? (
+                                                                        <img 
+                                                                            src={philosopher.imageUrl} 
+                                                                            alt={philosopher.name} 
+                                                                            className="w-6 h-6 rounded-full object-cover border border-primary/20"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="w-6 h-6 rounded-full bg-primary-container text-primary flex items-center justify-center text-[10px] font-bold">
+                                                                            {philosopher?.name ? philosopher.name.charAt(0) : 'P'}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            
+                                                            <div className={`p-3 rounded-lg text-xs leading-relaxed font-body whitespace-pre-line border
+                                                                ${isUser 
+                                                                    ? 'bg-surface-container-highest border-outline-variant/35 text-on-surface rounded-tr-none' 
+                                                                    : 'bg-primary-container/20 border-primary/10 text-on-surface rounded-tl-none'}`}
+                                                            >
+                                                                {msg.content}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {isGeneratingResponse && (
+                                                    <div className="flex gap-2.5 max-w-[85%] mr-auto items-center">
+                                                        <div className="shrink-0 animate-pulse">
+                                                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                                                                <Loader2 size={12} className="animate-spin text-primary" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-3 bg-primary-container/10 border border-primary/10 text-outline rounded-lg rounded-tl-none text-xs flex items-center gap-1.5">
+                                                            <Loader2 size={12} className="animate-spin text-primary" />
+                                                            Triết gia đang suy ngẫm...
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <div ref={chatEndRef} />
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Highlight Context box */}
+                                    {chatHighlightContext && (
+                                        <div className="px-4 py-2 bg-secondary/10 border-t border-secondary/20 flex items-start justify-between gap-2 shrink-0">
+                                            <div className="text-[10px] text-on-secondary-container leading-snug italic truncate flex-1">
+                                                <span className="font-bold not-italic text-secondary block mb-0.5 text-[9px] uppercase tracking-wider">Ngữ cảnh luận đàm:</span>
+                                                "{chatHighlightContext}"
+                                            </div>
+                                            <button
+                                                onClick={() => setChatHighlightContext('')}
+                                                className="text-secondary hover:text-red-400 p-0.5 rounded cursor-pointer"
+                                                title="Hủy ngữ cảnh"
+                                            >
+                                                <XCircle size={12} />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Chat Input Container */}
+                                    <div className="p-3 border-t border-outline-variant/20 bg-surface-container-lowest flex items-center gap-2 shrink-0">
+                                        <input
+                                            ref={chatInputRef}
+                                            type="text"
+                                            value={chatInput}
+                                            onChange={(e) => setChatInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    handleSendChatMessage();
+                                                }
+                                            }}
+                                            disabled={isGeneratingResponse || !selectedPhilosopherId}
+                                            placeholder={selectedPhilosopherId ? "Đặt câu hỏi luận đàm..." : "Chọn triết gia..."}
+                                            className="flex-1 bg-surface-container-high border border-outline-variant/30 rounded px-3 py-2 text-xs text-on-surface focus:outline-none focus:border-primary disabled:opacity-50"
+                                        />
+                                        <button
+                                            onClick={handleSendChatMessage}
+                                            disabled={isGeneratingResponse || !chatInput.trim() || !selectedPhilosopherId}
+                                            className="p-2 bg-primary text-on-primary rounded hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all shrink-0 flex items-center justify-center"
+                                        >
+                                            {isGeneratingResponse ? (
+                                                <Loader2 size={14} className="animate-spin" />
+                                            ) : (
+                                                <ChevronRight size={14} className="font-bold" />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Complete button */}
                     <button
                         onClick={onComplete}
-                        className="w-full py-4 bg-secondary text-on-secondary font-bold tracking-wider uppercase text-sm rounded flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-secondary/20"
+                        className="w-full py-4 bg-secondary text-on-secondary font-bold tracking-wider uppercase text-sm rounded flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-secondary/20 shrink-0"
                     >
                         Hoàn thành bài học
                         <ChevronRight size={16} />
                     </button>
-                </div>
             </div>
         </div>
     );
@@ -247,7 +781,7 @@ function QuizStage({ quiz, onFinish }) {
     const progress = ((current) / quiz.questions.length) * 100;
 
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto w-full flex-1 overflow-y-auto custom-scrollbar py-4">
             {/* Header */}
             <div className="mb-8">
                 <div className="flex justify-between items-center mb-3 text-xs text-on-surface-variant uppercase tracking-wider font-bold">
@@ -356,7 +890,7 @@ function ResultStage({ quiz, answers, onRestart, onBack }) {
                               { label: 'Cần cố gắng thêm', color: 'text-on-surface-variant' };
 
     return (
-        <div className="max-w-xl mx-auto text-center">
+        <div className="max-w-xl mx-auto text-center w-full flex-1 overflow-y-auto custom-scrollbar py-4">
             {/* Trophy */}
             <div className="mb-8 flex justify-center">
                 <div className="w-24 h-24 rounded-full bg-secondary/10 border border-secondary/30 flex items-center justify-center">
@@ -544,7 +1078,7 @@ export default function LessonPage() {
             </header>
 
             {/* Main Content */}
-            <main className="pt-16 px-4 md:px-12 py-10 max-w-[1200px] mx-auto">
+            <main className="h-screen pt-16 pb-6 px-4 md:px-12 max-w-[1200px] mx-auto flex flex-col overflow-hidden">
 
                 {/* READING STAGE */}
                 {stage === STAGES.READING && (
@@ -566,7 +1100,7 @@ export default function LessonPage() {
                             </button>
                         </div>
                     ) : (
-                        <ReadingStage lesson={lesson} onComplete={handleCompleteLesson} />
+                        <ReadingStage lesson={lesson} s3Key={key} onComplete={handleCompleteLesson} />
                     )
                 )}
 

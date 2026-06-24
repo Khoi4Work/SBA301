@@ -83,6 +83,28 @@ public class RagController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @Operation(summary = "Ask a question based on the reading document content and selected text context", description = "Generates a contextual response from the selected philosopher using the full document content and selection query context.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Answer generated successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Query parameter is blank or invalid"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error occurred during generation")
+    })
+    @GetMapping("/ask-contextual")
+    public ResponseEntity<ApiResponse<RagAskResponse>> askContextual(
+            @RequestParam("query") @NotBlank(message = "Query cannot be blank") String query,
+            @RequestParam(value = "s3Key", required = false) String s3Key,
+            @RequestParam(value = "selectedText", required = false) String selectedText,
+            @RequestParam(value = "philosopherId", required = false) UUID philosopherId,
+            @RequestParam(value = "sessionId", required = false) UUID sessionId) {
+
+        log.info("Received contextual RAG query: {}, S3Key: {}, PhilosopherID: {}, SessionID: {}", query, s3Key, philosopherId, sessionId);
+
+        UUID userId = userService.getCurrentUserId();
+        RagAskResponse response = ragService.askContextual(userId, query, s3Key, selectedText, philosopherId, sessionId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @Operation(summary = "List all indexed documents", description = "Retrieves a list of all documents currently stored in the vector database.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Document list retrieved successfully"),
