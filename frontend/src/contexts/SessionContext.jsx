@@ -11,6 +11,13 @@ export const SessionProvider = ({ children }) => {
         return localStorage.getItem('chatPhilosopherId');
     });
 
+    const [refreshSignal, setRefreshSignal] = useState(0);
+
+    const triggerRefresh = () => {
+        setRefreshSignal(prev => prev + 1);
+    };
+
+
     const setSessionId = (id) => {
         setCurrentSessionId(id);
         if (id) {
@@ -46,7 +53,9 @@ export const SessionProvider = ({ children }) => {
             currentPhilosopherId,
             setPhilosopherId,
             switchSession,
-            clearSession
+            clearSession,
+            refreshSignal,
+            triggerRefresh
         }}>
             {children}
         </SessionContext.Provider>
