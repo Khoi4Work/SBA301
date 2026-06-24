@@ -16,9 +16,9 @@ import {
     Heart,
     Users
 } from 'lucide-react';
-import apiClient from '@/services/apiClient';
-import { Sidebar } from '@/components/Sidebar';
-import Footer from '@/components/Footer';
+import apiClient from '@/services/apiClient.js';
+import { Sidebar } from '@/components/Sidebar.jsx';
+import Footer from '@/components/Footer.jsx';
 
 // Define the 10 rounds of the game
 const SCENARIOS = [

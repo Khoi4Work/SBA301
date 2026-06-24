@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import apiClient from "@/services/apiClient";
+import apiClient from "@/services/apiClient.js";
 import { getChatSessions } from "@/services/sessionService.js";
 import { useSession } from '@/contexts/SessionContext.jsx';
 import {
@@ -16,9 +16,9 @@ import {
   Trophy,
   Zap,
 } from "lucide-react";
-import { DialogueItem } from "./DialogueItem";
-import { QuickLinkItem } from "./QuickLinkItem";
-import { StatCard } from "./StatCard";
+import { DialogueItem } from "../components/DialogueItem.jsx";
+import { QuickLinkItem } from "../components/QuickLinkItem.jsx";
+import { StatCard } from "../components/StatCard.jsx";
 
 export function Dashboard() {
   const navigate = useNavigate();

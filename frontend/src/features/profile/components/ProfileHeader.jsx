@@ -17,7 +17,7 @@ export default function ProfileHeader({ user, setUser }) {
 
             localPreviewUrl = URL.createObjectURL(file);
 
-            // Đổi ngay Profile + Sidebar bằng ảnh tạm
+            // Đổi ngay ProfilePage + Sidebar bằng ảnh tạm
             setUser({
                 ...user,
                 avatarUrl: localPreviewUrl,

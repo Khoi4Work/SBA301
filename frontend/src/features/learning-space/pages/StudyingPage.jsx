@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import Header from '@/components/Header';
-import {Sidebar} from '@/components/Sidebar';
-import LibrarySection from '@/components/LibrarySection';
-import QuizSection from '@/components/QuizSection';
-import SuccessModal from '@/components/SuccessModal';
+import Header from '@/components/Header.jsx';
+import {Sidebar} from '@/components/Sidebar.jsx';
+import LibrarySection from '@/features/learning-space/pages/LibrarySection.jsx';
 import '@/assets/styles/philoverse-study.css';
 import Footer from "@/components/Footer.jsx";
 
-export default function Study() {
+export default function StudyingPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     return (
@@ -19,14 +17,12 @@ export default function Study() {
                 <div className="pt-20 px-4 md:px-16 py-12">
                     <div className="max-w-[1200px] mx-auto">
                         <LibrarySection />
-                        <QuizSection onSubmit={() => setIsModalOpen(true)} />
                     </div>
                 </div>
 
                 <Footer />
             </main>
 
-            <SuccessModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
     );
 }

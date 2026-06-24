@@ -1,14 +1,14 @@
-import PersonalInfo from '@/components/PersonalInfo';
+import PersonalInfo from '@/features/profile/components/PersonalInfo.jsx';
 import { Sidebar } from "@/components/Sidebar.jsx";
 import Footer from "@/components/Footer.jsx";
 import { TopNav } from "@/components/TopNav.jsx";
-import BackgroundTexture from "@/components/BackgroundTexture.jsx";
-import ProfileHeader from "@/components/ProfileHeader.jsx";
+import BackgroundTexture from "@/features/profile/components/BackgroundTexture.jsx";
+import ProfileHeader from "@/features/profile/components/ProfileHeader.jsx";
 import { useContext, useEffect, useState } from "react";
 import apiClient from "@/services/apiClient.js";
 import { AuthContext } from "@/contexts/AuthContext.jsx";
 
-export default function Profile() {
+export default function ProfilePage() {
     const { user: authUser, updateUser } = useContext(AuthContext);
     const [profileUser, setProfileUser] = useState(authUser);
 

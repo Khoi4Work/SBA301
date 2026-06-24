@@ -6,13 +6,12 @@ import {
     getFileTypeInfo,
     formatFileSize,
     formatDate,
-} from '@/services/documentService';
+} from '@/services/documentService.js';
 import {
     getChapterDisplayName,
     getSectionDisplayName,
     getPartDisplayName,
 } from '@/utils/curriculumMapping';
-
 
 // ─── Skeleton Card ───────────────────────────────────────────────────────────
 function SkeletonCard() {

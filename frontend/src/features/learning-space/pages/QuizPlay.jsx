@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import apiClient from '@/services/apiClient';
+import apiClient from '@/services/apiClient.js';
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, XCircle, Award, RefreshCw, Clock, Loader2, Info } from 'lucide-react';
 import '@/assets/styles/philoverse-study.css';
 

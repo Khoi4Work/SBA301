@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sidebar } from '@/components/Sidebar';
-import apiClient from '@/services/apiClient';
-import { fetchDocuments, getFileTypeInfo, formatFileSize } from '@/services/documentService';
+import { Sidebar } from '@/components/Sidebar.jsx';
+import apiClient from '@/services/apiClient.js';
+import { fetchDocuments, getFileTypeInfo, formatFileSize } from '@/services/documentService.js';
 import { FileText, Award, Calendar, ChevronRight, Sparkles, RefreshCw, Loader2, BookOpen, Sword, ChevronDown, Search } from 'lucide-react';
 import { getChapterDisplayName, getSectionDisplayName, getPartDisplayName } from '@/utils/curriculumMapping';
 import '@/assets/styles/philoverse-study.css';

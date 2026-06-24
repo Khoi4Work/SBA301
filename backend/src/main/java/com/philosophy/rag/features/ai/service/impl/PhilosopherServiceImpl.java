@@ -4,7 +4,7 @@ import com.philosophy.rag.features.ai.dto.PhilosopherRequest;
 import com.philosophy.rag.features.ai.dto.PhilosopherResponse;
 import com.philosophy.rag.features.ai.entity.Philosopher;
 import com.philosophy.rag.features.ai.repository.PhilosopherRepository;
-import com.philosophy.rag.utils.service.CloudinaryService;
+import com.philosophy.rag.utils.service.MediaStorageService;
 import com.philosophy.rag.features.ai.service.PhilosopherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import com.philosophy.rag.base.exception.ErrorCode;
 public class PhilosopherServiceImpl implements PhilosopherService {
 
     private final PhilosopherRepository philosopherRepository;
-    private final CloudinaryService cloudinaryService;
+    private final MediaStorageService cloudinaryService;
 
     @Override
     public List<PhilosopherResponse> findAllPhilosophers() {
@@ -35,19 +35,19 @@ public class PhilosopherServiceImpl implements PhilosopherService {
     @Override
     @Transactional
     public PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file) {
-        String avatarUrl = request.getAvatarUrl();
+        String avatarUrl = request.avatarUrl();
         if (file != null && !file.isEmpty()) {
             avatarUrl = cloudinaryService.uploadImage(file, "philosophy/avatars").getSecureUrl();
         }
 
         Philosopher philosopher = Philosopher.builder()
-                .name(request.getName())
+                .name(request.name())
                 .avatarUrl(avatarUrl)
-                .shortQuote(request.getShortQuote())
-                .category(request.getCategory())
-                .core(request.getCore())
-                .biography(request.getBiography())
-                .systemPrompt(request.getSystemPrompt())
+                .shortQuote(request.shortQuote())
+                .category(request.category())
+                .core(request.core())
+                .biography(request.biography())
+                .systemPrompt(request.systemPrompt())
                 .build();
 
         Philosopher saved = philosopherRepository.save(philosopher);
@@ -69,17 +69,17 @@ public class PhilosopherServiceImpl implements PhilosopherService {
         String avatarUrl = philosopher.getAvatarUrl();
         if (file != null && !file.isEmpty()) {
             avatarUrl = cloudinaryService.uploadImage(file, "philosophy/avatars").getSecureUrl();
-        } else if (request.getAvatarUrl() != null && !request.getAvatarUrl().isBlank()) {
-            avatarUrl = request.getAvatarUrl();
+        } else if (request.avatarUrl() != null && !request.avatarUrl().isBlank()) {
+            avatarUrl = request.avatarUrl();
         }
 
-        philosopher.setName(request.getName());
+        philosopher.setName(request.name());
         philosopher.setAvatarUrl(avatarUrl);
-        philosopher.setShortQuote(request.getShortQuote());
-        philosopher.setCategory(request.getCategory());
-        philosopher.setCore(request.getCore());
-        philosopher.setBiography(request.getBiography());
-        philosopher.setSystemPrompt(request.getSystemPrompt());
+        philosopher.setShortQuote(request.shortQuote());
+        philosopher.setCategory(request.category());
+        philosopher.setCore(request.core());
+        philosopher.setBiography(request.biography());
+        philosopher.setSystemPrompt(request.systemPrompt());
 
         Philosopher saved = philosopherRepository.save(philosopher);
         return mapToResponse(saved);

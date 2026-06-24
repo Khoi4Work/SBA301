@@ -192,7 +192,7 @@ export default function Home() {
                             </Link>
 
                             <Link
-                                to="/Study"
+                                to="/StudyingPage"
                                 className="group relative bg-surface-container-low border border-outline-variant/30 p-12 hover:border-secondary/40 transition-all duration-500 overflow-hidden cursor-pointer translate-y-8 block">
                                 <div
                                     className="absolute -right-8 -top-8 text-[120px] opacity-5 font-display-lg text-primary select-none group-hover:rotate-12 transition-transform duration-700">Ω

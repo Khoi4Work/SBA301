@@ -1,8 +1,8 @@
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
-import apiClient from "@/services/apiClient";
+import apiClient from "@/services/apiClient.js";
 
-export function SelectionView({ onSelect }) {
+export function SelectionPhilosopherPage({ onSelect }) {
   const [philosophers, setPhilosophers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 

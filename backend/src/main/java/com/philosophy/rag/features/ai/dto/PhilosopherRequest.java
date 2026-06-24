@@ -1,28 +1,23 @@
 package com.philosophy.rag.features.ai.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import lombok.Builder;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-public class PhilosopherRequest {
-
+public record PhilosopherRequest(
     @NotBlank(message = "Tên triết gia không được để trống")
-    private String name;
+    String name,
 
-    private String avatarUrl;
+    String avatarUrl,
 
-    private String shortQuote;
+    String shortQuote,
 
-    private String category;
+    String category,
 
-    private String core;
+    String core,
 
-    private String biography;
+    String biography,
 
     @NotBlank(message = "System prompt không được để trống")
-    private String systemPrompt;
-}
+    String systemPrompt
+) {}

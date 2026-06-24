@@ -3,7 +3,7 @@ import { ArrowRight, ChevronLeft, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "@/features/auth/services/authService";
 
-export default function ForgotPasswordCard() {
+export default function ForgotPasswordForm() {
     const [email, setEmail] = useState("");
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");

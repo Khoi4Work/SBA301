@@ -77,7 +77,7 @@ export default function UserManagement() {
                     <div className="w-12 h-12 bg-surface border border-secondary/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-secondary transition-colors">
                       <img 
                         src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDJdA5ndsUwXDSzeZ-oWcGzsGdEP9xPaxYPU3i81m5SIATWcLQGr4ZiOEoCNh9_zh8lGVnBrlCh61Tk5oGlXtDushKw58K48I5ktXIuepn57XfrIprXVBipYE2s6uw-gwRtO_7hO8TNnvuXu_xn74csF-E0VdqkgpKHEjLMvyb5pD9wsdPu2XuCTrTjfi_Rlf1l1ZQ8sMTIrNkHE1LH0eVACvvGSlJA66z7U0jiJSF3q5fCcNxSdH8v3yyCmxz9gyLWVk1dwh1UDY" 
-                        alt="Scholar Profile" 
+                        alt="Scholar ProfilePage"
                         className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                       />
                     </div>
@@ -117,7 +117,7 @@ export default function UserManagement() {
                     <div className="w-12 h-12 bg-surface border border-secondary/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-secondary transition-colors">
                       <img 
                         src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmdi7j946Z1vMZQRpzdLaL6-cJsV01BPCC88lAZllY-8Mk8loNAQ_Ocq23xofIR_77sUTyIvVqtJ_yqmQFJ8-2Jw6BzzPEqtd07YkSrggGWgwGuEtk4gEWfUTbRN84vPJIVj9aFHmCJlrWtrws8h_rxDP5BNYecmwkZS7Bp3J45S6wUYswW6TAPG8wcKdhqbTDkAhsEWOQOmLhSVyXfSJsawnEG9TyzALGYENNGyn4qxFqMBI24jc8FJDxbNzCgI_5RnUUDciH_uA" 
-                        alt="Scholar Profile" 
+                        alt="Scholar ProfilePage"
                         className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                       />
                     </div>
@@ -157,7 +157,7 @@ export default function UserManagement() {
                     <div className="w-12 h-12 bg-surface border border-secondary/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-secondary transition-colors">
                       <img 
                         src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsl2EngLZ-2vH1P8oxmLLt9Yk1yk3sdCcZHygcdSRM4LrlhJjgz9XmnJrwtX9YazVK7i0wr3DTWogdiUCSuGzqWrZ-d73aT_JRxWy_2P1KdR6XbY__WZBRCjsj1F57Xy-3dwZhjlsAsQvhBtBuPPfd4yiTuhzXZGMaDzKim4YdFjgRnHNZQ61H55mU-AdBpKhd2YVjKKaYcwY59k4pp8VyfafofgUEfRFhxaC5DQMUN_HhHVGP76spl4TNNnLql2NZWO_yRthS1hg" 
-                        alt="Scholar Profile" 
+                        alt="Scholar ProfilePage"
                         className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                       />
                     </div>
@@ -197,7 +197,7 @@ export default function UserManagement() {
                     <div className="w-12 h-12 bg-surface border border-error/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-error transition-colors">
                       <img 
                         src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhQsDcqdGo1ov99IAQWFIlW8kfb5WfpMYDfwmMrGVgKqJxoBFsdb8lk5HU4w6a2puBUpHta03S02ZVSpu_UQB27oyf04guxjHRbiWnABc4YnRsfHga8mQqj94F2zStvTIPSnv3ty5RK1Wf6C3wK29mZcROVTxHt21X9kg9ArwE0xA2U-iTAp0oGBWLZo_vH0I_efn68knAZNiLRd4yKaQRbiVG0V0FOdgsUiItLoRKI7DBE5FkDPBpJjU_KxSN-NUjOq_r5mj50Vc" 
-                        alt="Scholar Profile" 
+                        alt="Scholar ProfilePage"
                         className="w-full h-full object-cover grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                       />
                     </div>

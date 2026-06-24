@@ -97,7 +97,7 @@ export default function AdminLayout() {
           <div style={{}} className="w-8 h-8 rounded border border-secondary/40 overflow-hidden bg-secondary-container">
             <img 
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBct4JIfQDRmKeAviPjXr8b1Mg7jpAeQhVI4s-nc3yacomcgbb_sRvO44iKhi4BK3TD-fmVz8oWQ1bAcdLQP9kvcDT3GL-HWtpAWCSa-U0vMSqDipE0PJSJflFKZTMhj4pO9SIxaavOvXeGWb0v5G8z18PulSiEk4Ero0Ae4n1Xt9wu-fi5UMG1uucS9nBkdq9hyPU58aO9C8BrElJOAMtNdKmReNFtX-XpsTS7prZkCTuTviXa7cWInbV3P0iYojGNSBNziF0GF10" 
-              alt="Admin Profile" 
+              alt="Admin ProfilePage"
               className="w-full h-full object-cover" 
             />
           </div>

@@ -4,7 +4,7 @@ import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.utils.dto.DocumentDistributionResponse;
 import com.philosophy.rag.utils.dto.DocumentUploadResponse;
-import com.philosophy.rag.utils.service.CloudinaryService;
+import com.philosophy.rag.utils.service.MediaStorageService;
 import com.philosophy.rag.utils.service.S3StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +48,7 @@ public class S3StorageServiceImpl implements S3StorageService {
     private String awsRegion;
 
     private final S3Client s3Client;
-    private final CloudinaryService cloudinaryService;
+    private final MediaStorageService cloudinaryService;
 
     // In-memory cache for document metadata distribution response list
     private List<DocumentDistributionResponse> cachedDocumentList = null;

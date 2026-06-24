@@ -4,8 +4,8 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
-import com.philosophy.rag.utils.dto.CloudinaryUploadResponse;
-import com.philosophy.rag.utils.service.CloudinaryService;
+import com.philosophy.rag.utils.dto.UploadResponse;
+import com.philosophy.rag.utils.service.MediaStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,17 +17,17 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CloudinaryServiceImpl implements CloudinaryService {
+public class CloudinaryServiceImpl implements MediaStorageService {
 
     private final Cloudinary cloudinary;
 
     @Override
-    public CloudinaryUploadResponse uploadImage(MultipartFile file) throws ApiException {
+    public UploadResponse uploadImage(MultipartFile file) throws ApiException {
         return uploadImage(file, "philosophy/images");
     }
 
     @Override
-    public CloudinaryUploadResponse uploadImage(MultipartFile file, String folder) throws ApiException {
+    public UploadResponse uploadImage(MultipartFile file, String folder) throws ApiException {
         if (file == null || file.isEmpty()) {
             throw new ApiException(ErrorCode.INVALID_INPUT, "File must not be empty or null");
         }
@@ -47,7 +47,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
             log.info("Cloudinary upload successful for file: {}", file.getOriginalFilename());
 
-            return CloudinaryUploadResponse.builder()
+            return UploadResponse.builder()
                     .publicId((String) uploadResult.get("public_id"))
                     .url((String) uploadResult.get("url"))
                     .secureUrl((String) uploadResult.get("secure_url"))
