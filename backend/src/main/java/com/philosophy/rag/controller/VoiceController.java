@@ -9,7 +9,6 @@ import com.philosophy.rag.service.VoiceService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -46,15 +45,15 @@ public class VoiceController {
 
         java.time.LocalDateTime start = java.time.LocalDateTime.now();
 
-        // We need to pass the sessionId to voiceService.chat if we want the AI to have context
+        // We need to pass the sessionId to voiceService.chat if we want the AI to have
+        // context
         // But VoiceService.chat takes TtsRequest. TtsRequest is a record (immutable).
         // We must create a new TtsRequest with the sessionId.
         TtsRequest sessionRequest = new TtsRequest(
                 request.text(),
                 request.voice(),
                 request.philosopherId(),
-                sessionId
-        );
+                sessionId);
 
         ChatResponse response = voiceService.chat(sessionRequest);
         java.time.LocalDateTime end = java.time.LocalDateTime.now();
@@ -62,7 +61,8 @@ public class VoiceController {
         // Cập nhật sessionId vào response để Frontend có thể lưu lại
         ChatResponse finalResponse = new ChatResponse(response.text(), response.audioBase64(), sessionId);
 
-        chatHistoryService.saveInteraction(userId, request.philosopherId(), request.text(), response.text(), start, end, sessionId);
+        chatHistoryService.saveInteraction(userId, request.philosopherId(), request.text(), response.text(), start, end,
+                sessionId);
 
         return ApiResponse.success(finalResponse, "Chat response successfully");
     }

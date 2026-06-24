@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import com.philosophy.rag.service.CloudinaryService;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -34,6 +35,7 @@ import java.util.UUID;
 import java.net.URLEncoder;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 
 @Service
 @Slf4j
@@ -49,8 +51,14 @@ public class S3StorageServiceImpl implements S3StorageService {
     private final S3Client s3Client;
     private final CloudinaryService cloudinaryService;
 
+    // In-memory cache for document metadata distribution response list
+    private List<DocumentDistributionResponse> cachedDocumentList = null;
+    private Instant cacheExpiry = Instant.MIN;
+    private static final long CACHE_TTL_SECONDS = 300; // 5 minutes
+
     @Override
-    public DocumentUploadResponse uploadDocument(MultipartFile file, String title, String description, MultipartFile image, String imageUrl, String category)
+    public DocumentUploadResponse uploadDocument(MultipartFile file, String title, String description,
+            MultipartFile image, String imageUrl, String category)
             throws ApiException {
         log.info("Starting document upload: {}", file.getOriginalFilename());
         // Validate file rỗng
@@ -85,7 +93,7 @@ public class S3StorageServiceImpl implements S3StorageService {
         String key = "documents/" + LocalDate.now() + "/" + UUID.randomUUID() + "-" + asciiFileName;
         try {
             Map<String, String> metadata = new java.util.HashMap<>();
-            
+
             // Mã hóa UTF-8 tiếng Việt cho các trường metadata
             String rawTitle = title != null && !title.isBlank() ? title : originalFileName;
             String rawDescription = description != null && !description.isBlank() ? description : "";
@@ -96,7 +104,7 @@ public class S3StorageServiceImpl implements S3StorageService {
             metadata.put("category", URLEncoder.encode(rawCategory, StandardCharsets.UTF_8.name()));
             metadata.put("original-file-name", URLEncoder.encode(originalFileName, StandardCharsets.UTF_8.name()));
             metadata.put("uploaded-at", LocalDate.now().toString());
-            
+
             if (uploadedImageUrl != null && !uploadedImageUrl.isBlank()) {
                 metadata.put("image-url", uploadedImageUrl);
             }
@@ -124,6 +132,10 @@ public class S3StorageServiceImpl implements S3StorageService {
             throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "File upload failed: " + e.getMessage());
         }
 
+        // Invalidate cache on upload
+        this.cachedDocumentList = null;
+        this.cacheExpiry = Instant.MIN;
+
         // tạo url để truy cập file đã upload
         String url = getS3Url(bucketName, awsRegion, key);
 
@@ -142,17 +154,30 @@ public class S3StorageServiceImpl implements S3StorageService {
 
     @Override
     public List<DocumentDistributionResponse> listDocuments() throws ApiException {
+        Instant now = Instant.now();
+        if (cachedDocumentList != null && now.isBefore(cacheExpiry)) {
+            log.info("Returning cached document list (size: {})", cachedDocumentList.size());
+            return cachedDocumentList;
+        }
+
+        log.info("Cache miss or expired. Fetching document list from S3...");
         try {
             ListObjectsV2Response response = s3Client.listObjectsV2(ListObjectsV2Request.builder()
                     .bucket(bucketName)
                     .prefix("documents/")
                     .build());
 
-            return response.contents().stream()
+            List<DocumentDistributionResponse> documents = response.contents().stream()
                     .filter(object -> object.key() != null && !object.key().endsWith("/"))
                     .sorted((left, right) -> right.lastModified().compareTo(left.lastModified()))
                     .map(this::toDistributionResponse)
                     .toList();
+
+            // Cache the results
+            this.cachedDocumentList = documents;
+            this.cacheExpiry = now.plusSeconds(CACHE_TTL_SECONDS);
+
+            return documents;
         } catch (S3Exception e) {
             log.error("Failed to list S3 documents: {}", e.awsErrorDetails().errorMessage(), e);
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to list documents from S3");
@@ -177,7 +202,7 @@ public class S3StorageServiceImpl implements S3StorageService {
                     .build());
 
             Map<String, String> metadata = headObject.metadata();
-            
+
             // Lấy và giải mã Tiếng Việt từ S3 User Metadata
             String rawFileName = metadata.get("original-file-name");
             String fileName = null;
@@ -191,7 +216,7 @@ public class S3StorageServiceImpl implements S3StorageService {
             if (fileName == null || fileName.isBlank()) {
                 fileName = extractFileNameFromKey(object.key());
             }
-            
+
             String title = metadata.getOrDefault("title", fileName);
             try {
                 title = URLDecoder.decode(title, StandardCharsets.UTF_8.name());
@@ -310,9 +335,10 @@ public class S3StorageServiceImpl implements S3StorageService {
     }
 
     private String sanitizeFileName(String fileName) {
-        if (fileName == null) return "document";
+        if (fileName == null)
+            return "document";
         // Normalize Vietnamese accents and remove them
-        String normalized = java.text.Normalizer.normalize(fileName, java.text.Normalizer.Form.NFD);
+        String normalized = Normalizer.normalize(fileName, Normalizer.Form.NFD);
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
         String ascii = pattern.matcher(normalized).replaceAll("");
         // Replace 'đ' and 'Đ'

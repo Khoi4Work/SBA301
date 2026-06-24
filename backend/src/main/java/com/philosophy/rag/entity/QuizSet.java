@@ -1,57 +1,49 @@
 package com.philosophy.rag.entity;
 
-import com.github.f4b6a3.uuid.UuidCreator;
-import com.philosophy.rag.base.persistence.BaseEntity;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Thực thể: Bộ đề ôn tập (QuizSet)
+ * MongoDB Document: Bộ đề ôn tập (QuizSet)
  * Nhóm các câu hỏi ôn tập (thường gồm 20 câu hỏi) thuộc về một tài liệu nhất định.
+ * Tự động xóa sau 30 ngày (TTL).
  */
-@Entity
-@Table(name = "quiz_sets", indexes = {
-        @Index(name = "idx_quiz_set_document", columnList = "document_id")
-})
+@Document(collection = "quiz_sets")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class QuizSet extends BaseEntity {
+public class QuizSet {
 
     /** Mã bộ đề — Khóa chính */
     @Id
-    @Column(name = "quiz_set_id", nullable = false, updatable = false)
     private UUID quizSetId;
 
-    @PrePersist
-    public void generateId() {
-        if (quizSetId == null) {
-            quizSetId = UuidCreator.getTimeOrderedEpoch();
-        }
-    }
-
     /** Tiêu đề bộ đề ôn tập */
-    @Column(name = "title", nullable = false, length = 500)
     private String title;
 
-    /**
-     * Tài liệu liên quan.
-     */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "document_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_quiz_set_document"))
-    private Document document;
+    /** ID tài liệu liên quan */
+    private UUID documentId;
 
-    /**
-     * Danh sách câu hỏi trong bộ đề này.
-     */
-    @OneToMany(mappedBy = "quizSet", cascade = CascadeType.ALL, orphanRemoval = true)
+    /** Tiêu đề tài liệu liên quan */
+    private String documentTitle;
+
+    /** S3 Key của tài liệu liên quan (dùng để tìm bộ đề ôn tập) */
+    private String documentS3Key;
+
+    /** Danh sách câu hỏi trong bộ đề này (Embedded Document) */
     @Builder.Default
     private List<Quiz> quizzes = new ArrayList<>();
+
+    /** Thời gian tạo bộ đề - tự động xóa sau 30 ngày (2,592,000 giây) */
+    @Indexed(expireAfterSeconds = 2592000)
+    private Instant createdAt;
 }

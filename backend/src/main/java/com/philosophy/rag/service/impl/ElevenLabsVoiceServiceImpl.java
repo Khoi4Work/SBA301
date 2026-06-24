@@ -7,12 +7,10 @@ import com.philosophy.rag.service.VoiceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
 import java.util.Base64;
 
@@ -36,8 +34,10 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
 
     @Override
     public ChatResponse chat(TtsRequest request) {
-        String chatResponseText = cleanTextForTTS(ragService.ask(request.text(), request.philosopherId(), request.sessionId()));
-        String audioBase64 = textToSpeak(new TtsRequest(chatResponseText, voiceId, request.philosopherId(), request.sessionId()));
+        String chatResponseText = cleanTextForTTS(
+                ragService.ask(request.text(), request.philosopherId(), request.sessionId()));
+        String audioBase64 = textToSpeak(
+                new TtsRequest(chatResponseText, voiceId, request.philosopherId(), request.sessionId()));
         return new ChatResponse(chatResponseText, audioBase64, request.sessionId());
     }
 
@@ -98,6 +98,9 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
     }
 
     // Inner classes for API requests
-    private record ElevenLabsRequest(String model_id, String text, VoiceSettings voice_settings) {}
-    private record VoiceSettings(float stability, float similarity_boost, float style_exaggeration) {}
+    private record ElevenLabsRequest(String model_id, String text, VoiceSettings voice_settings) {
+    }
+
+    private record VoiceSettings(float stability, float similarity_boost, float style_exaggeration) {
+    }
 }

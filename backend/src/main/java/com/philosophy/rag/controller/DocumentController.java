@@ -8,7 +8,6 @@ import com.philosophy.rag.service.S3StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -74,7 +73,8 @@ public class DocumentController {
                 // Check completed files if user is logged in
                 Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
                 log.info("=== listDocuments Authentication: {} ===", authentication);
-                if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)) {
+                if (authentication != null && authentication.isAuthenticated()
+                                && !(authentication instanceof AnonymousAuthenticationToken)) {
                         String username = authentication.getName();
                         log.info("=== listDocuments Logged in user: {} ===", username);
                         userRepository.findByUsername(username).ifPresent(user -> {
@@ -83,10 +83,12 @@ public class DocumentController {
                                 for (DocumentDistributionResponse doc : documents) {
                                         boolean isCompleted = progresses.stream()
                                                         .anyMatch(p -> {
-                                                                boolean keyMatch = p.getDocument().getS3Key().equals(doc.getKey());
+                                                                boolean keyMatch = p.getDocument().getS3Key()
+                                                                                .equals(doc.getKey());
                                                                 boolean completed = p.getIsCompleted();
-                                                                log.info("=== DB Key: '{}' | S3 Key: '{}' | Match: {} | Completed: {} ===", 
-                                                                        p.getDocument().getS3Key(), doc.getKey(), keyMatch, completed);
+                                                                log.info("=== DB Key: '{}' | S3 Key: '{}' | Match: {} | Completed: {} ===",
+                                                                                p.getDocument().getS3Key(),
+                                                                                doc.getKey(), keyMatch, completed);
                                                                 return keyMatch && completed;
                                                         });
                                         doc.setIsCompleted(isCompleted);
@@ -100,27 +102,27 @@ public class DocumentController {
                 return ResponseEntity.ok(ApiResponse.success(documents, "Document list retrieved successfully"));
         }
 
-//        @Operation(summary = "Download a document from S3 by key")
-//        @GetMapping("/download")
-//        public ResponseEntity<byte[]> downloadDocument(
-//                        @RequestParam("key") String key) throws ApiException {
-//
-//                log.info("Downloading document with key: {}", key);
-//                byte[] fileBytes = s3StorageService.downloadDocument(key);
-//                String contentType = s3StorageService.getContentType(key);
-//
-//                // Extract readable filename from key (format: documents/date/uuid-filename)
-//                String fileName = key.substring(key.lastIndexOf('/') + 1);
-//                if (fileName.length() > 37 && fileName.charAt(36) == '-') {
-//                        fileName = fileName.substring(37);
-//                }
-//
-//                return ResponseEntity.ok()
-//                                .contentType(MediaType.parseMediaType(contentType))
-//                                .header(HttpHeaders.CONTENT_DISPOSITION,
-//                                                "attachment; filename=\"" + fileName + "\"")
-//                                .header("Access-Control-Expose-Headers", HttpHeaders.CONTENT_DISPOSITION)
-//                                .body(fileBytes);
-//        }
+        // @Operation(summary = "Download a document from S3 by key")
+        // @GetMapping("/download")
+        // public ResponseEntity<byte[]> downloadDocument(
+        // @RequestParam("key") String key) throws ApiException {
+        //
+        // log.info("Downloading document with key: {}", key);
+        // byte[] fileBytes = s3StorageService.downloadDocument(key);
+        // String contentType = s3StorageService.getContentType(key);
+        //
+        // // Extract readable filename from key (format: documents/date/uuid-filename)
+        // String fileName = key.substring(key.lastIndexOf('/') + 1);
+        // if (fileName.length() > 37 && fileName.charAt(36) == '-') {
+        // fileName = fileName.substring(37);
+        // }
+        //
+        // return ResponseEntity.ok()
+        // .contentType(MediaType.parseMediaType(contentType))
+        // .header(HttpHeaders.CONTENT_DISPOSITION,
+        // "attachment; filename=\"" + fileName + "\"")
+        // .header("Access-Control-Expose-Headers", HttpHeaders.CONTENT_DISPOSITION)
+        // .body(fileBytes);
+        // }
 
 }

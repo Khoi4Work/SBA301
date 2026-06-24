@@ -7,7 +7,8 @@ import {
   MessageSquare,
   Trash2,
   Pencil,
-  Archive
+  Archive,
+  History
 } from "lucide-react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
@@ -119,7 +120,14 @@ export function Sidebar() {
           to="/review"
         >
           <BookOpen className="w-5 h-5" />
-          <span className="font-label-md text-label-md">Ôn tập</span >
+          <span className="font-label-md text-label-md">Ôn tập</span>
+        </Link>
+        <Link
+          className={getMenuItemClass("/review/history")}
+          to="/review/history"
+        >
+          <History className="w-5 h-5" />
+          <span className="font-label-md text-label-md">Lịch sử ôn tập</span>
         </Link>
 
         {currentPath.startsWith("/ai") && (

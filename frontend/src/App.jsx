@@ -13,6 +13,7 @@ import Study from "@/pages/Study.jsx";
 import LessonPage from "@/pages/LessonPage.jsx";
 import Review from "@/pages/Review.jsx";
 import QuizPlay from "@/pages/QuizPlay.jsx";
+import QuizHistory from "@/pages/QuizHistory.jsx";
 import ProtectedRoute from "@/contexts/ProtectedRoute.jsx";
 import Profile from "@/pages/Profile.jsx";
 import ConsumeristEscape from "@/pages/ConsumeristEscape.jsx";
@@ -66,6 +67,7 @@ function AppRoutes() {
             <Route path="/ai" element={<ProtectedRoute><MainLayout><VirtualAssistant /></MainLayout></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><MainLayout><Chat /></MainLayout></ProtectedRoute>} />
             <Route path="/review" element={<ProtectedRoute><MainLayout><Review /></MainLayout></ProtectedRoute>} />
+            <Route path="/review/history" element={<ProtectedRoute><MainLayout><QuizHistory /></MainLayout></ProtectedRoute>} />
 
             {/* ==========================================
                 GROUP 4: ADMIN ROUTES (NESTED ROUTING)

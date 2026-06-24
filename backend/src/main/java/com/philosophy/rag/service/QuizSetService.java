@@ -4,7 +4,9 @@ import com.philosophy.rag.dto.request.QuizSetGenerateRequest;
 import com.philosophy.rag.dto.request.QuizSubmitRequest;
 import com.philosophy.rag.dto.response.QuizSetDetailResponse;
 import com.philosophy.rag.dto.response.QuizSetResponse;
+import com.philosophy.rag.dto.response.QuizHistoryResponse;
 import com.philosophy.rag.dto.response.QuizSubmitResponse;
+import com.philosophy.rag.dto.response.QuizSubmissionDetailResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,4 +16,6 @@ public interface QuizSetService {
     QuizSetResponse generateQuizSet(QuizSetGenerateRequest request);
     QuizSetDetailResponse getQuizSetDetail(UUID quizSetId);
     QuizSubmitResponse gradeQuizSet(UUID quizSetId, QuizSubmitRequest request);
+    List<QuizHistoryResponse> getQuizHistory();
+    QuizSubmissionDetailResponse getQuizSubmissionDetail(UUID submissionId);
 }

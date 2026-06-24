@@ -6,6 +6,8 @@ import com.philosophy.rag.dto.request.QuizSubmitRequest;
 import com.philosophy.rag.dto.response.QuizSetDetailResponse;
 import com.philosophy.rag.dto.response.QuizSetResponse;
 import com.philosophy.rag.dto.response.QuizSubmitResponse;
+import com.philosophy.rag.dto.response.QuizHistoryResponse;
+import com.philosophy.rag.dto.response.QuizSubmissionDetailResponse;
 import com.philosophy.rag.service.QuizSetService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -62,5 +64,22 @@ public class QuizSetController {
         log.info("Request to submit answers for quiz set id: {}", id);
         QuizSubmitResponse response = quizSetService.gradeQuizSet(id, request);
         return ResponseEntity.ok(ApiResponse.success(response, "Nộp bài thành công và đã ghi nhận kết quả"));
+    }
+
+    @Operation(summary = "Get user's quiz history")
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<List<QuizHistoryResponse>>> getQuizHistory() {
+        log.info("Request to get quiz history for current user");
+        List<QuizHistoryResponse> response = quizSetService.getQuizHistory();
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy lịch sử ôn tập thành công"));
+    }
+
+    @Operation(summary = "Get detailed quiz attempt review")
+    @GetMapping("/history/{submissionId}")
+    public ResponseEntity<ApiResponse<QuizSubmissionDetailResponse>> getQuizSubmissionDetail(
+            @PathVariable("submissionId") UUID submissionId) {
+        log.info("Request to get quiz submission details for submissionId: {}", submissionId);
+        QuizSubmissionDetailResponse response = quizSetService.getQuizSubmissionDetail(submissionId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Lấy chi tiết lịch sử làm bài thành công"));
     }
 }

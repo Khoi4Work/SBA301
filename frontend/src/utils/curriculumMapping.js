@@ -106,3 +106,67 @@ export function getPartDisplayName(chapterCode, sectionCode, partCode) {
     const title = PART_NAMES[chapterCode]?.[sectionCode]?.[partCode];
     return title ? `Phần ${partCode}: ${title}` : `Phần ${partCode}`;
 }
+
+/**
+ * Parses raw S3 file names (e.g. "Chuong1-I-2a") into beautiful, friendly Vietnamese curriculum titles.
+ */
+export function getFriendlyDocumentTitle(filename) {
+    if (!filename) return 'Tài liệu ôn tập';
+    
+    // Remove potential uuid prefixes or directory paths if present
+    let cleanName = filename.substring(filename.lastIndexOf('/') + 1);
+    cleanName = cleanName.substring(cleanName.lastIndexOf('\\') + 1);
+    
+    // Remove extension if present
+    const dotIdx = cleanName.lastIndexOf('.');
+    if (dotIdx > 0) {
+        cleanName = cleanName.substring(0, dotIdx);
+    }
+    
+    // Strip uuid prefix if it follows standard Spring S3 key prefix format (36 chars + dash)
+    if (cleanName.length > 37 && cleanName.charAt(36) === '-') {
+        cleanName = cleanName.substring(37);
+    }
+
+    // Try matching Chapter, Section, and Part. E.g., Chuong1-I-2a, Chương1-I-2
+    // Group 1: Chapter Number, Group 2: Roman Section, Group 3: Part Number, Group 4: Letter suffix (optional)
+    const match = cleanName.match(/(?:Chương|Chuong|Chapter)\s*(\d+)[\s-_]+([IVXLCDM]+)[\s-_]+(\d+)([a-zđA-ZĐ]*)/i);
+    if (match) {
+        const chapterNum = match[1];
+        const sectionRoman = match[2].toUpperCase();
+        const partNum = match[3];
+        const letter = match[4] || '';
+        
+        const chapterKey = `Chương ${chapterNum}`;
+        const partTitle = PART_NAMES[chapterKey]?.[sectionRoman]?.[partNum];
+        if (partTitle) {
+            const formattedPartTitle = partTitle.charAt(0).toLowerCase() + partTitle.slice(1);
+            return `Nội dung ${formattedPartTitle}${letter ? ` (phần ${letter})` : ''}`;
+        }
+    }
+    
+    // Fallback 1: Match Chapter and Section only
+    const sectionMatch = cleanName.match(/(?:Chương|Chuong|Chapter)\s*(\d+)[\s-_]+([IVXLCDM]+)/i);
+    if (sectionMatch) {
+        const chapterNum = sectionMatch[1];
+        const sectionRoman = sectionMatch[2].toUpperCase();
+        const chapterKey = `Chương ${chapterNum}`;
+        const sectionTitle = SECTION_NAMES[chapterKey]?.[sectionRoman];
+        if (sectionTitle) {
+            return sectionTitle;
+        }
+    }
+    
+    // Fallback 2: Match Chapter only
+    const chapterMatch = cleanName.match(/(?:Chương|Chuong|Chapter)\s*(\d+)/i);
+    if (chapterMatch) {
+        const chapterNum = chapterMatch[1];
+        const chapterKey = `Chương ${chapterNum}`;
+        const chapterTitle = CHAPTER_NAMES[chapterKey];
+        if (chapterTitle) {
+            return chapterTitle;
+        }
+    }
+    
+    return cleanName;
+}

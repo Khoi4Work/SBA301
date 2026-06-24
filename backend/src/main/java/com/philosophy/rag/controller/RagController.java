@@ -4,10 +4,12 @@ import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.dto.response.DocumentContent;
 import com.philosophy.rag.service.ChatHistoryService;
+import com.philosophy.rag.service.ChatSessionService;
 import com.philosophy.rag.service.RagService;
 import com.philosophy.rag.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -35,13 +37,13 @@ public class RagController {
     private final RagService ragService;
     private final ChatHistoryService chatHistoryService;
     private final UserService userService;
-    private final com.philosophy.rag.service.ChatSessionService chatSessionService;
+    private final ChatSessionService chatSessionService;
 
     @Operation(summary = "Upload and index a document (Requires ADMIN, STAFF or INSTRUCTOR)", description = "Uploads a file (PDF, TXT, etc.), extracts content, and stores it in the vector database for RAG.")
     @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "File uploaded and indexed successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid file or empty file uploaded"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error during indexing process")
+            @ApiResponse(responseCode = "200", description = "File uploaded and indexed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid file or empty file uploaded"),
+            @ApiResponse(responseCode = "500", description = "Internal server error during indexing process")
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")

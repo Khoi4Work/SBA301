@@ -8,7 +8,6 @@ import com.philosophy.rag.entity.ChatHistory;
 import com.philosophy.rag.entity.Philosopher;
 import com.philosophy.rag.repository.custom.VectorStoreRepository;
 import com.philosophy.rag.repository.itf.PhilosopherRepository;
-import com.philosophy.rag.repository.itf.ChatHistoryRepository;
 import com.philosophy.rag.service.ChatHistoryService;
 import com.philosophy.rag.service.CohereRerankService;
 import com.philosophy.rag.service.RagService;
@@ -50,9 +49,12 @@ public class GeminiRagServiceImpl implements RagService {
     private final ChatClient chatClient;
     private final ChatHistoryService chatHistoryService;
     private final CohereRerankService cohereRerankService;
-    private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true, java.util.List.of('\n', '\r', ' '));
+    private final TextSplitter textSplitter = new TokenTextSplitter(800, 400, 5, 10000, true,
+            java.util.List.of('\n', '\r', ' '));
 
-    public GeminiRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository, PhilosopherRepository philosopherRepository, @Qualifier("googleGenAiChatModel") ChatModel chatModel, ChatHistoryService chatHistoryService, CohereRerankService cohereRerankService) {
+    public GeminiRagServiceImpl(VectorStore vectorStore, VectorStoreRepository vectorStoreRepository,
+            PhilosopherRepository philosopherRepository, @Qualifier("googleGenAiChatModel") ChatModel chatModel,
+            ChatHistoryService chatHistoryService, CohereRerankService cohereRerankService) {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
         this.philosopherRepository = philosopherRepository;
@@ -65,7 +67,8 @@ public class GeminiRagServiceImpl implements RagService {
     public String uploadDocument(MultipartFile file) {
         String filename = file.getOriginalFilename();
         if (filename == null || (!filename.toLowerCase().endsWith(".pdf") && !filename.toLowerCase().endsWith(".md"))) {
-            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Unsupported file format. Only PDF and MD files are allowed.");
+            throw new ApiException(ErrorCode.RAG_SERVICE_ERROR,
+                    "Unsupported file format. Only PDF and MD files are allowed.");
         }
 
         Path tempFile = saveMultipartFile(file);
@@ -97,7 +100,8 @@ public class GeminiRagServiceImpl implements RagService {
 
     @Override
     public String ask(String query, UUID philosopherId, UUID sessionId) {
-        log.info("[Gemini RAG DEBUG] Incoming Query: {}, PhilosopherID: {}, SessionID: {}", query, philosopherId, sessionId);
+        log.info("[Gemini RAG DEBUG] Incoming Query: {}, PhilosopherID: {}, SessionID: {}", query, philosopherId,
+                sessionId);
 
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
@@ -164,7 +168,8 @@ public class GeminiRagServiceImpl implements RagService {
     }
 
     private String cleanText(String text) {
-        if (text == null) return "";
+        if (text == null)
+            return "";
         String cleaned = text.replaceAll("[\\p{Cc}&&[^\n]]", " ");
         cleaned = cleaned.replaceAll("-\s*\n", " ");
         cleaned = cleaned.replaceAll("(?<!\n)\n(?!\n)", " ");
@@ -184,7 +189,8 @@ public class GeminiRagServiceImpl implements RagService {
     private List<Document> retrieveCandidates(String query) {
         String keywordQuery = query.replaceAll("(?i)c?\s+kh?ng|c?\s+ph?i\s+l?|l?\s+g?|t?i\s+sao", " ").trim();
         List<Document> queryDocs = vectorStore.similaritySearch(SearchRequest.builder().query(query).topK(150).build());
-        List<Document> keywordDocs = vectorStore.similaritySearch(SearchRequest.builder().query(keywordQuery).topK(150).build());
+        List<Document> keywordDocs = vectorStore
+                .similaritySearch(SearchRequest.builder().query(keywordQuery).topK(150).build());
         return Stream.concat(queryDocs.stream(), keywordDocs.stream())
                 .distinct()
                 .collect(Collectors.toList());

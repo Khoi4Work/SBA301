@@ -2,10 +2,22 @@ package com.philosophy.rag.entity;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.philosophy.rag.base.persistence.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -41,24 +53,21 @@ public class ChatHistory extends BaseEntity {
      * Phiên hội thoại chứa tương tác này.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id",
-                foreignKey = @ForeignKey(name = "fk_chat_history_session"))
+    @JoinColumn(name = "session_id", foreignKey = @ForeignKey(name = "fk_chat_history_session"))
     private ChatSession session;
 
     /**
      * Người dùng tham gia hội thoại.
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_chat_history_user"))
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_chat_history_user"))
     private User user;
 
     /**
      * Triết gia tham gia hội thoại (Có thể null nếu không chọn triết gia cụ thể).
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "philosopher_id",
-                foreignKey = @ForeignKey(name = "fk_chat_history_philosopher"))
+    @JoinColumn(name = "philosopher_id", foreignKey = @ForeignKey(name = "fk_chat_history_philosopher"))
     private Philosopher philosopher;
 
     /**
