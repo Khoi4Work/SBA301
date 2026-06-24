@@ -1,5 +1,6 @@
 package com.philosophy.rag.dto.response;
 
+import com.philosophy.rag.entity.enums.Role;
 import lombok.Builder;
 import lombok.Data;
 
@@ -18,4 +19,5 @@ public class AuthResponse {
     private String biography;
     private String avatarUrl;
     private String email;
+    private Role role;
 }
