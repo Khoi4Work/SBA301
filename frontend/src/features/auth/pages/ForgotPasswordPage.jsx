@@ -1,5 +1,6 @@
 import "@/assets/styles/philoverse.css";
 import { Link } from "react-router-dom";
+import ForgotPasswordForm from "@/features/auth/components/ForgotPasswordForm.jsx";
 
 
 export default function ForgotPasswordPage() {

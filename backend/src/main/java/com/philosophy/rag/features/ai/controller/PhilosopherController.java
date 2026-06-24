@@ -63,4 +63,17 @@ public class PhilosopherController {
         philosopherService.deleteAllPhilosophers();
         return ResponseEntity.ok(ApiResponse.success(null, "Successfully deleted all philosophers"));
     }
+
+    @Operation(summary = "Delete philosopher by ID (Requires ADMIN)")
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deletePhilosopher(
+            @PathVariable UUID id) {
+
+        philosopherService.deletePhilosopherById(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(null, "Successfully deleted philosopher")
+        );
+    }
 }

@@ -224,7 +224,6 @@ export default function AcademyChaptersManagement() {
 
       </div>
 
-      <Footer/>
     </div>
   );
 }

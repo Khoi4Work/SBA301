@@ -5,6 +5,7 @@ import com.philosophy.rag.features.ai.dto.PhilosopherResponse;
 
 import java.util.List;
 import java.util.UUID;
+
 import org.springframework.web.multipart.MultipartFile;
 
 public interface PhilosopherService {
@@ -15,4 +16,6 @@ public interface PhilosopherService {
     PhilosopherResponse updatePhilosopher(UUID id, PhilosopherRequest request, MultipartFile file);
 
     void deleteAllPhilosophers();
+
+    void deletePhilosopherById(UUID id);
 }
