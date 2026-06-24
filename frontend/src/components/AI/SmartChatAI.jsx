@@ -23,7 +23,7 @@ const SmartChatAI = forwardRef(({
     const [isLoading, setIsLoading] = useState(false);
     const [isAISpeaking, setIsAISpeaking] = useState(false);
 
-    const { currentSessionId, setSessionId } = useSession();
+    const { currentSessionId, setSessionId, triggerRefresh } = useSession();
     const prevSessionIdRef = useRef(null);
     const justReceivedResponseRef = useRef(false);
 
@@ -122,6 +122,7 @@ const SmartChatAI = forwardRef(({
                     justReceivedResponseRef.current = true;
                     setSessionId(data.result.sessionId);
                 }
+                triggerRefresh();
                 setMessages(prev => [
                     ...prev,
                     {

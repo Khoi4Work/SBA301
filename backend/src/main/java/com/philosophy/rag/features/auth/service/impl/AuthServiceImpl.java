@@ -255,6 +255,7 @@ public class AuthServiceImpl implements AuthService {
                 .fullName(user.getFullName())
                 .biography(user.getBiography())
                 .avatarUrl(user.getAvatarUrl())
+                .role(user.getRole())
                 .expiresIn(JwtTokenProvider.ACCESS_TOKEN_VALIDITY / 1000)
                 .build();
     }

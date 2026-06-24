@@ -1,5 +1,6 @@
 package com.philosophy.rag.features.auth.dto;
 
+import com.philosophy.rag.features.auth.entity.enums.Role;
 import lombok.Builder;
 import java.util.UUID;
 
@@ -14,5 +15,6 @@ public record AuthResponse(
     String fullName,
     String biography,
     String avatarUrl,
-    String email
+    String email,
+    Role role
 ) {}

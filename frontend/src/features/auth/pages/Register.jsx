@@ -15,8 +15,6 @@ export default function Register() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [currentSloganContent, setCurrentSloganContent] = useState("Một cuộc đời không được xem xét thì không đáng sống.");
-    const [currentSloganAuthor, setCurrentSloganAuthor] = useState("SOCRATES");
 
     const [formData, setFormData] = useState({
         username: '',
@@ -40,19 +38,6 @@ export default function Register() {
     });
 
     const [focusedField, setFocusedField] = useState(null);
-
-   useEffect(() => { const fetchSlogan = async () => {
-       try {
-           const slogan = await getSlogan() ;
-           setCurrentSloganContent(slogan.data.result.content);
-           setCurrentSloganAuthor(slogan.data.result.author);
-       } catch (error) {
-           console.error("Lỗi khi tải slogan:", error);
-       }
-   }
-
-       fetchSlogan();},[])
-
 
     const validateField = (name, value, passwordVal = formData.password) => {
         switch (name) {
@@ -368,10 +353,10 @@ export default function Register() {
                 {/* Philosopher Quote */}
                 <div className="max-w-2xl text-center px-6 md:px-8">
                     <p className="font-headline text-2xl text-tertiary italic mb-4 font-medium">
-                        {currentSloganContent}
+                        "Một cuộc đời không được xem xét thì không đáng sống."
                     </p>
                     <p className="font-body text-sm font-semibold text-secondary-fixed-dim tracking-[0.3em] uppercase">
-                        — {currentSloganAuthor}
+                        — SOCRATES
                     </p>
                 </div>
             </main>

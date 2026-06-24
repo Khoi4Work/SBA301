@@ -9,9 +9,9 @@ export default function Home() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNavCompact, setIsNavCompact] = useState(false);
     const {user, logout} = useContext(AuthContext);
-    const [currentSloganContent, setCurrentSloganContent] = useState("Một cuộc đời không được xem xét thì không đáng sống.");
-    const [currentSloganAuthor, setCurrentSloganAuthor] = useState("SOCRATES");
-
+    const [currentSloganContent, setCurrentSloganContent] = useState();
+    const [currentSloganAuthor, setCurrentSloganAuthor] = useState();
+    const [isLoading, setIsLoading] = useState(true);
 
 
 
@@ -25,6 +25,8 @@ export default function Home() {
                 setCurrentSloganAuthor(slogan.data.result.author);
             } catch (error) {
                 console.error("Lỗi khi tải slogan:", error);
+            } finally {
+                setIsLoading(false);
             }
         }
 
@@ -63,7 +65,7 @@ export default function Home() {
                 to="/"
                 className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap"
             >
-              Xưởng sáng tạo
+                Triết học hóa cuộc sống
             </Link>
 
             <Link
@@ -109,7 +111,7 @@ export default function Home() {
                               Đăng nhập
                           </Link>
 
-                          <Link to="/login" className="bg-[#e9c176] text-on-primary px-6 py-2 rounded-none font-label-md text-label-md uppercase tracking-widest hover:bg-primary-fixed-dim transition-all active:scale-95">
+                          <Link to="/chat" className="bg-[#e9c176] text-on-primary px-6 py-2 rounded-none font-label-md text-label-md uppercase tracking-widest hover:bg-primary-fixed-dim transition-all active:scale-95">
                               Khởi đầu đối thoại
                           </Link>
                       </>
@@ -131,10 +133,14 @@ export default function Home() {
                         <div className="mb-8 flex justify-center">
                             <div className="w-16 h-1 bg-secondary"></div>
                         </div>
-                        <h1 className="font-display-lg text-[64px] md:text-[84px] leading-tight mb-8 tracking-tighter text-on-surface">
-                            {currentSloganContent}
-                        </h1>
-                        <p className="font-headline-md text-headline-md italic text-secondary mb-12">— {currentSloganAuthor}</p>
+                        <div className={`transition-opacity duration-1000 ease-in-out ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+                            <h1 className="font-display-lg text-[64px] md:text-[84px] leading-tight mb-8 tracking-tighter text-on-surface">
+                                {currentSloganContent}
+                            </h1>
+                            <p className="font-headline-md text-headline-md italic text-secondary mb-12">
+                                — {currentSloganAuthor}
+                            </p>
+                        </div>
                         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                             <button
                                 className="px-12 py-5 bg-surface-container-highest border border-secondary text-secondary font-label-md text-label-md uppercase tracking-[0.2em] hover:bg-secondary hover:text-surface-container-highest transition-all duration-500 active:scale-95 flex items-center group">
@@ -176,7 +182,7 @@ export default function Home() {
                                     <span className="material-symbols-outlined text-[48px] text-secondary">forum</span>
                                 </div>
                                 <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Luận đàm</h3>
-                                <p className="font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Tương
+                                <p className="text-justify font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Tương
                                     tác với trí tuệ triết học được đào tạo qua đối thoại Socratic để mài sắc tư duy và
                                     thách thức các định kiến nội tâm.</p>
                                 <div
@@ -195,7 +201,7 @@ export default function Home() {
                                     <span className="material-symbols-outlined text-[48px] text-secondary">school</span>
                                 </div>
                                 <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Học viện</h3>
-                                <p className="font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Hệ
+                                <p className="text-justify font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Hệ
                                     thống giáo trình bao quát 3.000 năm tư tưởng, từ Tiền-Socratic đến Hậu-Cấu trúc luận
                                     hiện đại, được biên soạn chuyên sâu.</p>
                                 <div
@@ -214,15 +220,12 @@ export default function Home() {
                                     <span
                                         className="material-symbols-outlined text-[48px] text-secondary">movie_edit</span>
                                 </div>
-                                <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Xưởng sáng
-                                    tạo</h3>
-                                <p className="font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Biến
-                                    tư tưởng thành hành động. Sử dụng công cụ tạo sinh của chúng tôi để hiện thực hóa
-                                    các khái niệm triết học thành các tác phẩm thị giác điện ảnh.</p>
+                                <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Triết học hóa cuộc sống</h3>
+                                <p className="text-justify font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Học giả có thể nhập một vấn đề cá nhân hoặc xã hội; hệ thống AI sẽ phân tích vấn đề đó dưới góc nhìn của các trường phái triết học, từ đó đưa ra cách nhìn sâu sắc hơn và giúp người dùng rèn luyện tư duy phản biện.</p>
                                 <div
                                     className="h-0.5 w-12 bg-secondary/30 group-hover:w-full transition-all duration-500"></div>
                                 <p className="mt-6 font-caption text-caption uppercase tracking-widest text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Khởi
-                                    tạo Động cơ</p>
+                                    tạo vấn đề</p>
                             </Link>
                         </div>
                     </div>
