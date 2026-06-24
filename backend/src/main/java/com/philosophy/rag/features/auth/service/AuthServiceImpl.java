@@ -1,22 +1,21 @@
-package com.philosophy.rag.service.impl;
+package com.philosophy.rag.features.auth.service;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.security.JwtTokenProvider;
-import com.philosophy.rag.dto.request.ForgotPasswordRequest;
-import com.philosophy.rag.dto.request.LoginRequest;
-import com.philosophy.rag.dto.request.RegisterRequest;
-import com.philosophy.rag.dto.request.ResetPasswordRequest;
-import com.philosophy.rag.dto.response.AuthResponse;
-import com.philosophy.rag.entity.PasswordResetToken;
-import com.philosophy.rag.entity.RefreshToken;
-import com.philosophy.rag.entity.TokenBlacklist;
-import com.philosophy.rag.entity.User;
-import com.philosophy.rag.repository.custom.PasswordResetTokenRepository;
-import com.philosophy.rag.repository.RefreshTokenRepository;
-import com.philosophy.rag.repository.TokenBlacklistRepository;
-import com.philosophy.rag.repository.UserRepository;
-import com.philosophy.rag.service.AuthService;
+import com.philosophy.rag.features.auth.dto.ForgotPasswordRequest;
+import com.philosophy.rag.features.auth.dto.LoginRequest;
+import com.philosophy.rag.features.auth.dto.RegisterRequest;
+import com.philosophy.rag.features.auth.dto.ResetPasswordRequest;
+import com.philosophy.rag.features.auth.dto.AuthResponse;
+import com.philosophy.rag.features.auth.entity.PasswordResetToken;
+import com.philosophy.rag.features.auth.entity.RefreshToken;
+import com.philosophy.rag.features.auth.entity.TokenBlacklist;
+import com.philosophy.rag.features.auth.entity.User;
+import com.philosophy.rag.features.auth.repository.PasswordResetTokenRepository;
+import com.philosophy.rag.features.auth.repository.RefreshTokenRepository;
+import com.philosophy.rag.features.auth.repository.TokenBlacklistRepository;
+import com.philosophy.rag.features.auth.repository.UserRepository;
 import com.philosophy.rag.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,17 +61,17 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
+        if (userRepository.existsByUsername(request.username())) {
             throw new ApiException(ErrorCode.INVALID_INPUT, "Username already exists");
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(request.email())) {
             throw new ApiException(ErrorCode.INVALID_INPUT, "Email already exists");
         }
 
         User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .username(request.username())
+                .email(request.email())
+                .passwordHash(passwordEncoder.encode(request.password()))
                 .build();
         userRepository.save(user);
 
@@ -82,27 +81,27 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        log.info("Attempting login for user: {}", request.getUsernameOrEmail());
+        log.info("Attempting login for user: {}", request.usernameOrEmail());
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsernameOrEmail(),
-                            request.getPassword()
+                            request.usernameOrEmail(),
+                            request.password()
                     )
             );
-            log.info("Authentication successful for user: {}", request.getUsernameOrEmail());
+            log.info("Authentication successful for user: {}", request.usernameOrEmail());
         } catch (Exception e) {
-            log.error("Authentication failed for user: {}. Error: {}", request.getUsernameOrEmail(), e.getMessage());
+            log.error("Authentication failed for user: {}. Error: {}", request.usernameOrEmail(), e.getMessage());
             throw new ApiException(ErrorCode.INVALID_INPUT, "Sai tài khoản hoặc mật khẩu");
         }
 
         User user = userRepository
-                .findByUsername(request.getUsernameOrEmail())
-                .or(() -> userRepository.findByEmail(request.getUsernameOrEmail()))
+                .findByUsername(request.usernameOrEmail())
+                .or(() -> userRepository.findByEmail(request.usernameOrEmail()))
                 .orElseThrow(() -> {
-                        log.error("User not found in database after authentication: {}", request.getUsernameOrEmail());
+                        log.error("User not found in database after authentication: {}", request.usernameOrEmail());
                         return new UsernameNotFoundException(
-                                "User not found: " + request.getUsernameOrEmail()
+                                "User not found: " + request.usernameOrEmail()
                                 );
                 });
         Long currentVersion = user.getTokenVersion() == null ? 0L : user.getTokenVersion();
@@ -159,7 +158,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @jakarta.transaction.Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
-        userRepository.findByEmail(request.getEmail())
+        userRepository.findByEmail(request.email())
                 .ifPresent(user -> {
                     passwordResetTokenRepository.deleteUnusedTokensByUserId(user.getUserId());
 
@@ -183,7 +182,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @jakarta.transaction.Transactional
     public void resetPassword(ResetPasswordRequest request) {
-        String tokenHash = hashToken(request.getToken());
+        String tokenHash = hashToken(request.token());
 
         PasswordResetToken resetToken = passwordResetTokenRepository
                 .findByTokenHashAndUsedAtIsNull(tokenHash)
@@ -195,7 +194,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = resetToken.getUser();
 
-        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
 
         user.setTokenVersion(
                 user.getTokenVersion() == null ? 1L : user.getTokenVersion() + 1

@@ -1,6 +1,6 @@
-package com.philosophy.rag.repository;
+package com.philosophy.rag.features.auth.repository;
 
-import com.philosophy.rag.entity.RefreshToken;
+import com.philosophy.rag.features.auth.entity.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

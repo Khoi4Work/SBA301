@@ -1,6 +1,6 @@
-package com.philosophy.rag.repository;
+package com.philosophy.rag.features.auth.repository;
 
-import com.philosophy.rag.entity.User;
+import com.philosophy.rag.features.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.UUID;

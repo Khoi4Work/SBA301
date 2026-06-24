@@ -1,11 +1,15 @@
-package com.philosophy.rag.controller;
+package com.philosophy.rag.features.auth.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResponse;
-import com.philosophy.rag.dto.request.*;
-import com.philosophy.rag.dto.response.AuthResponse;
-import com.philosophy.rag.service.AuthService;
+import com.philosophy.rag.features.auth.dto.ForgotPasswordRequest;
+import com.philosophy.rag.features.auth.dto.LoginRequest;
+import com.philosophy.rag.features.auth.dto.RegisterRequest;
+import com.philosophy.rag.features.auth.dto.ResetPasswordRequest;
+import com.philosophy.rag.features.auth.dto.RefreshTokenRequest;
+import com.philosophy.rag.features.auth.dto.AuthResponse;
+import com.philosophy.rag.features.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

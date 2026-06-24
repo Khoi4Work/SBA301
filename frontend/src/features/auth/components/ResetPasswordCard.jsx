@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, ChevronLeft, LockKeyhole } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { resetPassword } from "@/services/authService";
+import { resetPassword } from "@/features/auth/services/authService";
 
 export default function ResetPasswordCard() {
     const [searchParams] = useSearchParams();

@@ -1,4 +1,4 @@
-package com.philosophy.rag.entity;
+package com.philosophy.rag.features.auth.entity;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.philosophy.rag.base.persistence.BaseEntity;

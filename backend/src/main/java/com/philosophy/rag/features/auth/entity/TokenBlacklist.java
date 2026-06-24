@@ -1,4 +1,4 @@
-package com.philosophy.rag.entity;
+package com.philosophy.rag.features.auth.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

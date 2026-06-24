@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, ChevronLeft, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import { forgotPassword } from "@/services/authService";
+import { forgotPassword } from "@/features/auth/services/authService";
 
 export default function ForgotPasswordCard() {
     const [email, setEmail] = useState("");

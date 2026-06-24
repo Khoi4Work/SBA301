@@ -1,8 +1,8 @@
 import "../../assets/styles/philoverse.css";
 import { Link } from "react-router-dom";
-import ResetPasswordCard from "@/components/ResetPasswordCard.jsx";
+import ForgotPasswordCard from "@/features/auth/components/ForgotPasswordCard.jsx";
 
-export default function ResetPassword() {
+export default function ForgotPassword() {
     return (
         <div className="relative min-h-screen">
             <div className="fixed inset-0 z-0 bg-background">
@@ -11,7 +11,7 @@ export default function ResetPassword() {
                 <img
                     className="absolute inset-0 w-full h-full object-cover opacity-20 filter grayscale contrast-125"
                     alt="A grand, dimly lit ancient library at midnight"
-                    src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&q=80&w=2000"
+                    src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center opacity-10 blur-md pointer-events-none mix-blend-luminosity"
                 />
 
                 <div className="absolute inset-0 ink-fade"></div>
@@ -26,7 +26,7 @@ export default function ResetPassword() {
                         <div className="greek-divider w-16 mx-auto opacity-40"></div>
                     </Link>
 
-                    <ResetPasswordCard />
+                    <ForgotPasswordCard />
 
                     <footer className="mt-12 text-center max-w-[300px]">
                         <p className="font-caption text-caption text-on-surface-variant/50 italic leading-relaxed">

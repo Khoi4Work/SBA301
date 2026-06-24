@@ -1,18 +1,13 @@
-package com.philosophy.rag.dto.request;
+package com.philosophy.rag.features.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
-public class ResetPasswordRequest {
-
+public record ResetPasswordRequest(
     @NotBlank(message = "Token is required")
-    private String token;
+    String token,
 
     @NotBlank(message = "New password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
-    private String newPassword;
-}
+    String newPassword
+) {}
