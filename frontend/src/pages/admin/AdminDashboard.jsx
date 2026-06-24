@@ -1,16 +1,52 @@
-import React, { useContext } from 'react';
-import { AuthContext } from '@/contexts/AuthContext.jsx';
-import Footer from "@/components/Footer.jsx";
+import React, { useContext, useEffect, useState } from "react";
+import { AuthContext } from "@/contexts/AuthContext.jsx";
+import { userService } from "@/services/userService.js";
+import { philosopherService } from "@/services/philosopherService.js";
 
 export default function Dashboard() {
 
     const { user } = useContext(AuthContext);
 
     const displayName = user?.fullName || user?.username || "Quản trị viên";
+    const [userCount, setUserCount] = useState(0);
+    const [philosopherCount, setPhilosopherCount] = useState(0);
+    const [statsLoading, setStatsLoading] = useState(false);
+
+    const extractArray = (data) => {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.data)) return data.data;
+        if (Array.isArray(data?.result)) return data.result;
+        if (Array.isArray(data?.content)) return data.content;
+        if (Array.isArray(data?.users)) return data.users;
+        if (Array.isArray(data?.philosophers)) return data.philosophers;
+        return [];
+    };
+
+    useEffect(() => {
+        const fetchDashboardStats = async () => {
+            try {
+                setStatsLoading(true);
+
+                const [usersData, philosophersData] = await Promise.all([
+                    userService.getAllUsers(),
+                    philosopherService.getAll(),
+                ]);
+
+                setUserCount(extractArray(usersData).length);
+                setPhilosopherCount(extractArray(philosophersData).length);
+            } catch (err) {
+                console.error("Load dashboard stats failed:", err);
+            } finally {
+                setStatsLoading(false);
+            }
+        };
+
+        fetchDashboardStats();
+    }, []);
 
     return (
         <div className="animate-fade-in">
-            {/* Welcome Header */}
+            {/* Welcome, Header */}
             <section className="mb-12">
                 <h2 className="font-display text-5xl text-on-surface mb-2 font-bold tracking-tight">Bảng điều khiển Tổng quan</h2>
                 <p className="text-lg text-on-surface-variant max-w-2xl">Chào mừng {displayName}, đây là tóm lược hoạt động của viện.</p>
@@ -24,7 +60,9 @@ export default function Dashboard() {
                         <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5">+12%</span>
                     </div>
                     <span className="text-on-surface-variant font-semibold uppercase text-xs tracking-wider">Học giả (Scholars)</span>
-                    <span className="text-3xl font-display font-semibold mt-1">2,841</span>
+                    <span className="text-3xl font-display font-semibold mt-1">
+                        {statsLoading ? "..." : userCount}
+                    </span>
                 </div>
 
                 <div className="folio-card bg-surface-container-low p-6 flex flex-col">
@@ -33,7 +71,9 @@ export default function Dashboard() {
                         <span className="text-xs font-semibold text-secondary/60">STABLE</span>
                     </div>
                     <span className="text-on-surface-variant font-semibold uppercase text-xs tracking-wider">Triết gia AI</span>
-                    <span className="text-3xl font-display font-semibold mt-1">12</span>
+                    <span className="text-3xl font-display font-semibold mt-1">
+                        {statsLoading ? "..." : philosopherCount}
+                    </span>
                 </div>
 
                 <div className="folio-card bg-surface-container-low p-6 flex flex-col">
@@ -202,16 +242,6 @@ export default function Dashboard() {
                     </div>
                 </div>
             </div>
-
-            <div className="mt-24 mb-12 text-center">
-                <div className="greek-divider w-32 mx-auto relative group">
-                    <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-secondary bg-surface px-2 text-lg group-hover:rotate-180 transition-transform duration-700">•</span>
-
-                </div>
-
-            </div>
-
-            <Footer/>
         </div>
 
 

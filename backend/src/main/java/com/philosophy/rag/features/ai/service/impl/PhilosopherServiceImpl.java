@@ -95,4 +95,13 @@ public class PhilosopherServiceImpl implements PhilosopherService {
                 .imageUrl(entity.getAvatarUrl())
                 .build();
     }
+
+    @Override
+    @Transactional
+    public void deletePhilosopherById(UUID id) {
+        Philosopher philosopher = philosopherRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        philosopherRepository.delete(philosopher);
+    }
 }

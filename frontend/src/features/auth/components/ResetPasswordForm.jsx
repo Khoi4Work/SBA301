@@ -13,6 +13,107 @@ export default function ResetPasswordForm() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [touched, setTouched] = useState({
+        newPassword: false,
+        confirmPassword: false,
+    });
+
+    const [validationErrors, setValidationErrors] = useState({
+        newPassword: "",
+        confirmPassword: "",
+    });
+
+    const [focusedField, setFocusedField] = useState(null);
+
+    const validateField = (name, value, passwordVal = newPassword) => {
+        switch (name) {
+            case "newPassword": {
+                if (!value) return "Mật khẩu mới không được để trống";
+                if (value.length < 6 || value.length > 100) {
+                    return "Mật khẩu phải từ 6 đến 100 ký tự";
+                }
+
+                const hasLowercase = /[a-z]/.test(value);
+                const hasUppercase = /[A-Z]/.test(value);
+                const hasNumber = /\d/.test(value);
+
+                if (!hasLowercase || !hasUppercase || !hasNumber) {
+                    return "Mật khẩu phải chứa ít nhất 1 chữ thường, 1 chữ hoa và 1 chữ số";
+                }
+
+                return "";
+            }
+
+            case "confirmPassword": {
+                if (!value) return "Vui lòng xác nhận mật khẩu";
+                if (value !== passwordVal) return "Mật khẩu xác nhận không trùng khớp";
+                return "";
+            }
+
+            default:
+                return "";
+        }
+    };
+
+    const handlePasswordChange = (value) => {
+        setNewPassword(value);
+
+        if (touched.newPassword) {
+            const passwordError = validateField("newPassword", value);
+            setValidationErrors((prev) => ({
+                ...prev,
+                newPassword: passwordError,
+            }));
+        }
+
+        if (touched.confirmPassword) {
+            const confirmError = validateField("confirmPassword", confirmPassword, value);
+            setValidationErrors((prev) => ({
+                ...prev,
+                confirmPassword: confirmError,
+            }));
+        }
+    };
+
+    const handleConfirmPasswordChange = (value) => {
+        setConfirmPassword(value);
+
+        if (touched.confirmPassword) {
+            const confirmError = validateField("confirmPassword", value, newPassword);
+            setValidationErrors((prev) => ({
+                ...prev,
+                confirmPassword: confirmError,
+            }));
+        }
+    };
+
+    const handleBlur = (name) => {
+        setTouched((prev) => ({
+            ...prev,
+            [name]: true,
+        }));
+
+        setFocusedField(null);
+
+        const value = name === "newPassword" ? newPassword : confirmPassword;
+        const fieldError = validateField(name, value);
+
+        setValidationErrors((prev) => ({
+            ...prev,
+            [name]: fieldError,
+        }));
+    };
+
+    const handleFocus = (name) => {
+        setFocusedField(name);
+    };
+
+    const passwordChecks = {
+        length: newPassword.length >= 6 && newPassword.length <= 100,
+        lowercase: /[a-z]/.test(newPassword),
+        uppercase: /[A-Z]/.test(newPassword),
+        number: /\d/.test(newPassword),
+    };
 
     useEffect(() => {
         const tokenFromUrl = searchParams.get("token");
@@ -44,13 +145,20 @@ export default function ResetPasswordForm() {
             return;
         }
 
-        if (newPassword.length < 8) {
-            setError("Mật khẩu mới phải có ít nhất 8 ký tự.");
-            return;
-        }
+        const passwordError = validateField("newPassword", newPassword);
+        const confirmError = validateField("confirmPassword", confirmPassword, newPassword);
 
-        if (newPassword !== confirmPassword) {
-            setError("Mật khẩu xác nhận không khớp.");
+        setTouched({
+            newPassword: true,
+            confirmPassword: true,
+        });
+
+        setValidationErrors({
+            newPassword: passwordError,
+            confirmPassword: confirmError,
+        });
+
+        if (passwordError || confirmError) {
             return;
         }
 
@@ -96,10 +204,12 @@ export default function ResetPasswordForm() {
                         <input
                             type="password"
                             id="newPassword"
-                            placeholder="Ít nhất 8 ký tự"
+                            placeholder="Ít nhất 6 ký tự"
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full bg-transparent border border-outline-variant/60 outline-none text-on-surface placeholder:text-outline-variant px-4 py-3.5 text-sm transition-colors focus:border-secondary/70 focus:bg-primary-container/20"
+                            onChange={(e) => handlePasswordChange(e.target.value)}
+                            onBlur={() => handleBlur("newPassword")}
+                            onFocus={() => handleFocus("newPassword")}
+                            className="w-full bg-transparent border border-outline-variant/60 outline-none text-on-surface placeholder:text-outline-variant px-4 py-3.5 pr-11 text-sm transition-colors focus:border-secondary/70 focus:bg-primary-container/20"
                             required
                         />
 
@@ -107,6 +217,41 @@ export default function ResetPasswordForm() {
                             <LockKeyhole size={16} strokeWidth={1.5} />
                         </div>
                     </div>
+
+                    {(focusedField === "newPassword" || newPassword.length > 0) && (
+                        <div className="mt-3 p-4 bg-surface-container-lowest/70 border border-outline-variant/30 rounded shadow-inner space-y-2 transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+                            <p className="font-caption text-[11px] uppercase tracking-wider text-on-surface-variant/80 font-bold mb-1.5 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[14px] text-secondary">
+                    info
+                </span>
+                                Điều kiện bảo mật mật mã:
+                            </p>
+
+                            <ul className="text-xs space-y-1.5 font-body">
+                                <PasswordRule checked={passwordChecks.length}>
+                                    Dài từ 6 đến 100 ký tự
+                                </PasswordRule>
+
+                                <PasswordRule checked={passwordChecks.lowercase}>
+                                    Chứa ít nhất 1 chữ cái thường (a-z)
+                                </PasswordRule>
+
+                                <PasswordRule checked={passwordChecks.uppercase}>
+                                    Chứa ít nhất 1 chữ cái hoa (A-Z)
+                                </PasswordRule>
+
+                                <PasswordRule checked={passwordChecks.number}>
+                                    Chứa ít nhất 1 chữ số (0-9)
+                                </PasswordRule>
+                            </ul>
+                        </div>
+                    )}
+
+                    {touched.newPassword && validationErrors.newPassword && (
+                        <p className="mt-2 text-[12px] text-red-400">
+                            {validationErrors.newPassword}
+                        </p>
+                    )}
                 </div>
 
                 <div className="mb-6 flex flex-col gap-2">
@@ -123,11 +268,17 @@ export default function ResetPasswordForm() {
                             id="confirmPassword"
                             placeholder="Nhập lại mật khẩu mới"
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onChange={(e) => handleConfirmPasswordChange(e.target.value)}
+                            onBlur={() => handleBlur("confirmPassword")}
+                            onFocus={() => handleFocus("confirmPassword")}
                             className="w-full bg-transparent border border-outline-variant/60 outline-none text-on-surface placeholder:text-outline-variant px-4 py-3.5 text-sm transition-colors focus:border-secondary/70 focus:bg-primary-container/20"
                             required
                         />
-
+                        {touched.confirmPassword && validationErrors.confirmPassword && (
+                            <p className="mt-2 text-[12px] text-red-400">
+                                {validationErrors.confirmPassword}
+                            </p>
+                        )}
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-secondary/50 transition-colors pointer-events-none">
                             <LockKeyhole size={16} strokeWidth={1.5} />
                         </div>
@@ -164,5 +315,24 @@ export default function ResetPasswordForm() {
                 Quay lại đăng nhập
             </Link>
         </div>
+
+    );
+}
+
+function PasswordRule({ checked, children }) {
+    return (
+        <li
+            className={`flex items-center gap-2 transition-colors duration-200 ${
+                checked
+                    ? "text-emerald-400 font-medium"
+                    : "text-on-surface-variant/50"
+            }`}
+        >
+            <span className="flex items-center justify-center w-4 h-4 border border-current rounded-full text-[10px]">
+                {checked ? "✓" : "•"}
+            </span>
+
+            <span>{children}</span>
+        </li>
     );
 }

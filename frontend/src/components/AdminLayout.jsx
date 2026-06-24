@@ -1,6 +1,16 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import Footer from "@/components/Footer.jsx";
+import {useAuth} from "@/features/auth/hooks/useAuth.jsx";
 
 export default function AdminLayout() {
+    const { user } = useAuth();
+
+    const avatarSeed = user?.fullName || user?.username || "Admin";
+
+    const avatarSrc =
+        user?.avatarUrl ||
+        `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(avatarSeed)}`;
+
   return (
     <div className="font-sans min-h-screen overflow-x-hidden selection:bg-secondary/30">
       <div className="paper-texture fixed inset-0 z-[-1] pointer-events-none"></div>
@@ -8,7 +18,7 @@ export default function AdminLayout() {
       {/* Sidebar Navigation */}
       <aside className="h-screen w-64 fixed left-0 top-0 border-r-[0.5px] border-outline/30 bg-surface-container-lowest flex flex-col py-gutter z-50">
         <div className="px-6 mb-10">
-          <h1 className="font-display text-2xl text-secondary tracking-widest uppercase">The Lyceum</h1>
+          <h1 className="font-display text-2xl text-secondary tracking-widest uppercase">Philoverse</h1>
           <p className="font-sans text-[10px] text-on-surface-variant uppercase tracking-[0.2em] font-semibold mt-1">Central Administration</p>
         </div>
         
@@ -65,51 +75,45 @@ export default function AdminLayout() {
       </aside>
 
       {/* Top App Bar */}
-      <header className="flex justify-between items-center w-full px-gutter h-16 ml-64 max-w-[calc(100%-16rem)] border-b-[0.5px] border-outline/30 bg-surface/80 backdrop-blur-xl sticky top-0 z-40">
-        {/*<div className="flex items-center space-x-8">*/}
-        {/*  <h2 className="font-display text-2xl text-secondary">Lyceum Admin</h2>*/}
-        {/*  <nav className="hidden md:flex space-x-6">*/}
-        {/*    <span className="text-secondary border-b border-secondary pb-1 text-sm font-semibold">Dashboard</span>*/}
-        {/*    <span className="text-on-surface-variant opacity-80 hover:text-secondary hover:opacity-100 transition-opacity text-sm font-semibold cursor-pointer">Analytics</span>*/}
-        {/*    <span className="text-on-surface-variant opacity-80 hover:text-secondary hover:opacity-100 transition-opacity text-sm font-semibold cursor-pointer">Archives</span>*/}
-        {/*  </nav>*/}
-        {/*</div>*/}
+        <div className="ml-64 min-h-screen flex flex-col">
+            {/* Top App Bar */}
+            <header className="flex justify-between items-center w-full px-gutter h-16 border-b-[0.5px] border-outline/30 bg-surface/80 backdrop-blur-xl sticky top-0 z-40">
+                <div className="flex items-center justify-end space-x-6 w-full">
+                    <div className="relative flex items-center group">
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm tài liệu..."
+                            className="bg-transparent border-b border-outline/30 text-on-surface px-4 py-1 focus:outline-none focus:border-secondary transition-colors w-64 text-sm placeholder:text-on-surface-variant/40"
+                        />
+                        <span className="material-symbols-outlined absolute right-2 text-on-surface-variant text-lg">
+                    search
+                </span>
+                    </div>
 
-        <div  className="flex items-center justify-end space-x-6 w-full">
-          <div className="relative flex items-center group">
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm tài liệu..." 
-              className="bg-transparent border-b border-outline/30 text-on-surface px-4 py-1 focus:outline-none focus:border-secondary transition-colors w-64 text-sm placeholder:text-on-surface-variant/40" 
-            />
-            <span className="material-symbols-outlined absolute right-2 text-on-surface-variant text-lg">search</span>
-          </div>
-          
-          <button className="text-on-surface-variant hover:text-secondary transition-colors relative">
-            <span className="material-symbols-outlined">notifications</span>
-            <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-secondary rounded-full"></span>
-          </button>
-          
-          {/*<button className="text-on-surface-variant hover:text-secondary transition-colors">*/}
-          {/*  <span className="material-symbols-outlined">history_edu</span>*/}
-          {/*</button>*/}
-          
-          <div style={{}} className="w-8 h-8 rounded border border-secondary/40 overflow-hidden bg-secondary-container">
-            <img 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBct4JIfQDRmKeAviPjXr8b1Mg7jpAeQhVI4s-nc3yacomcgbb_sRvO44iKhi4BK3TD-fmVz8oWQ1bAcdLQP9kvcDT3GL-HWtpAWCSa-U0vMSqDipE0PJSJflFKZTMhj4pO9SIxaavOvXeGWb0v5G8z18PulSiEk4Ero0Ae4n1Xt9wu-fi5UMG1uucS9nBkdq9hyPU58aO9C8BrElJOAMtNdKmReNFtX-XpsTS7prZkCTuTviXa7cWInbV3P0iYojGNSBNziF0GF10" 
-              alt="Admin ProfilePage"
-              className="w-full h-full object-cover" 
-            />
-          </div>
-        </div>
-      </header>
+                    <button className="text-on-surface-variant hover:text-secondary transition-colors relative">
+                        <span className="material-symbols-outlined">notifications</span>
+                        <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-secondary rounded-full"></span>
+                    </button>
 
-      {/* Main Content */}
-      <main className="ml-64 p-margin-desktop min-h-[calc(100vh-64px)] relative">
-        <div className="max-w-container-max mx-auto relative z-10">
-          <Outlet />
+                    <div className="w-8 h-8 rounded border border-secondary/40 overflow-hidden bg-secondary-container">
+                        <img
+                            src={avatarSrc}
+                            alt={avatarSeed}
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1 p-margin-desktop relative">
+                <div className="max-w-container-max mx-auto relative z-10">
+                    <Outlet />
+                </div>
+            </main>
+
+            <Footer />
         </div>
-      </main>
     </div>
   );
 }

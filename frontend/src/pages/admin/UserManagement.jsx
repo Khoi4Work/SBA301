@@ -1,7 +1,149 @@
-import Footer from "@/components/Footer.jsx";
-import React from "react";
+import React, {useEffect, useState} from "react";
+import { userService } from "@/services/userService.js";
 
 export default function UserManagement() {
+
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [editingUser, setEditingUser] = useState(null);
+    const [editForm, setEditForm] = useState({
+        username: "",
+        email: "",
+        fullName: "",
+        biography: "",
+    });
+    const [saving, setSaving] = useState(false);
+    const [updateMessage, setUpdateMessage] = useState("");
+    const [updateError, setUpdateError] = useState("");
+
+    const extractUsers = (data) => {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.data)) return data.data;
+        if (Array.isArray(data?.result)) return data.result;
+        if (Array.isArray(data?.content)) return data.content;
+        if (Array.isArray(data?.users)) return data.users;
+
+        console.warn("Không tìm thấy mảng users trong response:", data);
+        return [];
+    };
+
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            setError("");
+
+            const data = await userService.getAllUsers();
+            const userList = extractUsers(data);
+
+            setUsers(userList);
+        } catch (err) {
+            console.error(err);
+            setError(
+                err.response?.data?.message ||
+                "Không tải được danh sách user. Check quyền ADMIN/STAFF."
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const handleUpdateUser = (user) => {
+        setEditingUser(user);
+        setUpdateMessage("");
+        setUpdateError("");
+
+        setEditForm({
+            username: user.username || "",
+            email: user.email || "",
+            fullName: user.fullName || "",
+            biography: user.biography || "",
+        });
+    };
+
+    const handleEditChange = (field, value) => {
+        setEditForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const handleCancelUpdate = () => {
+        setEditingUser(null);
+        setEditForm({
+            username: "",
+            email: "",
+            fullName: "",
+            biography: "",
+        });
+        setUpdateMessage("");
+        setUpdateError("");
+    };
+
+    const handleSubmitUpdate = async (event) => {
+        event.preventDefault();
+
+        if (!editingUser?.userId) return;
+
+        try {
+            setSaving(true);
+            setUpdateMessage("");
+            setUpdateError("");
+
+            const updatedUser = await userService.updateUser(editingUser.userId, {
+                username: editForm.username,
+                email: editForm.email,
+                fullName: editForm.fullName,
+                biography: editForm.biography,
+            });
+
+            await fetchUsers();
+
+            setEditingUser((prev) => ({
+                ...prev,
+                ...(updatedUser || {}),
+                username: editForm.username,
+                email: editForm.email,
+                fullName: editForm.fullName,
+                biography: editForm.biography,
+            }));
+
+            setUpdateMessage("Cập nhật user thành công.");
+        } catch (err) {
+            console.error(err);
+            setUpdateError(
+                err.response?.data?.message ||
+                "Cập nhật thất bại. Có thể username/email bị trùng."
+            );
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteUser = async (user) => {
+        const ok = window.confirm(
+            `Xóa user "${user.username || user.email}" thật hả?`
+        );
+
+        if (!ok) return;
+
+        try {
+            await userService.deleteUser(user.userId);
+            await fetchUsers();
+            alert("Xóa user thành công.");
+        } catch (err) {
+            console.error(err);
+            alert(
+                err.response?.data?.message ||
+                "Xóa user thất bại. Check quyền ADMIN."
+            );
+        }
+    };
+
   return (
     <div className="animate-fade-in pb-12 w-full">
       {/* Header Section */}
@@ -11,31 +153,41 @@ export default function UserManagement() {
             <span className="text-secondary font-semibold tracking-widest uppercase text-xs">Cộng đồng học giả</span>
             <h3 className="font-display text-5xl font-bold text-on-surface mt-3">Quản lý Người dùng</h3>
           </div>
-          <div className="flex gap-4">
-            <button className="px-6 py-2 border border-secondary/40 text-secondary hover:bg-secondary/5 transition-all text-sm uppercase tracking-widest font-semibold">
-              Xuất dữ liệu
-            </button>
-          </div>
         </div>
         <div className="h-[1px] w-full bg-gradient-to-r from-secondary/50 via-secondary/10 to-transparent"></div>
       </section>
+
+        {error && (
+            <div className="mb-6 border border-error/30 bg-error/10 text-error px-5 py-4 text-sm">
+                {error}
+            </div>
+        )}
+
+        {loading && (
+            <div className="mb-6 border border-secondary/20 bg-secondary/5 text-secondary px-5 py-4 text-sm">
+                Đang tải danh sách user...
+            </div>
+        )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <div className="bg-surface-container-low border border-secondary/10 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors">
           <p className="text-on-surface-variant text-xs uppercase tracking-widest font-semibold group-hover:text-secondary transition-colors">Tổng Học Giả</p>
-          <p className="font-display text-4xl font-semibold text-secondary">2,841</p>
-          <div className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
-            <span className="material-symbols-outlined text-[14px]">trending_up</span> +12% tháng này
-          </div>
+            <p className="font-display text-4xl font-semibold text-secondary">
+                {users.length}
+            </p>
+            <div className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
+                <span className="material-symbols-outlined text-[14px]">groups</span>
+                Dữ liệu từ hệ thống
+            </div>
         </div>
-        
+
         <div className="bg-surface-container-low border border-secondary/10 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors">
           <p className="text-on-surface-variant text-xs uppercase tracking-widest font-semibold group-hover:text-secondary transition-colors">Hiền Triết (Sage)</p>
           <p className="font-display text-4xl font-semibold text-secondary">142</p>
           <div className="text-xs text-on-surface-variant opacity-80">Hội đồng tối cao</div>
         </div>
-        
+
         <div className="bg-surface-container-low border border-secondary/10 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors">
           <p className="text-on-surface-variant text-xs uppercase tracking-widest font-semibold group-hover:text-secondary transition-colors">Đang Hoạt Động</p>
           <p className="font-display text-4xl font-semibold text-primary">1,104</p>
@@ -69,174 +221,120 @@ export default function UserManagement() {
                 <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest text-right">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-secondary/10">
-              
-              <tr className="group hover:bg-secondary/5 transition-colors duration-200 cursor-pointer">
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-surface border border-secondary/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-secondary transition-colors">
-                      <img 
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDJdA5ndsUwXDSzeZ-oWcGzsGdEP9xPaxYPU3i81m5SIATWcLQGr4ZiOEoCNh9_zh8lGVnBrlCh61Tk5oGlXtDushKw58K48I5ktXIuepn57XfrIprXVBipYE2s6uw-gwRtO_7hO8TNnvuXu_xn74csF-E0VdqkgpKHEjLMvyb5pD9wsdPu2XuCTrTjfi_Rlf1l1ZQ8sMTIrNkHE1LH0eVACvvGSlJA66z7U0jiJSF3q5fCcNxSdH8v3yyCmxz9gyLWVk1dwh1UDY" 
-                        alt="Scholar ProfilePage"
-                        className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-display text-xl font-semibold text-on-surface group-hover:text-secondary transition-colors">Alexandre de Rhodes</p>
-                      <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1 font-semibold">ID: SCH-2024-001</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm italic font-medium">alexandre@lyceum.edu</td>
-                <td className="px-6 py-5">
-                  <span className="px-2 py-1 bg-secondary-container/10 border border-secondary/30 text-secondary text-[10px] uppercase font-bold tracking-widest shadow-sm">Sage</span>
-                </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm">12/01/2024</td>
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                    <span className="text-xs text-on-surface-variant uppercase font-semibold">Hoạt động</span>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
-                  <button className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all" title="Xem hồ sơ">
-                    <span className="material-symbols-outlined text-[20px]">visibility</span>
-                  </button>
-                  <button className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all" title="Chỉnh sửa">
-                    <span className="material-symbols-outlined text-[20px]">edit_note</span>
-                  </button>
-                  <button className="p-1 hover:text-error hover:bg-error/10 rounded transition-all" title="Vô hiệu hóa">
-                    <span className="material-symbols-outlined text-[20px]">person_off</span>
-                  </button>
-                </td>
-              </tr>
+              <tbody className="divide-y divide-secondary/10">
+              {users.map((user) => (
+                  <tr
+                      key={user.userId}
+                      className="group hover:bg-secondary/5 transition-colors duration-200 cursor-pointer"
+                  >
+                      <td className="px-6 py-5">
+                          <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-surface border border-secondary/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-secondary transition-colors">
+                                  <img
+                                      src={
+                                          user.avatarUrl ||
+                                          `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(
+                                              user.fullName || user.username || "User"
+                                          )}`
+                                      }
+                                      alt="Scholar Profile"
+                                      className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                                  />
+                              </div>
 
-              <tr className="group hover:bg-secondary/5 transition-colors duration-200 cursor-pointer">
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-surface border border-secondary/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-secondary transition-colors">
-                      <img 
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmdi7j946Z1vMZQRpzdLaL6-cJsV01BPCC88lAZllY-8Mk8loNAQ_Ocq23xofIR_77sUTyIvVqtJ_yqmQFJ8-2Jw6BzzPEqtd07YkSrggGWgwGuEtk4gEWfUTbRN84vPJIVj9aFHmCJlrWtrws8h_rxDP5BNYecmwkZS7Bp3J45S6wUYswW6TAPG8wcKdhqbTDkAhsEWOQOmLhSVyXfSJsawnEG9TyzALGYENNGyn4qxFqMBI24jc8FJDxbNzCgI_5RnUUDciH_uA" 
-                        alt="Scholar ProfilePage"
-                        className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-display text-xl font-semibold text-on-surface group-hover:text-secondary transition-colors">Minh Khai Trương</p>
-                      <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1 font-semibold">ID: SCH-2024-104</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm italic font-medium">m.khai@lyceum.edu</td>
-                <td className="px-6 py-5">
-                  <span className="px-2 py-1 bg-surface-container border border-outline/30 text-on-surface-variant text-[10px] uppercase font-bold tracking-widest shadow-sm">Scholar</span>
-                </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm">28/02/2024</td>
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                    <span className="text-xs text-on-surface-variant uppercase font-semibold">Hoạt động</span>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
-                  <button className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all" title="Xem hồ sơ">
-                    <span className="material-symbols-outlined text-[20px]">visibility</span>
-                  </button>
-                  <button className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all" title="Chỉnh sửa">
-                    <span className="material-symbols-outlined text-[20px]">edit_note</span>
-                  </button>
-                  <button className="p-1 hover:text-error hover:bg-error/10 rounded transition-all" title="Vô hiệu hóa">
-                    <span className="material-symbols-outlined text-[20px]">person_off</span>
-                  </button>
-                </td>
-              </tr>
+                              <div>
+                                  <p className="font-display text-xl font-semibold text-on-surface group-hover:text-secondary transition-colors">
+                                      {user.fullName || user.username || "Unknown User"}
+                                  </p>
 
-              <tr className="group hover:bg-secondary/5 transition-colors duration-200 cursor-pointer">
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-surface border border-secondary/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-secondary transition-colors">
-                      <img 
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsl2EngLZ-2vH1P8oxmLLt9Yk1yk3sdCcZHygcdSRM4LrlhJjgz9XmnJrwtX9YazVK7i0wr3DTWogdiUCSuGzqWrZ-d73aT_JRxWy_2P1KdR6XbY__WZBRCjsj1F57Xy-3dwZhjlsAsQvhBtBuPPfd4yiTuhzXZGMaDzKim4YdFjgRnHNZQ61H55mU-AdBpKhd2YVjKKaYcwY59k4pp8VyfafofgUEfRFhxaC5DQMUN_HhHVGP76spl4TNNnLql2NZWO_yRthS1hg" 
-                        alt="Scholar ProfilePage"
-                        className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-display text-xl font-semibold text-on-surface group-hover:text-secondary transition-colors">Lê Quý Đôn</p>
-                      <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1 font-semibold">ID: SCH-2023-992</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm italic font-medium">don.le@archive.org</td>
-                <td className="px-6 py-5">
-                  <span className="px-2 py-1 bg-secondary-container/10 border border-secondary/30 text-secondary text-[10px] uppercase font-bold tracking-widest shadow-sm">Sage</span>
-                </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm">15/11/2023</td>
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-surface-bright shadow-[0_0_8px_rgba(255,255,255,0.1)]"></span>
-                    <span className="text-xs text-on-surface-variant uppercase font-semibold opacity-60 italic">Ngoại tuyến</span>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
-                  <button className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all" title="Xem hồ sơ">
-                    <span className="material-symbols-outlined text-[20px]">visibility</span>
-                  </button>
-                  <button className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all" title="Chỉnh sửa">
-                    <span className="material-symbols-outlined text-[20px]">edit_note</span>
-                  </button>
-                  <button className="p-1 hover:text-error hover:bg-error/10 rounded transition-all" title="Vô hiệu hóa">
-                    <span className="material-symbols-outlined text-[20px]">person_off</span>
-                  </button>
-                </td>
-              </tr>
+                                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1 font-semibold">
+                                      ID: {user.userId}
+                                  </p>
+                              </div>
+                          </div>
+                      </td>
 
-              <tr className="group hover:bg-error/5 transition-colors duration-200 cursor-pointer">
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-surface border border-error/30 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-error transition-colors">
-                      <img 
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhQsDcqdGo1ov99IAQWFIlW8kfb5WfpMYDfwmMrGVgKqJxoBFsdb8lk5HU4w6a2puBUpHta03S02ZVSpu_UQB27oyf04guxjHRbiWnABc4YnRsfHga8mQqj94F2zStvTIPSnv3ty5RK1Wf6C3wK29mZcROVTxHt21X9kg9ArwE0xA2U-iTAp0oGBWLZo_vH0I_efn68knAZNiLRd4yKaQRbiVG0V0FOdgsUiItLoRKI7DBE5FkDPBpJjU_KxSN-NUjOq_r5mj50Vc" 
-                        alt="Scholar ProfilePage"
-                        className="w-full h-full object-cover grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-display text-xl font-semibold text-on-surface group-hover:text-error transition-colors">Elena Võ</p>
-                      <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1 font-semibold">ID: SCH-2024-210</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm italic font-medium">elena.vo@lyceum.edu</td>
-                <td className="px-6 py-5">
-                   <span className="px-2 py-1 bg-surface-container border border-outline/30 text-on-surface-variant text-[10px] uppercase font-bold tracking-widest shadow-sm">Scholar</span>
-                </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm">03/03/2024</td>
-                <td className="px-6 py-5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-error shadow-[0_0_8px_rgba(255,180,171,0.5)]"></span>
-                    <span className="text-xs text-error uppercase font-semibold">Đã vô hiệu</span>
-                  </div>
-                </td>
-                <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
-                  <button className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all" title="Xem hồ sơ">
-                    <span className="material-symbols-outlined text-[20px]">visibility</span>
-                  </button>
-                  <button className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all" title="Chỉnh sửa">
-                    <span className="material-symbols-outlined text-[20px]">edit_note</span>
-                  </button>
-                   <button className="p-1 hover:text-emerald-400 hover:bg-emerald-400/10 rounded transition-all" title="Kích hoạt lại">
-                    <span className="material-symbols-outlined text-[20px]">person_check</span>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
+                      <td className="px-6 py-5 text-on-surface-variant text-sm italic font-medium">
+                          {user.email || "-"}
+                      </td>
+
+                      <td className="px-6 py-5">
+        <span className="px-2 py-1 bg-surface-container border border-outline/30 text-on-surface-variant text-[10px] uppercase font-bold tracking-widest shadow-sm">
+          {user.role || "User"}
+        </span>
+                      </td>
+
+                      <td className="px-6 py-5 text-on-surface-variant text-sm">
+                          {user.createdAt
+                              ? new Date(user.createdAt).toLocaleDateString("vi-VN")
+                              : "-"}
+                      </td>
+
+                      <td className="px-6 py-5">
+                          <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                              <span className="text-xs text-on-surface-variant uppercase font-semibold">
+            Hoạt động
+          </span>
+                          </div>
+                      </td>
+
+                      <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
+                          <button
+                              type="button"
+                              className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"
+                              title="Xem hồ sơ"
+                              onClick={() => console.log("View user:", user)}
+                          >
+          <span className="material-symbols-outlined text-[20px]">
+            visibility
+          </span>
+                          </button>
+
+                          <button
+                              type="button"
+                              className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"
+                              title="Chỉnh sửa"
+                              onClick={() => handleUpdateUser(user)}
+                          >
+          <span className="material-symbols-outlined text-[20px]">
+            edit_note
+          </span>
+                          </button>
+
+                          <button
+                              type="button"
+                              className="p-1 hover:text-error hover:bg-error/10 rounded transition-all"
+                              title="Xóa người dùng"
+                              onClick={() => handleDeleteUser(user)}
+                          >
+          <span className="material-symbols-outlined text-[20px]">
+            person_off
+          </span>
+                          </button>
+                      </td>
+                  </tr>
+              ))}
+
+              {!loading && users.length === 0 && (
+                  <tr>
+                      <td
+                          colSpan="6"
+                          className="px-6 py-10 text-center text-on-surface-variant"
+                      >
+                          Chưa có user nào.
+                      </td>
+                  </tr>
+              )}
+              </tbody>
           </table>
         </div>
 
         {/* Pagination */}
         <div className="px-6 py-4 bg-surface flex justify-between items-center border-t border-secondary/10">
-          <p className="text-xs text-on-surface-variant font-medium italic opacity-80">Hiển thị 1 - 4 trong tổng số 2,841 học giả</p>
+            <p className="text-xs text-on-surface-variant font-medium italic opacity-80">
+                {loading ? "Đang tải học giả..." : `Hiển thị ${users.length} học giả`}
+            </p>
           <div className="flex items-center gap-2">
             <button className="p-1 border border-secondary/20 text-on-surface-variant opacity-40 cursor-not-allowed rounded">
               <span className="material-symbols-outlined">chevron_left</span>
@@ -252,6 +350,129 @@ export default function UserManagement() {
           </div>
         </div>
       </div>
+
+        {editingUser && (
+            <div
+                className="fixed inset-0 z-[999] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+                onClick={handleCancelUpdate}
+            >
+                <section
+                    className="w-full max-w-4xl max-h-[85vh] bg-surface-container-lowest border border-secondary/20 overflow-hidden shadow-2xl shadow-black/50"
+                    onClick={(event) => event.stopPropagation()}
+                >
+                    <div className="px-6 py-5 bg-surface-container-high/30 border-b border-secondary/20 flex items-center justify-between">
+                        <div>
+                            <p className="text-secondary/80 text-[11px] uppercase tracking-widest font-semibold">
+                                Chỉnh sửa học giả
+                            </p>
+
+                            <h4 className="font-display text-2xl font-semibold text-on-surface mt-1">
+                                {editingUser.fullName || editingUser.username || "Unknown User"}
+                            </h4>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleCancelUpdate}
+                            className="p-1 hover:text-error hover:bg-error/10 rounded transition-all text-on-surface-variant"
+                            title="Đóng"
+                        >
+                    <span className="material-symbols-outlined text-[22px]">
+                        close
+                    </span>
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmitUpdate}>
+                        {(updateMessage || updateError) && (
+                            <div className="px-6 py-4 border-b border-secondary/10 bg-surface">
+                                {updateMessage && (
+                                    <p className="text-sm text-emerald-400 font-medium">
+                                        {updateMessage}
+                                    </p>
+                                )}
+
+                                {updateError && (
+                                    <p className="text-sm text-error font-medium">
+                                        {updateError}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="overflow-y-auto max-h-[58vh]">
+                            <table className="w-full text-left border-collapse">
+                                <tbody className="divide-y divide-secondary/10">
+
+                                <EditRow label="Username">
+                                    <input
+                                        value={editForm.username}
+                                        onChange={(event) =>
+                                            handleEditChange("username", event.target.value)
+                                        }
+                                        className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
+                                        required
+                                    />
+                                </EditRow>
+
+                                <EditRow label="Email">
+                                    <input
+                                        type="email"
+                                        value={editForm.email}
+                                        onChange={(event) =>
+                                            handleEditChange("email", event.target.value)
+                                        }
+                                        className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
+                                        required
+                                    />
+                                </EditRow>
+
+                                <EditRow label="Full Name">
+                                    <input
+                                        value={editForm.fullName}
+                                        onChange={(event) =>
+                                            handleEditChange("fullName", event.target.value)
+                                        }
+                                        className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
+                                    />
+                                </EditRow>
+
+                                <EditRow label="Biography">
+                                <textarea
+                                    value={editForm.biography}
+                                    onChange={(event) =>
+                                        handleEditChange("biography", event.target.value)
+                                    }
+                                    rows={4}
+                                    className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary resize-none"
+                                />
+                                </EditRow>
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="px-6 py-5 bg-surface border-t border-secondary/10 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={handleCancelUpdate}
+                                className="px-5 py-2 border border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary transition-all text-xs uppercase tracking-widest font-semibold"
+                            >
+                                Hủy
+                            </button>
+
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="px-5 py-2 border border-secondary bg-secondary/10 text-secondary hover:bg-secondary hover:text-on-secondary transition-all text-xs uppercase tracking-widest font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {saving ? "Đang lưu..." : updateMessage ? "Đã lưu" : "Lưu thay đổi"}
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+        )}
 
       {/* Detail Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-12">
@@ -275,10 +496,10 @@ export default function UserManagement() {
             </div>
           </div>
         </div>
-        
+
         <div className="lg:col-span-4 bg-surface-container-low border border-secondary/10 p-8 space-y-6 folio-card flex flex-col">
           <h4 className="font-semibold text-secondary uppercase tracking-widest text-xs mb-2">Phân bổ Vai trò</h4>
-          
+
           <div className="flex-1 space-y-6">
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-semibold text-on-surface-variant">
@@ -308,7 +529,7 @@ export default function UserManagement() {
               </div>
             </div>
           </div>
-          
+
           <p className="text-[10px] text-on-surface-variant italic font-medium pt-6 border-t border-secondary/10 opacity-70">
             Dữ liệu được cập nhật thời gian thực từ mạng lưới Lyceum toàn cầu.
           </p>
@@ -316,15 +537,22 @@ export default function UserManagement() {
       </section>
 
       {/* Footer Minimal */}
-      <div className="mt-24 mb-12 text-center">
-        <div className="greek-divider w-32 mx-auto relative group">
-          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-secondary bg-surface px-2 text-lg group-hover:rotate-180 transition-transform duration-700">•</span>
-
-        </div>
-
-      </div>
-
-      <Footer/>
     </div>
   );
+}
+
+function EditRow({ label, children }) {
+    return (
+        <tr className="hover:bg-secondary/5 transition-colors">
+            <td className="px-6 py-5 w-56 align-top">
+                <p className="text-secondary/80 text-[11px] uppercase tracking-widest font-semibold">
+                    {label}
+                </p>
+            </td>
+
+            <td className="px-6 py-5">
+                {children}
+            </td>
+        </tr>
+    );
 }
