@@ -5,8 +5,8 @@ import {
     ChevronRight, ChevronLeft, Trophy, RotateCcw,
     Loader2, ArrowLeft, Pause, Play, AlertTriangle
 } from 'lucide-react';
-import { fetchLessonContent, generateQuiz, speakText } from '@/services/sessionService';
-import apiClient from '@/services/apiClient';
+import { fetchLessonContent, generateQuiz, speakText } from '@/services/sessionService.js';
+import apiClient from '@/services/apiClient.js';
 import '@/assets/styles/philoverse-study.css';
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────

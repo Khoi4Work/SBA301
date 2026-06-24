@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import { Sidebar } from "@/components/Sidebar.jsx";
-import { SelectionView } from "@/components/SelectionView.jsx";
+import { SelectionPhilosopherPage } from "@/features/philosopher-chat/pages/SelectionPhilosopherPage.jsx";
 import { DialogueView } from "@/components/DialogueView.jsx";
 import "@/assets/styles/philoverse-chat.css";
 import Header from "@/components/Header.jsx";
@@ -57,7 +57,7 @@ export default function  Chat() {
                 >
                     <AnimatePresence mode="wait">
                         {view === "selection" ? (
-                            <SelectionView key="selection" onSelect={handleSelect} />
+                            <SelectionPhilosopherPage key="selection" onSelect={handleSelect} />
                         ) : (
                             selectedPhilosopher && (
                                 <DialogueView

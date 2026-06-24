@@ -1,16 +1,16 @@
 import React, {useState, useRef, useEffect} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Ph_Annghen from '../../avatar3D/Ph_Annghen.jsx';
-import Karl_Marx from '../../avatar3D/Karl_Marx.jsx';
-import SmartChatAI from "@/components/AI/SmartChatAI.jsx";
-import MicButton from "@/components/AI/MicButton.jsx";
-import ChatPanel from "@/components/AI/ChatPanel.jsx";
+import Ph_Annghen from '../components/avatar3D/Ph_Annghen.jsx';
+import Karl_Marx from '../components/avatar3D/Karl_Marx.jsx';
+import SmartChatAI from "@/features/philosopher-chat/components/SmartChatAI.jsx";
+import MicButton from "@/features/philosopher-chat/components/MicButton.jsx";
+import ChatPanel from "@/features/philosopher-chat/components/ChatPanel.jsx";
 import { useSpeechToText } from '@/hooks/useSpeechToText.js';
 import { Sidebar } from "@/components/Sidebar.jsx";
 import { useSession } from '@/contexts/SessionContext.jsx';
 import "@/assets/styles/philoverse-chat.css";
 
-const VirtualAssistant = () => {
+const VirtualAssistantPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const philosopher = location.state?.philosopher;
@@ -187,4 +187,4 @@ const VirtualAssistant = () => {
     );
 };
 
-export default VirtualAssistant;
+export default VirtualAssistantPage;

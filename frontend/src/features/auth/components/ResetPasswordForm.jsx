@@ -3,7 +3,7 @@ import { ArrowRight, ChevronLeft, LockKeyhole } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "@/features/auth/services/authService";
 
-export default function ResetPasswordCard() {
+export default function ResetPasswordForm() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 

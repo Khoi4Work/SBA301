@@ -6,7 +6,7 @@ import {
     getFileTypeInfo,
     formatFileSize,
     formatDate,
-} from '@/services/documentService';
+} from '@/services/documentService.js';
 
 // ─── Skeleton Card ───────────────────────────────────────────────────────────
 function SkeletonCard() {

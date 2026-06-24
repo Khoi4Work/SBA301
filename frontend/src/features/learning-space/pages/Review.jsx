@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sidebar } from '@/components/Sidebar';
-import apiClient from '@/services/apiClient';
-import { fetchDocuments, getFileTypeInfo, formatFileSize } from '@/services/documentService';
+import { Sidebar } from '@/components/Sidebar.jsx';
+import apiClient from '@/services/apiClient.js';
+import { fetchDocuments, getFileTypeInfo, formatFileSize } from '@/services/documentService.js';
 import { FileText, Award, Calendar, ChevronRight, Sparkles, RefreshCw, Loader2, BookOpen, Sword } from 'lucide-react';
 import '@/assets/styles/philoverse-study.css';
 import Footer from "@/components/Footer.jsx"; // Reusing styles
