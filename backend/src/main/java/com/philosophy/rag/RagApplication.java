@@ -13,7 +13,7 @@ import java.util.TimeZone;
 
 @SpringBootApplication
 @EnableJpaAuditing(auditorAwareRef = "auditAwareImpl")
-@EnableJpaRepositories(basePackages = "com.philosophy.rag.repository")
+@EnableJpaRepositories
 public class RagApplication {
     public static void main(String[] args) {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
