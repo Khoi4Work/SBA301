@@ -4,7 +4,7 @@ import com.philosophy.rag.features.ai.dto.PhilosopherRequest;
 import com.philosophy.rag.features.ai.dto.PhilosopherResponse;
 import com.philosophy.rag.features.ai.entity.Philosopher;
 import com.philosophy.rag.features.ai.repository.PhilosopherRepository;
-import com.philosophy.rag.utils.service.CloudinaryService;
+import com.philosophy.rag.utils.service.MediaStorageService;
 import com.philosophy.rag.features.ai.service.PhilosopherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import com.philosophy.rag.base.exception.ErrorCode;
 public class PhilosopherServiceImpl implements PhilosopherService {
 
     private final PhilosopherRepository philosopherRepository;
-    private final CloudinaryService cloudinaryService;
+    private final MediaStorageService cloudinaryService;
 
     @Override
     public List<PhilosopherResponse> findAllPhilosophers() {

@@ -8,14 +8,14 @@ import com.philosophy.rag.features.auth.dto.UserUpdateRequest;
 import com.philosophy.rag.features.auth.entity.User;
 import com.philosophy.rag.features.auth.repository.UserRepository;
 import com.philosophy.rag.features.auth.service.UserService;
-import com.philosophy.rag.utils.dto.CloudinaryUploadResponse;
+import com.philosophy.rag.utils.dto.UploadResponse;
 import com.philosophy.rag.features.learning.dto.UserDashboardResponse;
 import com.philosophy.rag.features.learning.dto.SessionContentResponse;
 import com.philosophy.rag.features.learning.entity.LearningProgress;
 import com.philosophy.rag.utils.entity.Document;
 import com.philosophy.rag.features.learning.repository.LearningProgressRepository;
 import com.philosophy.rag.utils.repository.DocumentRepository;
-import com.philosophy.rag.utils.service.CloudinaryService;
+import com.philosophy.rag.utils.service.MediaStorageService;
 import com.philosophy.rag.utils.service.S3StorageService;
 import com.philosophy.rag.features.learning.service.SessionService;
 import org.springframework.security.core.Authentication;
@@ -36,7 +36,7 @@ import java.time.Instant;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final CloudinaryService cloudinaryService;
+    private final MediaStorageService cloudinaryService;
     private final LearningProgressRepository learningProgressRepository;
     private final DocumentRepository documentRepository;
     private final ChatHistoryRepository chatHistoryRepository;
@@ -137,7 +137,7 @@ public class UserServiceImpl implements UserService {
 
         String oldPublicId = user.getCloudinaryPublicId();
 
-        CloudinaryUploadResponse uploadResult = cloudinaryService.uploadImage(file,"philosophy/avatars");
+        UploadResponse uploadResult = cloudinaryService.uploadImage(file,"philosophy/avatars");
         user.setAvatarUrl(uploadResult.getSecureUrl());
         user.setCloudinaryPublicId(uploadResult.getPublicId());
 

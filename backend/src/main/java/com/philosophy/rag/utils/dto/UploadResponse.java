@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CloudinaryUploadResponse {
+public class UploadResponse {
     private String publicId;
     private String url;
     private String secureUrl;

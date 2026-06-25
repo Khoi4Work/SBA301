@@ -2,8 +2,8 @@ package com.philosophy.rag.utils.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.response.ApiResponse;
-import com.philosophy.rag.utils.dto.CloudinaryUploadResponse;
-import com.philosophy.rag.utils.service.CloudinaryService;
+import com.philosophy.rag.utils.dto.UploadResponse;
+import com.philosophy.rag.utils.service.MediaStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,16 +18,16 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class CloudinaryController {
 
-    private final CloudinaryService cloudinaryService;
+    private final MediaStorageService cloudinaryService;
 
     @Operation(summary = "Upload an image to Cloudinary")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<CloudinaryUploadResponse>> uploadImage(
+    public ResponseEntity<ApiResponse<UploadResponse>> uploadImage(
             @RequestPart("file") MultipartFile file,
             @RequestParam(value = "folder", defaultValue = "philosophy/images") String folder) throws ApiException {
 
         log.info("Received request to upload image: {}", file.getOriginalFilename());
-        CloudinaryUploadResponse response = cloudinaryService.uploadImage(file, folder);
+        UploadResponse response = cloudinaryService.uploadImage(file, folder);
         return ResponseEntity.ok(ApiResponse.success(response, "Image uploaded successfully"));
     }
 
