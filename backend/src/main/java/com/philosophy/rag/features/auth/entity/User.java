@@ -107,9 +107,4 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<LearningProgress> learningProgresses = new ArrayList<>();
-
-    /** Lịch sử làm bài kiểm tra */
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<UserQuizResult> quizResults = new ArrayList<>();
 }

@@ -12,6 +12,7 @@ import StudyingPage from "@/features/learning-space/pages/StudyingPage.jsx";
 import LessonPage from "@/features/learning-space/pages/LessonPage.jsx";
 import Review from "@/features/learning-space/pages/Review.jsx";
 import QuizPlay from "@/features/learning-space/pages/QuizPlay.jsx";
+import QuizHistory from "@/pages/QuizHistory.jsx";
 import ProtectedRoute from "@/contexts/ProtectedRoute.jsx";
 import ProfilePage from "@/features/profile/pages/ProfilePage.jsx";
 import ConsumeristEscape from "@/features/learning-space/components/ConsumeristEscape.jsx";
@@ -67,12 +68,13 @@ function AppRoutes() {
             <Route path="/ai" element={<ProtectedRoute><MainLayout><VirtualAssistantPage /></MainLayout></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><MainLayout><Chat /></MainLayout></ProtectedRoute>} />
             <Route path="/review" element={<ProtectedRoute><MainLayout><Review /></MainLayout></ProtectedRoute>} />
+            <Route path="/review/history" element={<ProtectedRoute><MainLayout><QuizHistory /></MainLayout></ProtectedRoute>} />
 
             {/* ==========================================
                 GROUP 4: ADMIN ROUTES (NESTED ROUTING)
                 ========================================== */}
             {/* Thêm requireRole="ADMIN" vào ProtectedRoute nếu bạn có hỗ trợ */}
-            <Route path="/admin" element={ <ProtectedRoute requireRole="ADMIN"><AdminLayout /></ProtectedRoute>}>
+            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 {/* Các route con này sẽ được render vào bên trong <Outlet /> của AdminLayout */}
                 <Route index element={<AdminDashboard />} /> {/* path: /admin */}
                 <Route path="philosophers" element={<AIPhilosophersManagement />} /> {/* path: /admin/philosophers */}

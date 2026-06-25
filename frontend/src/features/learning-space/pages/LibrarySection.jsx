@@ -1,12 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FileText, RefreshCw, AlertTriangle, Search } from 'lucide-react';
+import { BookOpen, FileText, RefreshCw, AlertTriangle, Search, CheckCircle2, ChevronDown } from 'lucide-react';
 import {
     fetchDocuments,
     getFileTypeInfo,
     formatFileSize,
     formatDate,
 } from '@/services/documentService.js';
+import {
+    getChapterDisplayName,
+    getSectionDisplayName,
+    getPartDisplayName,
+} from '@/utils/curriculumMapping';
 
 // ─── Skeleton Card ───────────────────────────────────────────────────────────
 function SkeletonCard() {
@@ -63,6 +68,14 @@ function DocumentCard({ doc }) {
         <div className="group bg-surface-container-low border border-outline-variant/20 relative flex flex-col h-full hover:border-secondary/40 transition-all duration-500 rounded overflow-hidden">
             <div className="absolute inset-0 paper-texture pointer-events-none" />
 
+            {/* Completed Badge */}
+            {doc.isCompleted && (
+                <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/95 text-white rounded text-[10px] font-bold tracking-wider uppercase shadow-lg shadow-emerald-500/20 backdrop-blur-sm border border-emerald-400/30">
+                    <CheckCircle2 size={12} />
+                    Đã học
+                </div>
+            )}
+
             {/* Thumbnail / Cover Image from Cloudinary / File Banner */}
             {doc.imageUrl ? (
                 <div className="relative h-48 overflow-hidden flex items-center justify-center bg-surface-container-highest">
@@ -78,9 +91,9 @@ function DocumentCard({ doc }) {
 
             {/* Card Body */}
             <div className="p-6 folio-border flex-1 flex flex-col">
-                {/* Title */}
+                {/* Title (Prefix with Phần a, b... if available) */}
                 <h3 className="font-display text-xl text-on-surface mb-1 font-semibold leading-snug line-clamp-2">
-                    {doc.title || doc.fileName}
+                    {doc.parsedLetterSection ? `Phần ${doc.parsedLetterSection}: ` : ''}{doc.title || doc.fileName}
                 </h3>
 
                 {/* Description */}
@@ -94,27 +107,30 @@ function DocumentCard({ doc }) {
 
                 {/* Metadata */}
                 <div className="mt-auto space-y-2">
-                    <div className="flex items-center justify-between text-xs text-on-surface-variant">
-                        <span className="flex items-center gap-1">
-                            <FileText size={12} />
-                            {doc.fileName}
-                        </span>
-                        <span>{formatFileSize(doc.fileSize)}</span>
-                    </div>
                     <div className="text-xs text-outline">
                         Cập nhật: {formatDate(doc.lastModified)}
                     </div>
                 </div>
             </div>
 
-            {/* Start Lesson Button */}
-            <button
-                onClick={handleStartLesson}
-                className="w-full py-4 bg-surface-container-high text-on-surface text-sm font-bold tracking-wider uppercase border-t border-outline-variant/20 hover:bg-secondary hover:text-on-secondary transition-all flex items-center justify-center gap-2"
-            >
-                <BookOpen size={14} />
-                Bắt đầu học
-            </button>
+            {/* Start / Re-learn Lesson Button */}
+            {doc.isCompleted ? (
+                <button
+                    onClick={handleStartLesson}
+                    className="w-full py-4 bg-emerald-500/10 text-emerald-400 text-sm font-bold tracking-wider uppercase border-t border-outline-variant/20 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                    <CheckCircle2 size={14} />
+                    Học lại
+                </button>
+            ) : (
+                <button
+                    onClick={handleStartLesson}
+                    className="w-full py-4 bg-surface-container-high text-on-surface text-sm font-bold tracking-wider uppercase border-t border-outline-variant/20 hover:bg-secondary hover:text-on-secondary transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                    <BookOpen size={14} />
+                    Bắt đầu học
+                </button>
+            )}
         </div>
     );
 }
@@ -147,7 +163,7 @@ function ErrorState({ message, onRetry }) {
             </p>
             <button
                 onClick={onRetry}
-                className="mt-2 flex items-center gap-2 px-6 py-3 bg-secondary text-on-secondary text-sm font-bold tracking-wider uppercase rounded hover:opacity-90 transition-opacity"
+                className="mt-2 flex items-center gap-2 px-6 py-3 bg-secondary text-on-secondary text-sm font-bold tracking-wider uppercase rounded hover:opacity-90 transition-opacity cursor-pointer"
             >
                 <RefreshCw size={14} />
                 Thử lại
@@ -157,14 +173,19 @@ function ErrorState({ message, onRetry }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-const CATEGORIES = ['Tất cả bộ sưu tập', 'Chương 1', 'Chương 2', 'Chương 3'];
-
 export default function LibrarySection() {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeCategory, setActiveCategory] = useState('Tất cả bộ sưu tập');
     const [searchQuery, setSearchQuery] = useState('');
+
+    // State cho bộ lọc mới
+    const [selectedCurriculum, setSelectedCurriculum] = useState('GIÁO TRÌNH TRIẾT HỌC MÁC - LÊNIN');
+    const [activeChapter, setActiveChapter] = useState('');
+    const [activeSection, setActiveSection] = useState('Tất cả');
+
+    // State quản lý việc mở/đóng dropdown giáo trình
+    const [isCurriculumOpen, setIsCurriculumOpen] = useState(false);
 
     const loadDocuments = async () => {
         setLoading(true);
@@ -184,69 +205,178 @@ export default function LibrarySection() {
         loadDocuments();
     }, []);
 
-    // Filter theo category và search query
-    const filteredDocs = useMemo(() => {
-        return documents.filter((doc) => {
-            let matchesCategory = false;
-            if (activeCategory === 'Tất cả bộ sưu tập') {
-                matchesCategory = true;
-            } else if (activeCategory === 'Chương 1') {
-                matchesCategory =
-                    doc.category === 'Chương 1' ||
-                    doc.category?.toLowerCase()?.includes('chương 1') ||
-                    doc.category?.toLowerCase()?.includes('chuong 1') ||
-                    doc.title?.toLowerCase()?.includes('chương 1') ||
-                    doc.title?.toLowerCase()?.includes('chuong 1') ||
-                    doc.fileName?.toLowerCase()?.includes('chương 1') ||
-                    doc.fileName?.toLowerCase()?.includes('chuong 1') ||
-                    doc.fileName?.toLowerCase()?.includes('c1_') ||
-                    doc.fileName?.toLowerCase()?.includes('c1-') ||
-                    doc.fileName?.toLowerCase()?.includes('c1.');
-            } else if (activeCategory === 'Chương 2') {
-                matchesCategory =
-                    doc.category === 'Chương 2' ||
-                    doc.category?.toLowerCase()?.includes('chương 2') ||
-                    doc.category?.toLowerCase()?.includes('chuong 2') ||
-                    doc.title?.toLowerCase()?.includes('chương 2') ||
-                    doc.title?.toLowerCase()?.includes('chuong 2') ||
-                    doc.fileName?.toLowerCase()?.includes('chương 2') ||
-                    doc.fileName?.toLowerCase()?.includes('chuong 2') ||
-                    doc.fileName?.toLowerCase()?.includes('c2_') ||
-                    doc.fileName?.toLowerCase()?.includes('c2-') ||
-                    doc.fileName?.toLowerCase()?.includes('c2.');
-            } else if (activeCategory === 'Chương 3') {
-                matchesCategory =
-                    doc.category === 'Chương 3' ||
-                    doc.category?.toLowerCase()?.includes('chương 3') ||
-                    doc.category?.toLowerCase()?.includes('chuong 3') ||
-                    doc.title?.toLowerCase()?.includes('chương 3') ||
-                    doc.title?.toLowerCase()?.includes('chuong 3') ||
-                    doc.fileName?.toLowerCase()?.includes('chương 3') ||
-                    doc.fileName?.toLowerCase()?.includes('chuong 3') ||
-                    doc.fileName?.toLowerCase()?.includes('c3_') ||
-                    doc.fileName?.toLowerCase()?.includes('c3-') ||
-                    doc.fileName?.toLowerCase()?.includes('c3.');
-            }
+    // 1. Phân tích cấu trúc 5 cấp từ tên file
+    // Định dạng ví dụ: "Chương1-I-1b.docx" -> Chương: 1, Mục La Mã: I, Phần số: 1, Phần chữ: b
+    const parsedDocs = useMemo(() => {
+        return documents.map((doc) => {
+            const name = doc.fileName || doc.title || '';
+            
+            // Tìm số chương (ví dụ: "Chương 1" hoặc "Chương1")
+            const chapterMatch = name.match(/Chương\s*(\d+)/i);
+            const parsedChapter = chapterMatch ? `Chương ${chapterMatch[1]}` : null;
 
-            const q = searchQuery.toLowerCase();
+            // Tìm mục La Mã (ví dụ: "Chương 1 - I - 1a" -> "I", hoặc "Chương1-II" -> "II")
+            const sectionMatch = name.match(/Chương\s*\d+\s*-\s*([IVXLCDM]+)/i);
+            const parsedSection = sectionMatch ? sectionMatch[1].toUpperCase() : null;
+
+            // Tìm phần số và phần chữ (ví dụ: "Chương1-I-1b" -> phần số "1", phần chữ "b")
+            // Regex khớp với: dấu gạch ngang thứ hai -> chữ số -> chữ cái tùy chọn
+            const subSectionMatch = name.match(/Chương\s*\d+\s*-\s*[IVXLCDM]+\s*-\s*(\d+)([a-zđA-ZĐ]*)/i);
+            const parsedNumberSection = subSectionMatch ? subSectionMatch[1] : null;
+            const parsedLetterSection = subSectionMatch ? subSectionMatch[2] : null;
+
+            return {
+                ...doc,
+                parsedChapter,
+                parsedSection,
+                parsedNumberSection,
+                parsedLetterSection,
+            };
+        });
+    }, [documents]);
+
+    // 2. Lấy danh sách các giáo trình (curricula) duy nhất từ S3 categories
+    const curricula = useMemo(() => {
+        const set = new Set();
+        documents.forEach((doc) => {
+            if (doc.category && doc.category.trim() !== '' && doc.category !== 'Tài liệu ôn tập') {
+                const cat = doc.category.trim();
+                // Loại bỏ các category bị gán nhầm thành tên Chương (ví dụ: "Chương 1", "Chương 2", "Chuong...")
+                const isChapterName = /^Chương\s*\d+/i.test(cat) || /^Chuong\s*\d+/i.test(cat);
+                if (!isChapterName) {
+                    set.add(cat);
+                }
+            }
+        });
+        // Luôn đảm bảo có giáo trình Mác - Lênin
+        set.add('GIÁO TRÌNH TRIẾT HỌC MÁC - LÊNIN');
+        return Array.from(set);
+    }, [documents]);
+
+    // 3. Lọc tài liệu thuộc giáo trình đang chọn
+    const curriculumDocs = useMemo(() => {
+        if (!selectedCurriculum) return [];
+        return parsedDocs.filter((doc) => {
+            const matchesCategory = doc.category === selectedCurriculum;
+            // Fallback: Nếu chọn giáo trình Triết học Mác-Lênin, cho phép hiển thị các tài liệu chứa "chương" hoặc "chuong" trong tên/title 
+            // phòng trường hợp category trong S3 chưa được cập nhật chính xác.
+            const matchesFallback =
+                selectedCurriculum === 'GIÁO TRÌNH TRIẾT HỌC MÁC - LÊNIN' &&
+                (doc.fileName?.toLowerCase()?.includes('chương') ||
+                    doc.fileName?.toLowerCase()?.includes('chuong') ||
+                    doc.title?.toLowerCase()?.includes('chương') ||
+                    doc.title?.toLowerCase()?.includes('chuong'));
+
+            return matchesCategory || matchesFallback;
+        });
+    }, [parsedDocs, selectedCurriculum]);
+
+    // 4. Lấy danh sách các chương của giáo trình đang chọn
+    const chapters = useMemo(() => {
+        const set = new Set();
+        curriculumDocs.forEach((doc) => {
+            if (doc.parsedChapter) {
+                set.add(doc.parsedChapter);
+            }
+        });
+        return Array.from(set).sort((a, b) => {
+            const numA = parseInt(a.replace(/^\D+/g, ''));
+            const numB = parseInt(b.replace(/^\D+/g, ''));
+            return numA - numB;
+        });
+    }, [curriculumDocs]);
+
+    // Tự động chọn chương đầu tiên khi giáo trình thay đổi hoặc danh sách chương thay đổi
+    useEffect(() => {
+        if (chapters.length > 0) {
+            setActiveChapter(chapters[0]);
+        } else {
+            setActiveChapter('');
+        }
+    }, [selectedCurriculum, chapters]);
+
+    // 5. Lấy danh sách các mục La Mã của chương đang chọn
+    const sections = useMemo(() => {
+        if (!activeChapter) return [];
+        const set = new Set();
+        curriculumDocs.forEach((doc) => {
+            if (doc.parsedChapter === activeChapter && doc.parsedSection) {
+                set.add(doc.parsedSection);
+            }
+        });
+        const romanOrder = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+        return Array.from(set).sort((a, b) => {
+            return romanOrder.indexOf(a) - romanOrder.indexOf(b);
+        });
+    }, [curriculumDocs, activeChapter]);
+
+    // Tự động chọn mục La Mã đầu tiên khi đổi chương hoặc khi danh sách mục La Mã thay đổi
+    useEffect(() => {
+        if (sections.length > 0) {
+            setActiveSection(sections[0]);
+        } else {
+            setActiveSection('Tất cả');
+        }
+    }, [sections]);
+
+    // 6. Lọc tài liệu theo activeChapter, activeSection và searchQuery
+    const filteredDocs = useMemo(() => {
+        return curriculumDocs.filter((doc) => {
+            const matchesChapter = !activeChapter || doc.parsedChapter === activeChapter;
+            const matchesSection =
+                !activeSection ||
+                activeSection === 'Tất cả' ||
+                doc.parsedSection === activeSection;
+
+            const q = searchQuery.toLowerCase().trim();
             const matchesSearch =
                 !q ||
                 doc.title?.toLowerCase().includes(q) ||
                 doc.fileName?.toLowerCase().includes(q) ||
                 doc.description?.toLowerCase().includes(q);
 
-            return matchesCategory && matchesSearch;
+            return matchesChapter && matchesSection && matchesSearch;
         });
-    }, [documents, activeCategory, searchQuery]);
+    }, [curriculumDocs, activeChapter, activeSection, searchQuery]);
+
+    // 7. Nhóm tài liệu theo Phần số (parsedNumberSection) và sắp xếp theo Phần chữ (parsedLetterSection)
+    const groupedDocs = useMemo(() => {
+        const groups = {};
+        filteredDocs.forEach((doc) => {
+            const numSec = doc.parsedNumberSection || 'Khác';
+            if (!groups[numSec]) {
+                groups[numSec] = [];
+            }
+            groups[numSec].push(doc);
+        });
+
+        // Sắp xếp các tài liệu trong mỗi nhóm theo thứ tự chữ cái của parsedLetterSection (a, b, c...)
+        Object.keys(groups).forEach((key) => {
+            groups[key].sort((a, b) => {
+                const letterA = a.parsedLetterSection || '';
+                const letterB = b.parsedLetterSection || '';
+                return letterA.localeCompare(letterB);
+            });
+        });
+
+        // Trả về danh sách các nhóm đã sắp xếp (các phần số được sắp xếp tăng dần 1, 2, 3...)
+        return Object.keys(groups)
+            .sort((a, b) => {
+                if (a === 'Khác') return 1;
+                if (b === 'Khác') return -1;
+                return parseInt(a) - parseInt(b);
+            })
+            .map((key) => ({
+                numberSection: key,
+                docs: groups[key],
+            }));
+    }, [filteredDocs]);
 
     return (
         <section className="mb-20">
             {/* Section Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
                 <div>
-                    {/*<span className="text-xs uppercase tracking-[0.3em] text-secondary mb-2 block font-medium">*/}
-                    {/*    Tri thức chọn lọc*/}
-                    {/*</span>*/}
                     <h2 className="font-display text-5xl text-on-background font-bold tracking-tight">
                         Thư viện học giả
                     </h2>
@@ -255,14 +385,14 @@ export default function LibrarySection() {
                     {/* Live counter */}
                     {!loading && !error && (
                         <span className="text-xs text-outline font-medium">
-                            {filteredDocs.length}/{documents.length} tài liệu
+                            {filteredDocs.length}/{curriculumDocs.length} tài liệu
                         </span>
                     )}
                     {/* Refresh button */}
                     <button
                         onClick={loadDocuments}
                         disabled={loading}
-                        className="flex items-center gap-2 bg-surface-container-high px-4 py-2 border border-outline-variant/30 rounded text-sm font-bold tracking-wider text-secondary hover:border-secondary/60 transition-all disabled:opacity-40"
+                        className="flex items-center gap-2 bg-surface-container-high px-4 py-2 border border-outline-variant/30 rounded text-sm font-bold tracking-wider text-secondary hover:border-secondary/60 transition-all disabled:opacity-40 cursor-pointer"
                         title="Tải lại thư viện"
                     >
                         <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -271,54 +401,142 @@ export default function LibrarySection() {
                 </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="relative mb-6">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline" />
-                <input
-                    type="text"
-                    placeholder="Tìm kiếm tài liệu..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-surface-container-high border border-outline-variant/30 rounded text-sm text-on-surface placeholder:text-outline-variant focus:outline-none focus:border-secondary/60 transition-all"
-                />
-                {searchQuery && (
+            {/* Filter controls row */}
+            <div className="flex flex-col md:flex-row gap-5 mb-6">
+                {/* 1. Dropdown Chọn Giáo trình */}
+                <div className="relative inline-block text-left w-full md:w-80 shrink-0">
+                    <label className="block text-xs uppercase tracking-[0.2em] text-outline mb-2 font-bold">
+                        Giáo trình học tập
+                    </label>
                     <button
-                        onClick={() => setSearchQuery('')}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-secondary transition-colors"
+                        type="button"
+                        onClick={() => setIsCurriculumOpen(!isCurriculumOpen)}
+                        className="w-full bg-surface-container-high px-4 py-3 border border-outline-variant/30 rounded text-sm font-semibold text-on-surface flex items-center justify-between hover:border-secondary/60 transition-all shadow-sm focus:outline-none cursor-pointer"
                     >
-                        <span className="material-symbols-outlined text-[18px]">close</span>
+                        <div className="flex items-center gap-2.5 truncate">
+                            <BookOpen size={16} className="text-secondary shrink-0" />
+                            <span className="truncate">{selectedCurriculum}</span>
+                        </div>
+                        <ChevronDown size={14} className="text-outline shrink-0 transition-transform duration-300" style={{ transform: isCurriculumOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                     </button>
-                )}
+
+                    {isCurriculumOpen && (
+                        <>
+                            <div 
+                                className="fixed inset-0 z-30" 
+                                onClick={() => setIsCurriculumOpen(false)}
+                            />
+                            <div className="absolute left-0 mt-2 w-full bg-surface-container-high border border-outline-variant/40 rounded-lg shadow-xl z-40 py-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                                {curricula.map((cur) => (
+                                    <button
+                                        key={cur}
+                                        onClick={() => {
+                                            setSelectedCurriculum(cur);
+                                            setIsCurriculumOpen(false);
+                                        }}
+                                        className={`w-full px-4 py-3 text-left text-sm flex items-center gap-2 hover:bg-secondary/10 hover:text-secondary transition-all cursor-pointer ${
+                                            selectedCurriculum === cur 
+                                                ? 'bg-secondary/5 text-secondary font-bold' 
+                                                : 'text-on-surface-variant'
+                                        }`}
+                                    >
+                                        <BookOpen size={14} className={selectedCurriculum === cur ? 'text-secondary' : 'text-outline'} />
+                                        <span className="truncate">{cur}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* 2. Ô Tìm kiếm */}
+                <div className="relative flex-1">
+                    <label className="block text-xs uppercase tracking-[0.2em] text-outline mb-2 font-bold">
+                        Tìm kiếm tài liệu
+                    </label>
+                    <div className="relative">
+                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline" />
+                        <input
+                            type="text"
+                            placeholder="Nhập từ khóa tìm kiếm..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 bg-surface-container-high border border-outline-variant/30 rounded text-sm text-on-surface placeholder:text-outline-variant focus:outline-none focus:border-secondary/60 transition-all"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-secondary transition-colors cursor-pointer"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">close</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* Category Filter */}
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-4 mb-8">
-                {CATEGORIES.map((cat) => (
-                    <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={`px-5 py-2 text-sm font-bold tracking-wider whitespace-nowrap rounded transition-all ${
-                            activeCategory === cat
-                                ? 'bg-secondary text-on-secondary'
-                                : 'border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary'
-                        }`}
-                    >
-                        {cat}
-                    </button>
-                ))}
-            </div>
+            {/* 3. Chương & Mục La Mã */}
+            {selectedCurriculum && chapters.length > 0 && (
+                <div className="space-y-6 p-6 bg-surface-container-low border border-outline-variant/20 rounded-xl mb-8 shadow-sm">
+                    {/* Danh sách Chương */}
+                    <div className="space-y-2">
+                        <span className="text-xs uppercase tracking-[0.2em] text-outline font-bold block">
+                            Chương học tập
+                        </span>
+                        <div className="flex flex-wrap gap-3">
+                            {chapters.map((chap) => (
+                                <button
+                                    key={chap}
+                                    onClick={() => setActiveChapter(chap)}
+                                    className={`px-5 py-2.5 text-xs font-bold tracking-wider rounded transition-all cursor-pointer ${
+                                        activeChapter === chap
+                                            ? 'bg-secondary text-on-secondary shadow-md border border-secondary scale-[1.02]'
+                                            : 'border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary hover:bg-secondary/5'
+                                    }`}
+                                >
+                                    {getChapterDisplayName(chap)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-            {/* Document Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 relative">
+                    {/* Danh sách Mục La Mã (Chỉ hiện khi chương có mục La Mã) */}
+                    {activeChapter && sections.length > 0 && (
+                        <div className="space-y-2 pt-4 border-t border-outline-variant/20">
+                            <span className="text-xs uppercase tracking-[0.2em] text-outline font-bold block">
+                                Mục học tập (La Mã) của {getChapterDisplayName(activeChapter)}
+                            </span>
+                            <div className="flex flex-wrap gap-2.5">
+                                {sections.map((sec) => (
+                                    <button
+                                        key={sec}
+                                        onClick={() => setActiveSection(sec)}
+                                        className={`px-5 py-2 text-xs font-bold tracking-wider rounded transition-all cursor-pointer ${
+                                            activeSection === sec
+                                                ? 'bg-secondary/15 text-secondary border border-secondary/40 shadow-sm scale-[1.02]'
+                                                : 'border border-outline-variant/40 text-on-surface-variant hover:border-secondary/40 hover:text-secondary hover:bg-secondary/5'
+                                        }`}
+                                    >
+                                        {getSectionDisplayName(activeChapter, sec)}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Document Grid grouped by Number Section */}
+            <div className="space-y-12 relative">
                 <div className="h-px w-[200%] -left-[50%] absolute bg-gradient-to-r from-transparent via-outline-variant/20 to-transparent -top-12" />
 
                 {/* Loading Skeletons */}
                 {loading && (
-                    <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                         <SkeletonCard />
                         <SkeletonCard />
                         <SkeletonCard />
-                    </>
+                    </div>
                 )}
 
                 {/* Error State */}
@@ -327,13 +545,32 @@ export default function LibrarySection() {
                 )}
 
                 {/* Empty State */}
-                {!loading && !error && filteredDocs.length === 0 && (
+                {!loading && !error && groupedDocs.length === 0 && (
                     <EmptyState query={searchQuery} />
                 )}
 
-                {/* Document Cards */}
-                {!loading && !error && filteredDocs.map((doc, i) => (
-                    <DocumentCard key={doc.key ?? i} doc={doc} />
+                {/* Grouped Document Cards */}
+                {!loading && !error && groupedDocs.map((group) => (
+                    <div key={group.numberSection} className="space-y-4">
+                        {group.numberSection !== 'Khác' ? (
+                            <h3 className="font-display text-xl text-secondary font-bold flex items-center gap-2">
+                                <span className="w-1.5 h-5 bg-secondary rounded-full inline-block" />
+                                {getPartDisplayName(activeChapter, activeSection, group.numberSection)}
+                            </h3>
+                        ) : (
+                            filteredDocs.some(d => d.parsedNumberSection) && (
+                                <h3 className="font-display text-xl text-outline font-bold flex items-center gap-2">
+                                    <span className="w-1.5 h-5 bg-outline rounded-full inline-block" />
+                                    Tài liệu khác
+                                </h3>
+                            )
+                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                            {group.docs.map((doc, i) => (
+                                <DocumentCard key={doc.key ?? i} doc={doc} />
+                            ))}
+                        </div>
+                    </div>
                 ))}
             </div>
         </section>
