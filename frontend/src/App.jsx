@@ -74,7 +74,7 @@ function AppRoutes() {
                 GROUP 4: ADMIN ROUTES (NESTED ROUTING)
                 ========================================== */}
             {/* Thêm requireRole="ADMIN" vào ProtectedRoute nếu bạn có hỗ trợ */}
-            <Route path="/admin" element={ <ProtectedRoute requireRole="ADMIN"><AdminLayout /></ProtectedRoute>}>
+            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 {/* Các route con này sẽ được render vào bên trong <Outlet /> của AdminLayout */}
                 <Route index element={<AdminDashboard />} /> {/* path: /admin */}
                 <Route path="philosophers" element={<AIPhilosophersManagement />} /> {/* path: /admin/philosophers */}

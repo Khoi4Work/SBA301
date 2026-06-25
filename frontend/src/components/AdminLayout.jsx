@@ -38,8 +38,8 @@ export default function AdminLayout() {
               `flex items-center gap-3 px-4 py-3 font-semibold transition-colors duration-200 ${isActive ? 'text-secondary border-l-2 border-secondary bg-secondary-container/10' : 'text-on-surface-variant opacity-70 hover:opacity-100 hover:bg-secondary-container/5 hover:text-secondary'}`
             }
           >
-            <span className="material-symbols-outlined mr-2">account_balance</span>
-            <span className="text-sm">Academy Chapters</span>
+            <span className="material-symbols-outlined mr-2">description</span>
+            <span className="text-sm">Academy Documents</span>
           </NavLink>
           <NavLink 
             to="/admin/philosophers"

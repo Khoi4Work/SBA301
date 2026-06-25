@@ -23,6 +23,9 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -57,7 +60,7 @@ public class S3StorageServiceImpl implements S3StorageService {
 
     @Override
     public DocumentUploadResponse uploadDocument(MultipartFile file, String title, String description,
-            MultipartFile image, String imageUrl, String category)
+            MultipartFile image, String category)
             throws ApiException {
         log.info("Starting document upload: {}", file.getOriginalFilename());
         // Validate file rỗng
@@ -78,7 +81,7 @@ public class S3StorageServiceImpl implements S3StorageService {
         String asciiFileName = sanitizeFileName(safeFileName);
 
         // Tải ảnh bìa lên Cloudinary (nếu có file image truyền lên)
-        String uploadedImageUrl = imageUrl;
+        String uploadedImageUrl = null;
         if (image != null && !image.isEmpty()) {
             try {
                 log.info("Uploading cover image to Cloudinary for document: {}", originalFileName);
@@ -347,5 +350,78 @@ public class S3StorageServiceImpl implements S3StorageService {
         // Replace multiple underscores with a single underscore
         ascii = ascii.replaceAll("_+", "_");
         return ascii;
+    }
+
+    @Override
+    public void deleteDocument(String key) throws ApiException {
+        log.info("Deleting document from S3 with key: {}", key);
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build());
+            log.info("Successfully deleted S3 object: {}", key);
+            
+            // Invalidate cache
+            this.cachedDocumentList = null;
+            this.cacheExpiry = Instant.MIN;
+        } catch (S3Exception e) {
+            log.error("Failed to delete S3 object: {}", e.awsErrorDetails().errorMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Failed to delete file from S3");
+        } catch (Exception e) {
+            log.error("Unexpected error during S3 delete: {}", e.getMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Delete failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateDocumentMetadata(String key, String title, String description, String category, MultipartFile newImage) throws ApiException {
+        log.info("Updating metadata for S3 document: {}", key);
+        try {
+            // Get existing metadata first
+            HeadObjectResponse headObject = s3Client.headObject(HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build());
+            Map<String, String> existingMetadata = headObject.metadata();
+            Map<String, String> newMetadata = new java.util.HashMap<>(existingMetadata);
+            
+            if (title != null && !title.isBlank()) {
+                newMetadata.put("title", URLEncoder.encode(title, StandardCharsets.UTF_8.name()));
+            }
+            if (description != null) {
+                newMetadata.put("description", URLEncoder.encode(description, StandardCharsets.UTF_8.name()));
+            }
+            if (category != null && !category.isBlank()) {
+                newMetadata.put("category", URLEncoder.encode(category, StandardCharsets.UTF_8.name()));
+            }
+            
+            if (newImage != null && !newImage.isEmpty()) {
+                log.info("Uploading new cover image to Cloudinary for key: {}", key);
+                String uploadedImageUrl = cloudinaryService.uploadImage(newImage, "philosophy/documents").getSecureUrl();
+                newMetadata.put("image-url", uploadedImageUrl);
+            }
+            
+            s3Client.copyObject(CopyObjectRequest.builder()
+                    .sourceBucket(bucketName)
+                    .sourceKey(key)
+                    .destinationBucket(bucketName)
+                    .destinationKey(key)
+                    .metadata(newMetadata)
+                    .metadataDirective(MetadataDirective.REPLACE)
+                    .build());
+            
+            log.info("Successfully updated S3 metadata for key: {}", key);
+            
+            // Invalidate cache
+            this.cachedDocumentList = null;
+            this.cacheExpiry = Instant.MIN;
+        } catch (S3Exception e) {
+            log.error("Failed to copy/update S3 metadata: {}", e.awsErrorDetails().errorMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Failed to update S3 metadata");
+        } catch (Exception e) {
+            log.error("Unexpected error during S3 metadata update: {}", e.getMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Update failed: " + e.getMessage());
+        }
     }
 }
