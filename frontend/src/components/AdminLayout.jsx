@@ -39,7 +39,7 @@ export default function AdminLayout() {
             }
           >
             <span className="material-symbols-outlined mr-2">account_balance</span>
-            <span className="text-sm">Academy Chapters</span>
+            <span className="text-sm">Học viện</span>
           </NavLink>
           <NavLink 
             to="/admin/philosophers"
@@ -48,7 +48,7 @@ export default function AdminLayout() {
             }
           >
             <span className="material-symbols-outlined mr-2" style={{ fontVariationSettings: "'FILL' 1" }}>psychology</span>
-            <span className="text-sm">AI Philosophers</span>
+            <span className="text-sm">Triết gia AI</span>
           </NavLink>
           <NavLink 
             to="/admin/users"
@@ -57,7 +57,7 @@ export default function AdminLayout() {
             }
           >
             <span className="material-symbols-outlined mr-2">group</span>
-            <span className="text-sm">User Management</span>
+            <span className="text-sm">Quản lý người dùng</span>
           </NavLink>
         </nav>
 

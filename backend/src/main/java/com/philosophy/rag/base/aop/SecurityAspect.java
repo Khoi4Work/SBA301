@@ -47,7 +47,7 @@ public class SecurityAspect {
     public void requiresRoleAnnotated() {}
 
     /** Tất cả method ở tầng controller (audit log) */
-    @Pointcut("within(com.philosophy.rag.controller..*)")
+    @Pointcut("within(com.philosophy.rag.features.*.controller..*)")
     public void controllerLayer() {}
 
     // ──────────────────────────────────────────────────────────────────────────
