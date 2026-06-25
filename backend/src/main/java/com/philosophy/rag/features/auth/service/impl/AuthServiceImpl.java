@@ -71,7 +71,6 @@ public class AuthServiceImpl implements AuthService {
                 .username(request.username())
                 .email(request.email())
                 .passwordHash(passwordEncoder.encode(request.password()))
-                .active(true)
                 .build();
         userRepository.save(user);
 
@@ -104,11 +103,6 @@ public class AuthServiceImpl implements AuthService {
                                 "User not found: " + request.usernameOrEmail()
                                 );
                 });
-
-        if (Boolean.FALSE.equals(user.getActive())) {
-            log.warn("Blocked login attempt for inactive user: {}", user.getUsername());
-            throw new ApiException(ErrorCode.INVALID_INPUT, "Tài khoản đã bị khóa");
-        }
 
         Long currentVersion = user.getTokenVersion() == null ? 0L : user.getTokenVersion();
         user.setTokenVersion(currentVersion + 1);
@@ -149,10 +143,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = authToken.getUser();
-        if (Boolean.FALSE.equals(user.getActive())) {
-            authTokenRepository.delete(authToken);
-            throw new ApiException(ErrorCode.INVALID_INPUT, "Tài khoản đã bị khóa");
-        }
         String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name(), user.getTokenVersion(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
 
         return AuthResponse.builder()
