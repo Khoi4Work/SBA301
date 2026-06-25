@@ -13,6 +13,8 @@ public interface RagService {
 
     RagAskResponse ask(UUID userId, String query, UUID philosopherId, UUID sessionId);
 
+    RagAskResponse askContextual(UUID userId, String query, String s3Key, String selectedText, UUID philosopherId, UUID sessionId);
+
     List<DocumentContent> listDocuments();
 
     void resetVectorStore();

@@ -1,7 +1,171 @@
+import React, { useState, useEffect } from "react";
 import Footer from "@/components/Footer.jsx";
-import React from "react";
+import {
+  fetchDocuments,
+  uploadDocument,
+  updateDocument,
+  deleteDocument,
+  formatFileSize,
+  formatDate
+} from "@/services/documentService.js";
 
 export default function AcademyChaptersManagement() {
+  const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  // Modal states
+  const [modalMode, setModalMode] = useState(null); // "upload" | "edit" | "delete"
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  
+  // Form states
+  const [formTitle, setFormTitle] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [formCategory, setFormCategory] = useState("Tài liệu ôn tập");
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadImage, setUploadImage] = useState(null);
+  
+  const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState("");
+
+  const loadDocuments = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      const data = await fetchDocuments();
+      setDocuments(data);
+    } catch (err) {
+      console.error(err);
+      setError("Không tải được danh sách tài liệu học từ hệ thống.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const openUploadModal = () => {
+    setModalMode("upload");
+    setSelectedDoc(null);
+    setFormTitle("");
+    setFormDesc("");
+    setFormCategory("Tài liệu ôn tập");
+    setUploadFile(null);
+    setUploadImage(null);
+    setModalError("");
+  };
+
+  const openEditModal = (doc) => {
+    setModalMode("edit");
+    setSelectedDoc(doc);
+    setFormTitle(doc.title || "");
+    setFormDesc(doc.description || "");
+    setFormCategory(doc.category || "Tài liệu ôn tập");
+    setUploadFile(null);
+    setUploadImage(null);
+    setModalError("");
+  };
+
+  const openDeleteModal = (doc) => {
+    setModalMode("delete");
+    setSelectedDoc(doc);
+    setModalError("");
+  };
+
+  const closeModal = () => {
+    setModalMode(null);
+    setSelectedDoc(null);
+    setUploadFile(null);
+    setUploadImage(null);
+    setModalError("");
+  };
+
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault();
+    if (!uploadFile) {
+      setModalError("Vui lòng chọn tệp tin tài liệu (.pdf hoặc .md)");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", uploadFile);
+    if (formTitle.trim()) formData.append("title", formTitle);
+    if (formDesc.trim()) formData.append("description", formDesc);
+    if (uploadImage) formData.append("image", uploadImage);
+    formData.append("category", formCategory);
+
+    try {
+      setSaving(true);
+      setModalError("");
+      await uploadDocument(formData);
+      await loadDocuments();
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      setModalError(err.response?.data?.message || "Tải lên tài liệu thất bại.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    if (formTitle.trim()) formData.append("title", formTitle);
+    if (formDesc.trim()) formData.append("description", formDesc);
+    if (uploadImage) formData.append("image", uploadImage);
+    formData.append("category", formCategory);
+
+    try {
+      setSaving(true);
+      setModalError("");
+      await updateDocument(selectedDoc.key, formData);
+      await loadDocuments();
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      setModalError(err.response?.data?.message || "Cập nhật tài liệu thất bại.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      setModalError("");
+      await deleteDocument(selectedDoc.key);
+      await loadDocuments();
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      setModalError(err.response?.data?.message || "Xóa tài liệu thất bại.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Filtered documents search
+  const filteredDocs = documents.filter((doc) => {
+    const titleMatch = doc.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const fileMatch = doc.fileName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const categoryMatch = doc.category?.toLowerCase().includes(searchQuery.toLowerCase());
+    return titleMatch || fileMatch || categoryMatch;
+  });
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredDocs.length / itemsPerPage) || 1;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentDocs = filteredDocs.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <div className="animate-fade-in pb-12">
       {/* Header Section */}
@@ -10,14 +174,19 @@ export default function AcademyChaptersManagement() {
           <nav className="flex items-center text-[10px] font-semibold text-secondary/60 tracking-widest uppercase mb-3">
             <span>Học viện</span>
             <span className="material-symbols-outlined text-[12px] mx-2">chevron_right</span>
-            <span>Quản lý chương học</span>
+            <span>Quản lý học liệu</span>
           </nav>
-          <h3 className="font-display text-4xl font-semibold text-on-surface">Danh Mục Chương Trình</h3>
-          <p className="text-on-surface-variant/70 mt-3 max-w-2xl">Quản lý và biên soạn các chương học cốt lõi trong hệ thống tri thức Lyceum. Mỗi chương đại diện cho một trụ cột của sự hiểu biết.</p>
+          <h3 className="font-display text-4xl font-semibold text-on-surface">Danh Mục Tài Liệu Học</h3>
+          <p className="text-on-surface-variant/70 mt-3 max-w-2xl">
+            Quản lý kho học liệu cốt lõi trong hệ thống tri thức Lyceum. Các tài liệu được tải lên S3 phục vụ trực tiếp cho hoạt động tự học và luyện đề.
+          </p>
         </div>
         <div>
-          <button className="bg-secondary text-on-secondary px-8 py-3 text-sm font-semibold uppercase tracking-widest border border-secondary hover:bg-transparent hover:text-secondary transition-all duration-500 shadow-lg shadow-secondary/10">
-            Thêm chương mới
+          <button 
+            onClick={openUploadModal}
+            className="bg-secondary text-on-secondary px-8 py-3 text-sm font-semibold uppercase tracking-widest border border-secondary hover:bg-transparent hover:text-secondary transition-all duration-500 shadow-lg shadow-secondary/10"
+          >
+            Tải lên tài liệu
           </button>
         </div>
       </div>
@@ -29,201 +198,456 @@ export default function AcademyChaptersManagement() {
             <span className="material-symbols-outlined text-6xl">auto_stories</span>
           </div>
           <p className="text-secondary font-semibold uppercase tracking-tighter text-xs mb-2">Tổng quan nội dung</p>
-          <h4 className="font-display text-2xl font-semibold text-on-surface mb-6">24 Chương Học Đã Xuất Bản</h4>
+          <h4 className="font-display text-2xl font-semibold text-on-surface mb-6">
+            {documents.length} Học Liệu Đã Tải Lên
+          </h4>
           <div className="flex space-x-12">
             <div>
-              <span className="block text-4xl font-display text-on-surface">156</span>
-              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-widest mt-1">Bài học tổng cộng</span>
+              <span className="block text-4xl font-display text-on-surface">
+                {documents.filter(d => d.contentType?.includes("pdf")).length}
+              </span>
+              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-widest mt-1">Tài liệu PDF</span>
             </div>
             <div>
-              <span className="block text-4xl font-display text-on-surface">1.2k</span>
-              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-widest mt-1">Học viên tham gia</span>
+              <span className="block text-4xl font-display text-on-surface">
+                {documents.filter(d => d.contentType?.includes("markdown") || d.contentType?.includes("md")).length}
+              </span>
+              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-widest mt-1">Tài liệu MD</span>
             </div>
             <div>
-              <span className="block text-4xl font-display text-secondary">98%</span>
-              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-widest mt-1">Tỉ lệ hoàn thành</span>
+              <span className="block text-4xl font-display text-secondary">
+                {formatFileSize(documents.reduce((acc, curr) => acc + (curr.fileSize || 0), 0))}
+              </span>
+              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-widest mt-1">Tổng dung lượng</span>
             </div>
           </div>
         </div>
         <div className="col-span-12 md:col-span-4 bg-secondary-container/10 border border-secondary/20 p-gutter flex flex-col justify-between">
           <div>
-            <p className="text-secondary font-semibold uppercase tracking-tighter text-xs mb-2">Trạng thái hệ thống</p>
+            <p className="text-secondary font-semibold uppercase tracking-tighter text-xs mb-2">Trạng thái lưu trữ</p>
             <p className="text-on-surface text-sm italic">&quot;Tri thức là ngọn đèn duy nhất soi sáng bóng tối của sự vô tri.&quot;</p>
           </div>
           <div className="flex items-center space-x-2 text-secondary mt-6">
             <div className="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
-            <span className="text-[11px] font-semibold uppercase tracking-widest">Máy chủ Archive-01: Hoạt động</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest">S3 Bucket: Active</span>
           </div>
         </div>
+      </div>
+
+      {/* Search & Actions Bar */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="relative flex items-center w-full max-w-md">
+          <input
+            type="text"
+            placeholder="Tìm kiếm tài liệu học theo tiêu đề, tên file..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            className="bg-surface-container-low border border-secondary/20 text-on-surface px-4 py-2.5 pl-10 focus:outline-none focus:border-secondary transition-colors w-full text-sm placeholder:text-on-surface-variant/40"
+          />
+          <span className="material-symbols-outlined absolute left-3 text-on-surface-variant/60 text-lg">
+            search
+          </span>
+        </div>
+        <button 
+          onClick={loadDocuments}
+          className="ml-4 p-2 border border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors"
+          title="Làm mới danh sách"
+        >
+          <span className={`material-symbols-outlined ${isLoading ? "animate-spin" : ""}`}>refresh</span>
+        </button>
       </div>
 
       {/* Data Table Section */}
       <div className="bg-surface-container-lowest border border-secondary/10 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-container-high/50 border-b border-secondary/20">
-                <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em]">Tên chương</th>
-                <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em]">Mô tả</th>
-                <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em] text-center">Số bài học</th>
-                <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em]">Trạng thái</th>
-                <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em] text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-secondary/10">
-              <tr className="hover:bg-secondary/5 transition-colors group cursor-pointer">
-                <td className="px-6 py-6">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-surface-container flex items-center justify-center border border-secondary/30 mr-4 group-hover:border-secondary transition-colors">
-                      <span className="material-symbols-outlined text-secondary text-xl">menu_book</span>
-                    </div>
-                    <span className="font-display text-lg text-on-surface group-hover:text-secondary transition-colors">Nhập môn Triết học</span>
-                  </div>
-                </td>
-                <td className="px-6 py-6 border-l border-secondary/5">
-                  <p className="text-on-surface-variant text-sm line-clamp-1 max-w-xs">Tìm hiểu những khái niệm cơ bản về sự tồn tại và nhận thức luận.</p>
-                </td>
-                <td className="px-6 py-6 text-center border-l border-secondary/5">
-                  <span className="text-on-surface">12</span>
-                </td>
-                <td className="px-6 py-6 border-l border-secondary/5">
-                  <span className="inline-flex items-center px-2 py-0.5 border border-secondary/40 text-[10px] text-secondary uppercase tracking-widest font-bold bg-secondary/5">
-                    Đã xuất bản
-                  </span>
-                </td>
-                <td className="px-6 py-6 text-right border-l border-secondary/5">
-                  <div className="flex justify-end space-x-4 opacity-70 group-hover:opacity-100 transition-opacity">
-                    <button className="text-on-surface-variant hover:text-secondary transition-colors flex items-center space-x-1" title="Sửa">
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                      <span className="text-[11px] uppercase tracking-tighter font-medium">Sửa</span>
-                    </button>
-                    <button className="text-on-surface-variant hover:text-error transition-colors flex items-center space-x-1" title="Xóa">
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                      <span className="text-[11px] uppercase tracking-tighter font-medium">Xóa</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              
-              <tr className="hover:bg-secondary/5 transition-colors group cursor-pointer">
-                <td className="px-6 py-6">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-surface-container flex items-center justify-center border border-secondary/30 mr-4 group-hover:border-secondary transition-colors">
-                      <span className="material-symbols-outlined text-secondary text-xl">architecture</span>
-                    </div>
-                    <span className="font-display text-lg text-on-surface group-hover:text-secondary transition-colors">Logic học Hình thức</span>
-                  </div>
-                </td>
-                <td className="px-6 py-6 border-l border-secondary/5">
-                  <p className="text-on-surface-variant text-sm line-clamp-1 max-w-xs">Nghiên cứu về các quy luật tư duy và lập luận chính xác.</p>
-                </td>
-                <td className="px-6 py-6 text-center border-l border-secondary/5">
-                  <span className="text-on-surface">08</span>
-                </td>
-                <td className="px-6 py-6 border-l border-secondary/5">
-                  <span className="inline-flex items-center px-2 py-0.5 border border-outline/40 text-[10px] text-on-surface-variant uppercase tracking-widest font-bold bg-surface-variant/20">
-                    Bản nháp
-                  </span>
-                </td>
-                <td className="px-6 py-6 text-right border-l border-secondary/5">
-                  <div className="flex justify-end space-x-4 opacity-70 group-hover:opacity-100 transition-opacity">
-                    <button className="text-on-surface-variant hover:text-secondary transition-colors flex items-center space-x-1">
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                      <span className="text-[11px] uppercase tracking-tighter font-medium">Sửa</span>
-                    </button>
-                    <button className="text-on-surface-variant hover:text-error transition-colors flex items-center space-x-1">
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                      <span className="text-[11px] uppercase tracking-tighter font-medium">Xóa</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-
-              <tr className="hover:bg-secondary/5 transition-colors group cursor-pointer">
-                <td className="px-6 py-6">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-surface-container flex items-center justify-center border border-secondary/30 mr-4 group-hover:border-secondary transition-colors">
-                      <span className="material-symbols-outlined text-secondary text-xl">balance</span>
-                    </div>
-                    <span className="font-display text-lg text-on-surface group-hover:text-secondary transition-colors">Đạo đức học Hellenistic</span>
-                  </div>
-                </td>
-                <td className="px-6 py-6 border-l border-secondary/5">
-                  <p className="text-on-surface-variant text-sm line-clamp-1 max-w-xs">Khám phá tư tưởng của Stoics, Epicureans và Skeptics.</p>
-                </td>
-                <td className="px-6 py-6 text-center border-l border-secondary/5">
-                  <span className="text-on-surface">15</span>
-                </td>
-                <td className="px-6 py-6 border-l border-secondary/5">
-                  <span className="inline-flex items-center px-2 py-0.5 border border-secondary/40 text-[10px] text-secondary uppercase tracking-widest font-bold bg-secondary/5">
-                    Đã xuất bản
-                  </span>
-                </td>
-                <td className="px-6 py-6 text-right border-l border-secondary/5">
-                  <div className="flex justify-end space-x-4 opacity-70 group-hover:opacity-100 transition-opacity">
-                    <button className="text-on-surface-variant hover:text-secondary transition-colors flex items-center space-x-1">
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                      <span className="text-[11px] uppercase tracking-tighter font-medium">Sửa</span>
-                    </button>
-                    <button className="text-on-surface-variant hover:text-error transition-colors flex items-center space-x-1">
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                      <span className="text-[11px] uppercase tracking-tighter font-medium">Xóa</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination */}
-        <div className="px-6 py-4 flex items-center justify-between border-t border-secondary/10 bg-surface-container-low/50">
-          <p className="text-xs text-on-surface-variant uppercase tracking-widest font-semibold">Hiển thị 1-3 trong 24 chương</p>
-          <div className="flex items-center space-x-2">
-            <button className="p-1 border border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary transition-all disabled:opacity-30">
-              <span className="material-symbols-outlined">navigate_before</span>
-            </button>
-            <button className="px-3 py-1 border border-secondary bg-secondary/10 text-secondary text-xs font-bold">1</button>
-            <button className="px-3 py-1 border border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary text-xs transition-all">2</button>
-            <button className="px-3 py-1 border border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary text-xs transition-all">3</button>
-            <button className="p-1 border border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary transition-all">
-              <span className="material-symbols-outlined">navigate_next</span>
-            </button>
+        {isLoading ? (
+          <div className="p-20 text-center text-on-surface-variant/60 flex flex-col items-center justify-center gap-3">
+            <span className="material-symbols-outlined text-4xl animate-spin text-secondary">progress_activity</span>
+            <p className="text-sm font-semibold uppercase tracking-widest">Đang tải danh sách học liệu...</p>
           </div>
-        </div>
+        ) : error ? (
+          <div className="p-20 text-center text-error/80 flex flex-col items-center justify-center gap-3">
+            <span className="material-symbols-outlined text-4xl">error</span>
+            <p className="text-sm font-semibold">{error}</p>
+            <button onClick={loadDocuments} className="text-xs underline text-secondary mt-2">Thử lại</button>
+          </div>
+        ) : filteredDocs.length === 0 ? (
+          <div className="p-20 text-center text-on-surface-variant/60 flex flex-col items-center justify-center gap-2">
+            <span className="material-symbols-outlined text-4xl">folder_off</span>
+            <p className="text-sm font-semibold uppercase tracking-widest">Không có tài liệu nào trùng khớp</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface-container-high/50 border-b border-secondary/20">
+                    <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em]">Tên học liệu</th>
+                    <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em]">Mô tả</th>
+                    <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em] text-center">Định dạng & Dung lượng</th>
+                    <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em]">Chuyên mục</th>
+                    <th className="px-6 py-4 font-semibold text-[11px] text-secondary uppercase tracking-[0.2em] text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-secondary/10">
+                  {currentDocs.map((doc) => (
+                    <tr key={doc.key} className="hover:bg-secondary/5 transition-colors group">
+                      <td className="px-6 py-5">
+                        <div className="flex items-center">
+                          {doc.imageUrl ? (
+                            <img 
+                              src={doc.imageUrl} 
+                              alt="Cover" 
+                              className="w-10 h-10 object-cover border border-secondary/20 mr-4"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-surface-container flex items-center justify-center border border-secondary/30 mr-4">
+                              <span className="material-symbols-outlined text-secondary text-xl">
+                                {doc.contentType?.includes("pdf") ? "picture_as_pdf" : "description"}
+                              </span>
+                            </div>
+                          )}
+                          <div>
+                            <span className="font-display text-[15px] font-semibold text-on-surface block leading-tight">
+                              {doc.title}
+                            </span>
+                            <span className="text-[10px] text-on-surface-variant/60 font-mono block mt-0.5">
+                              {doc.fileName}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 border-l border-secondary/5">
+                        <p className="text-on-surface-variant text-sm line-clamp-1 max-w-xs" title={doc.description}>
+                          {doc.description || <em className="opacity-40">Không có mô tả</em>}
+                        </p>
+                      </td>
+                      <td className="px-6 py-5 text-center border-l border-secondary/5">
+                        <span className="text-on-surface text-xs block font-bold uppercase">
+                          {doc.contentType?.includes("pdf") ? "PDF" : doc.contentType?.includes("markdown") || doc.contentType?.includes("md") ? "Markdown" : "File"}
+                        </span>
+                        <span className="text-[10px] text-on-surface-variant/70 block mt-0.5">
+                          {formatFileSize(doc.fileSize)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 border-l border-secondary/5">
+                        <span className="inline-flex items-center px-2.5 py-0.5 border border-secondary/40 text-[10px] text-secondary uppercase tracking-widest font-bold bg-secondary/5">
+                          {doc.category || "Chưa phân loại"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 text-right border-l border-secondary/5">
+                        <div className="flex justify-end space-x-4 opacity-70 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => openEditModal(doc)}
+                            className="text-on-surface-variant hover:text-secondary transition-colors flex items-center space-x-1" 
+                            title="Sửa"
+                          >
+                            <span className="material-symbols-outlined text-lg">edit</span>
+                            <span className="text-[11px] uppercase tracking-tighter font-medium">Sửa</span>
+                          </button>
+                          <button 
+                            onClick={() => openDeleteModal(doc)}
+                            className="text-on-surface-variant hover:text-error transition-colors flex items-center space-x-1" 
+                            title="Xóa"
+                          >
+                            <span className="material-symbols-outlined text-lg">delete</span>
+                            <span className="text-[11px] uppercase tracking-tighter font-medium">Xóa</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Pagination */}
+            <div className="px-6 py-4 flex items-center justify-between border-t border-secondary/10 bg-surface-container-low/50">
+              <p className="text-xs text-on-surface-variant uppercase tracking-widest font-semibold">
+                Hiển thị {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredDocs.length)} trong {filteredDocs.length} tài liệu
+              </p>
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-1 border border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary transition-all disabled:opacity-30"
+                >
+                  <span className="material-symbols-outlined">navigate_before</span>
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button 
+                    key={i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`px-3 py-1 border text-xs font-bold transition-all ${currentPage === i + 1 ? "border-secondary bg-secondary/10 text-secondary" : "border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary"}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-1 border border-secondary/20 text-on-surface-variant hover:border-secondary hover:text-secondary transition-all disabled:opacity-30"
+                >
+                  <span className="material-symbols-outlined">navigate_next</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Additional Detail Column */}
+      {/* Additional Detail Section */}
       <div className="mt-16 border-t border-secondary/20 pt-8 flex gap-12 flex-wrap md:flex-nowrap">
         <div className="flex-1">
-          <h5 className="font-display text-2xl text-on-surface mb-4">Ghi chú Hành chính</h5>
+          <h5 className="font-display text-2xl text-on-surface mb-4">Ghi chú Quản lý</h5>
           <div className="p-6 bg-surface-container border-l-[3px] border-secondary italic text-on-surface-variant text-sm leading-relaxed">
-            Mọi thay đổi đối với chương trình học cốt lõi cần được Hội đồng Học thuật phê duyệt trước khi xuất bản. Hãy đảm bảo các thẻ siêu dữ liệu (metadata) được gắn đầy đủ để hỗ trợ việc truy xuất hồ sơ trong tương lai.
+            Mọi tài liệu khi tải lên sẽ tự động được trích xuất văn bản thô đầy đủ (FullText) thông qua công cụ đọc PDF/MD của hệ thống RAG và lưu trữ trong cơ sở dữ liệu học tập. Việc xóa tài liệu học sẽ kéo theo việc tự động hủy bỏ các tiến trình học tập của học viên và các bộ đề trắc nghiệm thông minh sinh ra từ tài liệu đó.
           </div>
-        </div>
-        <div className="w-full md:w-80 space-y-4">
-          <h5 className="font-semibold text-[11px] text-secondary uppercase tracking-[0.2em] mb-4">Hoạt động gần đây</h5>
-          <ul className="space-y-4 border-l border-secondary/20 pl-4">
-            <li className="flex items-start space-x-3 text-sm relative">
-              <div className="absolute -left-[21px] top-1.5 w-[9px] h-[9px] rounded-full bg-secondary"></div>
-              <span className="text-on-surface-variant leading-tight"><strong className="text-on-surface">Admin_X</strong> đã chỉnh sửa chương &quot;Nhập môn Triết học&quot; <br/><em className="text-xs opacity-60">2 giờ trước</em></span>
-            </li>
-            <li className="flex items-start space-x-3 text-sm relative">
-               <div className="absolute -left-[21px] top-1.5 w-[9px] h-[9px] rounded-full bg-surface-bright border border-secondary"></div>
-              <span className="text-on-surface-variant leading-tight"><strong className="text-on-surface">System</strong> đã tự động sao lưu Archives <br/><em className="text-xs opacity-60">5 giờ trước</em></span>
-            </li>
-          </ul>
         </div>
       </div>
 
+      {/* Greek decorative element */}
       <div className="mt-24 mb-12 text-center">
         <div className="greek-divider w-32 mx-auto relative group">
           <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-secondary bg-surface px-2 text-lg group-hover:rotate-180 transition-transform duration-700">•</span>
-
         </div>
-
       </div>
 
+      {/* MODALS */}
+      {modalMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-surface-container border border-secondary/20 w-full max-w-lg p-8 relative shadow-2xl animate-scale-in">
+            <button 
+              onClick={closeModal}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-secondary transition-colors"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+
+            {modalMode === "upload" && (
+              <form onSubmit={handleUploadSubmit} className="space-y-6">
+                <div>
+                  <h4 className="font-display text-2xl font-semibold text-on-surface mb-2">Tải Lên Học Liệu Mới</h4>
+                  <p className="text-xs text-on-surface-variant/70">Tải lên tệp tài liệu mới lên S3 và lập chỉ mục (index) văn bản tự động.</p>
+                </div>
+
+                {modalError && (
+                  <div className="p-3 bg-error/10 border border-error/20 text-error text-xs font-semibold">
+                    {modalError}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {/* File Input */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Tệp tài liệu (.pdf, .md) *</label>
+                    <input 
+                      type="file" 
+                      accept=".pdf,.md"
+                      onChange={(e) => setUploadFile(e.target.files[0])}
+                      required
+                      className="w-full text-xs text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:border file:border-secondary/20 file:bg-surface-container-high file:text-secondary file:text-xs file:font-semibold hover:file:bg-secondary/10"
+                    />
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Tiêu đề (Để trống sẽ lấy tên tệp)</label>
+                    <input 
+                      type="text" 
+                      placeholder="Nhập tiêu đề học liệu"
+                      value={formTitle}
+                      onChange={(e) => setFormTitle(e.target.value)}
+                      className="w-full bg-surface-container-high border border-secondary/20 text-on-surface px-3 py-2 text-sm focus:outline-none focus:border-secondary"
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Chuyên mục</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ví dụ: Triết học Cổ đại, Thần thoại..."
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value)}
+                      className="w-full bg-surface-container-high border border-secondary/20 text-on-surface px-3 py-2 text-sm focus:outline-none focus:border-secondary"
+                    />
+                  </div>
+
+                  {/* Cover Image */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Ảnh bìa (Không bắt buộc)</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => setUploadImage(e.target.files[0])}
+                      className="w-full text-xs text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:border file:border-secondary/20 file:bg-surface-container-high file:text-secondary file:text-xs file:font-semibold hover:file:bg-secondary/10"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Mô tả ngắn</label>
+                    <textarea 
+                      placeholder="Nhập mô tả tóm tắt nội dung tài liệu học tập..."
+                      value={formDesc}
+                      onChange={(e) => setFormDesc(e.target.value)}
+                      rows="3"
+                      className="w-full bg-surface-container-high border border-secondary/20 text-on-surface px-3 py-2 text-sm focus:outline-none focus:border-secondary resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-secondary/10">
+                  <button 
+                    type="button" 
+                    onClick={closeModal}
+                    className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={saving}
+                    className="bg-secondary text-on-secondary px-6 py-2 text-xs font-bold uppercase tracking-wider border border-secondary hover:bg-transparent hover:text-secondary disabled:opacity-40 transition-all duration-300"
+                  >
+                    {saving ? "Đang tải lên..." : "Xác nhận"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {modalMode === "edit" && (
+              <form onSubmit={handleEditSubmit} className="space-y-6">
+                <div>
+                  <h4 className="font-display text-2xl font-semibold text-on-surface mb-2">Chỉnh Sửa Thông Tin</h4>
+                  <p className="text-xs text-on-surface-variant/70">Cập nhật thông tin mô tả và siêu dữ liệu cho tài liệu hiện có.</p>
+                </div>
+
+                {modalError && (
+                  <div className="p-3 bg-error/10 border border-error/20 text-error text-xs font-semibold">
+                    {modalError}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {/* File details read-only */}
+                  <div className="p-3 bg-surface-container-high/60 border border-secondary/10 text-xs text-on-surface-variant space-y-1">
+                    <p><strong>Tên file gốc:</strong> {selectedDoc?.fileName}</p>
+                    <p><strong>Đường dẫn khóa S3:</strong> <span className="font-mono text-[10px] break-all">{selectedDoc?.key}</span></p>
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Tiêu đề học liệu *</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Nhập tiêu đề học liệu"
+                      value={formTitle}
+                      onChange={(e) => setFormTitle(e.target.value)}
+                      className="w-full bg-surface-container-high border border-secondary/20 text-on-surface px-3 py-2 text-sm focus:outline-none focus:border-secondary"
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Chuyên mục *</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Ví dụ: Triết học Cổ đại, Thần thoại..."
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value)}
+                      className="w-full bg-surface-container-high border border-secondary/20 text-on-surface px-3 py-2 text-sm focus:outline-none focus:border-secondary"
+                    />
+                  </div>
+
+                  {/* Cover Image */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Đổi ảnh bìa mới (Không bắt buộc)</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => setUploadImage(e.target.files[0])}
+                      className="w-full text-xs text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:border file:border-secondary/20 file:bg-surface-container-high file:text-secondary file:text-xs file:font-semibold hover:file:bg-secondary/10"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-secondary mb-1.5">Mô tả ngắn</label>
+                    <textarea 
+                      placeholder="Nhập mô tả tóm tắt nội dung tài liệu..."
+                      value={formDesc}
+                      onChange={(e) => setFormDesc(e.target.value)}
+                      rows="3"
+                      className="w-full bg-surface-container-high border border-secondary/20 text-on-surface px-3 py-2 text-sm focus:outline-none focus:border-secondary resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-secondary/10">
+                  <button 
+                    type="button" 
+                    onClick={closeModal}
+                    className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={saving}
+                    className="bg-secondary text-on-secondary px-6 py-2 text-xs font-bold uppercase tracking-wider border border-secondary hover:bg-transparent hover:text-secondary disabled:opacity-40 transition-all duration-300"
+                  >
+                    {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {modalMode === "delete" && (
+              <form onSubmit={handleDeleteSubmit} className="space-y-6">
+                <div>
+                  <h4 className="font-display text-2xl font-semibold text-error mb-2">Xác Nhận Xóa Tài Liệu</h4>
+                  <p className="text-xs text-on-surface-variant/70">Hành động này không thể hoàn tác. Vui lòng kiểm tra kỹ trước khi đồng ý.</p>
+                </div>
+
+                {modalError && (
+                  <div className="p-3 bg-error/10 border border-error/20 text-error text-xs font-semibold">
+                    {modalError}
+                  </div>
+                )}
+
+                <div className="p-4 bg-error/5 border border-error/20 text-sm text-on-surface space-y-2">
+                  <p>Bạn sắp xóa vĩnh viễn tài liệu học:</p>
+                  <p className="font-bold text-base text-secondary">{selectedDoc?.title}</p>
+                  <p className="text-xs text-on-surface-variant/80">Tên file: <span className="font-mono">{selectedDoc?.fileName}</span></p>
+                  <p className="text-xs text-error/90 font-semibold mt-4 block">
+                    * CẢNH BÁO: Xóa học liệu này sẽ tự động xóa sạch các tiến trình học tập của toàn bộ học viên và các bộ đề trắc nghiệm trích xuất từ tài liệu này khỏi hệ thống database.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-secondary/10">
+                  <button 
+                    type="button" 
+                    onClick={closeModal}
+                    className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={saving}
+                    className="bg-error text-white px-6 py-2 text-xs font-bold uppercase tracking-wider border border-error hover:bg-transparent hover:text-error disabled:opacity-40 transition-all duration-300"
+                  >
+                    {saving ? "Đang xóa..." : "Đồng ý xóa"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

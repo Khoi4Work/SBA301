@@ -11,6 +11,45 @@ export async function fetchDocuments() {
 }
 
 /**
+ * Tải lên tài liệu mới
+ * @param {FormData} formData
+ * @returns {Promise<object>}
+ */
+export async function uploadDocument(formData) {
+    const response = await apiClient.post('/documents', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data?.result;
+}
+
+/**
+ * Cập nhật tài liệu
+ * @param {string} key
+ * @param {FormData} formData
+ * @returns {Promise<object>}
+ */
+export async function updateDocument(key, formData) {
+    const response = await apiClient.put(`/documents?key=${encodeURIComponent(key)}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data?.result;
+}
+
+/**
+ * Xóa tài liệu
+ * @param {string} key
+ * @returns {Promise<object>}
+ */
+export async function deleteDocument(key) {
+    const response = await apiClient.delete(`/documents?key=${encodeURIComponent(key)}`);
+    return response.data?.result;
+}
+
+/**
  * Tải file từ S3 thông qua download URL
  * @param {string} downloadUrl - URL tải file do backend cung cấp
  * @param {string} fileName - Tên file để lưu xuống

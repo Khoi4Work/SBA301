@@ -22,4 +22,5 @@ public class DocumentDistributionResponse {
     private String lastModified;
     private String imageUrl;
     private String category;
+    private Boolean isCompleted;
 }

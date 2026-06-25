@@ -473,7 +473,7 @@ export default function QuizPlay() {
                         </div>
                         
                         <h2 className="font-display text-4xl font-bold text-on-surface">Kết quả ôn tập</h2>
-                        <p className="text-outline text-sm mt-1">{quizSet.title}</p>
+                        <p className="text-outline text-sm mt-1">{quizSet.title ? quizSet.title.replace(/:.*/, '') : ''}</p>
                         
                         <div className="grid grid-cols-3 gap-4 max-w-md mx-auto mt-8 border-t border-outline-variant/10 pt-6">
                             <div>
@@ -544,6 +544,18 @@ export default function QuizPlay() {
                                         {/* User answer vs Correct answer summary */}
                                         {q.quizType === 'MULTIPLE_CHOICE' || q.quizType === 'TRUE_FALSE' || q.quizType === 'SCENARIO' ? (
                                             <div>
+                                                <p className="text-xs text-outline mb-1.5 font-medium">Bạn đã chọn:</p>
+                                                {(() => {
+                                                    const selectedOpt = q.options.find(o => o.optionId === answer?.selectedOptionId);
+                                                    return selectedOpt ? (
+                                                        <span className={`font-semibold ${feedback?.isCorrect ? 'text-green-500' : 'text-red-500'} block mb-3`}>
+                                                            {feedback?.isCorrect ? '✓' : '✗'} {selectedOpt.optionText}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-red-500 italic block mb-3">Chưa trả lời</span>
+                                                    );
+                                                })()}
+                                                
                                                 <p className="text-xs text-outline mb-1 font-medium">Đáp án đúng:</p>
                                                 {q.options.filter(o => feedback?.correctOptionIds.includes(o.optionId)).map(o => (
                                                     <span key={o.optionId} className="font-semibold text-green-500 block">
@@ -555,20 +567,43 @@ export default function QuizPlay() {
 
                                         {q.quizType === 'FILL_IN_THE_BLANK' ? (
                                             <div>
+                                                <p className="text-xs text-outline mb-1.5 font-medium">Bạn đã nhập:</p>
+                                                {answer?.blankText ? (
+                                                    <span className={`font-semibold ${feedback?.isCorrect ? 'text-green-500' : 'text-red-500'} block mb-3`}>
+                                                        {feedback?.isCorrect ? '✓' : '✗'} "{answer.blankText}"
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-red-500 italic block mb-3">Chưa trả lời</span>
+                                                )}
+
                                                 <p className="text-xs text-outline mb-1 font-medium">Từ cần điền chính xác:</p>
                                                 <span className="font-semibold text-green-500 block">
                                                     ✓ {feedback?.correctText}
                                                 </span>
-                                                {answer?.blankText && (
-                                                    <p className="text-xs text-on-surface-variant mt-1">
-                                                        Bạn đã nhập: <span className="italic">"{answer.blankText}"</span>
-                                                    </p>
-                                                )}
                                             </div>
                                         ) : null}
 
                                         {q.quizType === 'TIMELINE' ? (
                                             <div>
+                                                <p className="text-xs text-outline mb-1.5 font-medium">Trình tự bạn đã sắp xếp:</p>
+                                                <div className="space-y-1.5 mb-4">
+                                                    {answer?.orderedOptionIds && answer.orderedOptionIds.length > 0 ? (
+                                                        answer.orderedOptionIds.map((id, index) => {
+                                                            const opt = q.options.find(o => o.optionId === id);
+                                                            return (
+                                                                <div key={id} className="flex items-center gap-2 text-xs">
+                                                                    <span className="w-5 h-5 rounded-full bg-secondary/15 text-secondary font-bold flex items-center justify-center">
+                                                                        {index + 1}
+                                                                    </span>
+                                                                    <span className="text-on-surface-variant">{opt?.optionText}</span>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <span className="text-red-500 italic">Chưa trả lời</span>
+                                                    )}
+                                                </div>
+
                                                 <p className="text-xs text-outline mb-1.5 font-medium">Trình tự dòng thời gian đúng:</p>
                                                 <div className="space-y-1.5">
                                                     {feedback?.correctTimelineOrder.map((id, index) => {
@@ -588,6 +623,21 @@ export default function QuizPlay() {
 
                                         {q.quizType === 'MATCHING' ? (
                                             <div>
+                                                <p className="text-xs text-outline mb-1.5 font-medium">Các cặp bạn đã ghép:</p>
+                                                {answer?.matches && answer.matches.length > 0 ? (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                                                        {answer.matches.map((pair, index) => (
+                                                            <div key={index} className="bg-secondary/5 border border-secondary/10 rounded px-3 py-1.5 text-xs text-on-surface-variant">
+                                                                <strong className="text-secondary">{pair.left?.trim()}</strong>
+                                                                <span className="text-outline mx-2">⇆</span>
+                                                                <strong className="text-secondary">{pair.right?.trim()}</strong>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-red-500 italic mb-4">Chưa ghép cặp nào</p>
+                                                )}
+
                                                 <p className="text-xs text-outline mb-1.5 font-medium">Các cặp ghép chính xác:</p>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                     {feedback?.correctPairs.map((pair, index) => {
@@ -635,7 +685,7 @@ export default function QuizPlay() {
 
                 <div className="text-center">
                     <h3 className="font-display font-bold text-lg text-on-surface leading-tight">
-                        {quizSet.title}
+                        {quizSet.title ? quizSet.title.replace(/:.*/, '') : ''}
                     </h3>
                     <span className="text-xs text-outline font-medium">
                         Câu {currentIndex + 1} trên {questions.length}

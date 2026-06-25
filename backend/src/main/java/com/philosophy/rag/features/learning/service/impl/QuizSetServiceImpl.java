@@ -14,12 +14,12 @@ import com.philosophy.rag.features.learning.dto.QuizSetDetailResponse;
 import com.philosophy.rag.features.learning.dto.QuizSetResponse;
 import com.philosophy.rag.features.learning.dto.QuizSubmitResponse;
 import com.philosophy.rag.features.learning.dto.SessionContentResponse;
+import com.philosophy.rag.features.learning.dto.QuizHistoryResponse;
+import com.philosophy.rag.features.learning.dto.QuizSubmissionDetailResponse;
 import com.philosophy.rag.features.learning.entity.Quiz;
 import com.philosophy.rag.features.learning.entity.QuizOption;
 import com.philosophy.rag.features.learning.entity.QuizSet;
 import com.philosophy.rag.features.learning.entity.UserQuizResult;
-import com.philosophy.rag.features.learning.repository.QuizOptionRepository;
-import com.philosophy.rag.features.learning.repository.QuizRepository;
 import com.philosophy.rag.features.learning.repository.QuizSetRepository;
 import com.philosophy.rag.features.learning.repository.UserQuizResultRepository;
 import com.philosophy.rag.features.learning.service.QuizSetService;
@@ -36,11 +36,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
+
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import com.github.f4b6a3.uuid.UuidCreator;
 
 @Slf4j
 @Service
@@ -48,8 +53,6 @@ public class QuizSetServiceImpl implements QuizSetService {
 
     private final DocumentRepository documentRepository;
     private final QuizSetRepository quizSetRepository;
-    private final QuizRepository quizRepository;
-    private final QuizOptionRepository quizOptionRepository;
     private final UserQuizResultRepository userQuizResultRepository;
     private final UserRepository userRepository;
 
@@ -61,8 +64,6 @@ public class QuizSetServiceImpl implements QuizSetService {
     public QuizSetServiceImpl(
             DocumentRepository documentRepository,
             QuizSetRepository quizSetRepository,
-            QuizRepository quizRepository,
-            QuizOptionRepository quizOptionRepository,
             UserQuizResultRepository userQuizResultRepository,
             UserRepository userRepository,
             SessionService sessionService,
@@ -70,8 +71,6 @@ public class QuizSetServiceImpl implements QuizSetService {
             ObjectMapper objectMapper, RagService ragService) {
         this.documentRepository = documentRepository;
         this.quizSetRepository = quizSetRepository;
-        this.quizRepository = quizRepository;
-        this.quizOptionRepository = quizOptionRepository;
         this.userQuizResultRepository = userQuizResultRepository;
         this.userRepository = userRepository;
         this.sessionService = sessionService;
@@ -79,6 +78,7 @@ public class QuizSetServiceImpl implements QuizSetService {
         this.objectMapper = objectMapper;
         this.ragService = ragService;
     }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -111,12 +111,15 @@ public class QuizSetServiceImpl implements QuizSetService {
         // 2. Create QuizSet have marked order
         long existingCount = quizSetRepository.findByDocumentS3Key(request.getS3Key()).size();
         String title = "Bộ đề số " + (existingCount + 1) + ": " + contentResponse.getTitle();
-        
+
         QuizSet quizSet = QuizSet.builder()
+                .quizSetId(UuidCreator.getTimeOrderedEpoch())
                 .title(title)
-                .document(doc)
+                .documentId(doc.getDocumentId())
+                .documentTitle(doc.getTitle())
+                .documentS3Key(doc.getS3Key())
+                .createdAt(Instant.now())
                 .build();
-        quizSet = quizSetRepository.save(quizSet);
 
         // 3. Prepare prompt send to AI for generating 20 question
         String context = contentResponse.getContent();
@@ -137,8 +140,7 @@ public class QuizSetServiceImpl implements QuizSetService {
 
         for (AiQuizQuestionDto qDto : questionsDto) {
             Quiz quiz = Quiz.builder()
-                    .document(doc)
-                    .quizSet(quizSet)
+                    .quizId(UuidCreator.getTimeOrderedEpoch())
                     .questionText(qDto.getQuestionText())
                     .explanation(qDto.getExplanation())
                     .quizType(Quiz.QuizType.valueOf(qDto.getQuizType()))
@@ -146,15 +148,46 @@ public class QuizSetServiceImpl implements QuizSetService {
                     .build();
 
             List<QuizOption> options = new ArrayList<>();
-            for (AiQuizOptionDto oDto : qDto.getOptions()) {
-                QuizOption option = QuizOption.builder()
-                        .quiz(quiz)
-                        .optionText(oDto.getOptionText())
-                        .isCorrect(oDto.getIsCorrect() != null ? oDto.getIsCorrect() : false)
-                        .orderIndex(oDto.getOrderIndex())
-                        .build();
-                options.add(option);
+            int optIdx = 0;
+            if (qDto.getOptions() != null) {
+                for (AiQuizOptionDto oDto : qDto.getOptions()) {
+                    QuizOption option = QuizOption.builder()
+                            .optionId(UuidCreator.getTimeOrderedEpoch())
+                            .optionText(oDto.getOptionText())
+                            .isCorrect(oDto.getParsedIsCorrect())
+                            .orderIndex(oDto.getOrderIndex() != null ? oDto.getOrderIndex() : optIdx)
+                            .build();
+                    options.add(option);
+                    optIdx++;
+                }
             }
+
+            // Fallback: If no option is marked correct, check correctIndex or correctText
+            // from question DTO
+            boolean hasCorrect = options.stream().anyMatch(QuizOption::getIsCorrect);
+            if (!hasCorrect) {
+                if (qDto.getCorrectIndex() != null && qDto.getCorrectIndex() >= 0
+                        && qDto.getCorrectIndex() < options.size()) {
+                    options.get(qDto.getCorrectIndex()).setIsCorrect(true);
+                } else if (qDto.getCorrectText() != null && !qDto.getCorrectText().isEmpty()) {
+                    String cleanCorrect = cleanText(qDto.getCorrectText());
+                    for (QuizOption opt : options) {
+                        if (cleanText(opt.getOptionText()).equals(cleanCorrect)) {
+                            opt.setIsCorrect(true);
+                            break;
+                        }
+                    }
+                } else if (qDto.getCorrectAnswer() != null && !qDto.getCorrectAnswer().isEmpty()) {
+                    String cleanCorrect = cleanText(qDto.getCorrectAnswer());
+                    for (QuizOption opt : options) {
+                        if (cleanText(opt.getOptionText()).equals(cleanCorrect)) {
+                            opt.setIsCorrect(true);
+                            break;
+                        }
+                    }
+                }
+            }
+
             quiz.setOptions(options);
             quizzes.add(quiz);
         }
@@ -223,6 +256,8 @@ public class QuizSetServiceImpl implements QuizSetService {
         Map<UUID, QuizSubmitRequest.AnswerItem> userAnswers = request.getAnswers().stream()
                 .collect(Collectors.toMap(QuizSubmitRequest.AnswerItem::getQuizId, Function.identity()));
 
+        UUID submissionId = UuidCreator.getTimeOrderedEpoch();
+        Instant completedAt = Instant.now();
         int score = 0;
         int xpGained = 0;
         List<QuizSubmitResponse.FeedbackItem> feedbackItems = new ArrayList<>();
@@ -251,10 +286,25 @@ public class QuizSetServiceImpl implements QuizSetService {
                         }
                         if (answer.getSelectedOptionId() != null) {
                             Optional<QuizOption> selectedOpt = quiz.getOptions().stream()
-                                    .filter(o -> o.getOptionId().equals(answer.getSelectedOptionId()))
+                                     .filter(o -> o.getOptionId() != null &&
+                                             o.getOptionId().toString()
+                                                     .equalsIgnoreCase(answer.getSelectedOptionId().toString()))
                                     .findFirst();
-                            if (selectedOpt.isPresent() && selectedOpt.get().getIsCorrect()) {
-                                isCorrect = true;
+                            if (selectedOpt.isPresent()) {
+                                QuizOption userOpt = selectedOpt.get();
+                                if (userOpt.getIsCorrect()) {
+                                    isCorrect = true;
+                                } else {
+                                    // Text-based fallback: Check if userOpt text matches any correct option text
+                                    String cleanUserOptText = cleanText(userOpt.getOptionText());
+                                    boolean textMatch = quiz.getOptions().stream()
+                                            .filter(QuizOption::getIsCorrect)
+                                            .anyMatch(correctOpt -> cleanText(correctOpt.getOptionText())
+                                                    .equals(cleanUserOptText));
+                                    if (textMatch) {
+                                        isCorrect = true;
+                                    }
+                                }
                             }
                         }
                         break;
@@ -270,7 +320,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                         if (blankOpt != null) {
                             correctText = blankOpt.getOptionText();
                             if (answer.getBlankText() != null &&
-                                    answer.getBlankText().trim().equalsIgnoreCase(correctText.trim())) {
+                                    cleanText(answer.getBlankText()).equals(cleanText(correctText))) {
                                 isCorrect = true;
                             }
                         }
@@ -287,12 +337,11 @@ public class QuizSetServiceImpl implements QuizSetService {
                         if (answer.getMatches() != null && !answer.getMatches().isEmpty()) {
                             boolean allMatched = true;
                             for (QuizSubmitRequest.MatchingPair pair : answer.getMatches()) {
-                                String userPairString = pair.getLeft().trim() + " | " + pair.getRight().trim();
                                 boolean found = dbPairs.stream().anyMatch(dbPair -> {
                                     String[] parts = dbPair.split("\\|");
                                     if (parts.length == 2) {
-                                        return parts[0].trim().equalsIgnoreCase(pair.getLeft().trim()) &&
-                                                parts[1].trim().equalsIgnoreCase(pair.getRight().trim());
+                                        return cleanText(parts[0]).equals(cleanText(pair.getLeft())) &&
+                                                cleanText(parts[1]).equals(cleanText(pair.getRight()));
                                     }
                                     return false;
                                 });
@@ -342,11 +391,34 @@ public class QuizSetServiceImpl implements QuizSetService {
             }
 
             // Save the result
-            UserQuizResult quizResult = UserQuizResult.builder()
-                    .user(user)
-                    .quiz(quiz)
+            UserQuizResult.UserQuizResultBuilder resultBuilder = UserQuizResult.builder()
+                    .resultId(UuidCreator.getTimeOrderedEpoch())
+                    .userId(user.getUserId())
+                    .quizSetId(quizSet.getQuizSetId())
+                    .submissionId(submissionId)
+                    .quizSetTitle(quizSet.getTitle())
+                    .documentTitle(quizSet.getDocumentTitle())
+                    .quizId(quiz.getQuizId())
                     .isCorrectAnswer(isCorrect)
-                    .build();
+                    .completedAt(completedAt);
+
+            if (answer != null) {
+                resultBuilder.selectedOptionId(answer.getSelectedOptionId());
+                resultBuilder.blankText(answer.getBlankText());
+                resultBuilder.orderedOptionIds(answer.getOrderedOptionIds());
+                
+                if (answer.getMatches() != null) {
+                    List<UserQuizResult.MongoMatchingPair> mongoMatches = answer.getMatches().stream()
+                            .map(pair -> UserQuizResult.MongoMatchingPair.builder()
+                                    .left(pair.getLeft())
+                                    .right(pair.getRight())
+                                    .build())
+                            .collect(Collectors.toList());
+                    resultBuilder.matches(mongoMatches);
+                }
+            }
+
+            UserQuizResult quizResult = resultBuilder.build();
             resultsToSave.add(quizResult);
 
             feedbackItems.add(QuizSubmitResponse.FeedbackItem.builder()
@@ -377,16 +449,154 @@ public class QuizSetServiceImpl implements QuizSetService {
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<QuizHistoryResponse> getQuizHistory() {
+        log.info("Fetching quiz history for the authenticated user");
+
+        // 1. Lấy thông tin user hiện tại
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");
+        }
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy người dùng"));
+
+        // 2. Lấy toàn bộ danh sách kết quả làm bài của User
+        List<UserQuizResult> results = userQuizResultRepository.findByUserId(user.getUserId());
+
+        // 3. Group các kết quả theo submissionId (mỗi lượt nộp bài)
+        Map<UUID, List<UserQuizResult>> groupedBySubmission = results.stream()
+                .filter(r -> r.getSubmissionId() != null)
+                .collect(Collectors.groupingBy(UserQuizResult::getSubmissionId));
+
+        // 4. Map thành danh sách DTO và sắp xếp giảm dần theo thời gian nộp bài
+        return groupedBySubmission.entrySet().stream()
+                .map(entry -> {
+                    UUID submissionId = entry.getKey();
+                    List<UserQuizResult> group = entry.getValue();
+                    UserQuizResult first = group.get(0);
+
+                    long correctCount = group.stream().filter(UserQuizResult::getIsCorrectAnswer).count();
+                    int totalQuestions = group.size();
+                    int xpGained = group.stream().mapToInt(r -> r.getIsCorrectAnswer() ? 10 : -5).sum();
+
+                    return QuizHistoryResponse.builder()
+                            .submissionId(submissionId)
+                            .quizSetId(first.getQuizSetId())
+                            .quizSetTitle(first.getQuizSetTitle())
+                            .documentTitle(first.getDocumentTitle())
+                            .score((int) correctCount)
+                            .totalQuestions(totalQuestions)
+                            .xpGained(xpGained)
+                            .completedAt(first.getCompletedAt() != null ? LocalDateTime.ofInstant(first.getCompletedAt(), ZoneId.systemDefault()) : null)
+                            .build();
+                })
+                .sorted(Comparator.comparing(QuizHistoryResponse::getCompletedAt).reversed())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public QuizSubmissionDetailResponse getQuizSubmissionDetail(UUID submissionId) {
+        log.info("Fetching quiz submission detail for submissionId: {}", submissionId);
+
+        // 1. Lấy toàn bộ kết quả làm bài của submissionId đó
+        List<UserQuizResult> results = userQuizResultRepository.findBySubmissionId(submissionId);
+        if (results == null || results.isEmpty()) {
+            throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy chi tiết bài làm của lượt nộp này");
+        }
+
+        // 2. Lấy thông tin chung của lượt nộp bài
+        UserQuizResult firstResult = results.get(0);
+        UUID quizSetId = firstResult.getQuizSetId();
+
+        // 3. Lấy bộ đề gốc
+        QuizSet quizSet = quizSetRepository.findById(quizSetId)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy thông tin bộ đề gốc"));
+
+        // 4. Map danh sách câu hỏi gốc và câu trả lời tương ứng của người dùng
+        Map<UUID, UserQuizResult> userAnswers = results.stream()
+                .collect(Collectors.toMap(UserQuizResult::getQuizId, Function.identity(), (r1, r2) -> r1));
+
+        List<QuizSubmissionDetailResponse.QuestionDetailItem> questionItems = quizSet.getQuizzes().stream()
+                .map(quiz -> {
+                    UserQuizResult result = userAnswers.get(quiz.getQuizId());
+                    
+                    // Map options
+                    List<QuizSubmissionDetailResponse.OptionItem> optionItems = quiz.getOptions().stream()
+                            .map(opt -> QuizSubmissionDetailResponse.OptionItem.builder()
+                                    .optionId(opt.getOptionId())
+                                    .optionText(opt.getOptionText())
+                                    .isCorrect(opt.getIsCorrect())
+                                    .orderIndex(opt.getOrderIndex())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    // Xây dựng chi tiết câu hỏi kèm câu trả lời của user
+                    QuizSubmissionDetailResponse.QuestionDetailItem.QuestionDetailItemBuilder questionBuilder = 
+                            QuizSubmissionDetailResponse.QuestionDetailItem.builder()
+                                    .quizId(quiz.getQuizId())
+                                    .questionText(quiz.getQuestionText())
+                                    .explanation(quiz.getExplanation())
+                                    .quizType(quiz.getQuizType().name())
+                                    .options(optionItems);
+
+                    if (result != null) {
+                        questionBuilder.isCorrect(result.getIsCorrectAnswer());
+                        questionBuilder.selectedOptionId(result.getSelectedOptionId());
+                        questionBuilder.blankText(result.getBlankText());
+                        questionBuilder.orderedOptionIds(result.getOrderedOptionIds());
+
+                        // Map matches
+                        if (result.getMatches() != null) {
+                            List<QuizSubmitRequest.MatchingPair> apiMatches = result.getMatches().stream()
+                                    .map(pair -> {
+                                        QuizSubmitRequest.MatchingPair p = new QuizSubmitRequest.MatchingPair();
+                                        p.setLeft(pair.getLeft());
+                                        p.setRight(pair.getRight());
+                                        return p;
+                                    })
+                                    .collect(Collectors.toList());
+                            questionBuilder.matches(apiMatches);
+                        }
+                    }
+
+                    return questionBuilder.build();
+                })
+                .collect(Collectors.toList());
+
+        // 5. Tính toán thống kê
+        long score = results.stream().filter(UserQuizResult::getIsCorrectAnswer).count();
+        int totalQuestions = results.size();
+        int xpGained = results.stream().mapToInt(r -> r.getIsCorrectAnswer() ? 10 : -5).sum();
+
+        return QuizSubmissionDetailResponse.builder()
+                .submissionId(submissionId)
+                .quizSetId(quizSetId)
+                .quizSetTitle(firstResult.getQuizSetTitle())
+                .documentTitle(firstResult.getDocumentTitle())
+                .score((int) score)
+                .totalQuestions(totalQuestions)
+                .xpGained(xpGained)
+                .completedAt(firstResult.getCompletedAt() != null ? LocalDateTime.ofInstant(firstResult.getCompletedAt(), ZoneId.systemDefault()) : null)
+                .questions(questionItems)
+                .build();
+    }
+
+
     // ── Helper: map entity -> response ────────────────────────────────────────
 
     private QuizSetResponse toResponse(QuizSet set) {
         return QuizSetResponse.builder()
                 .quizSetId(set.getQuizSetId())
                 .title(set.getTitle())
-                .documentId(set.getDocument().getDocumentId())
-                .documentTitle(set.getDocument().getTitle())
+                .documentId(set.getDocumentId())
+                .documentTitle(set.getDocumentTitle())
                 .questionCount(set.getQuizzes() != null ? set.getQuizzes().size() : 0)
-                .createdAt(set.getCreatedAt())
+                .createdAt(set.getCreatedAt() != null ? LocalDateTime.ofInstant(set.getCreatedAt(), ZoneId.systemDefault()) : null)
                 .build();
     }
 
@@ -420,6 +630,24 @@ public class QuizSetServiceImpl implements QuizSetService {
         }
     }
 
+    private String cleanText(String text) {
+        if (text == null) {
+            return "";
+        }
+        // Normalize Unicode to NFC
+        String cleaned = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
+        // Lowercase
+        cleaned = cleaned.toLowerCase().trim();
+        // Remove markdown bold/italic asterisks and underscores
+        cleaned = cleaned.replaceAll("\\*+", "");
+        cleaned = cleaned.replaceAll("_+", "");
+        // Remove quotes (standard, curly, smart)
+        cleaned = cleaned.replaceAll("^[\"\'“‘’”]+|[\"\'“‘’”]+$", "");
+        // Remove trailing punctuation like dots
+        cleaned = cleaned.replaceAll("[\\.\\,\\!\\?\\;]+$", "");
+        return cleaned.trim();
+    }
+
     // ── Helper DTOs cho việc parse AI response ────────────────────────────────
 
     @Data
@@ -428,12 +656,34 @@ public class QuizSetServiceImpl implements QuizSetService {
         private String questionText;
         private String explanation;
         private List<AiQuizOptionDto> options;
+        private Integer correctIndex;
+        private String correctText;
+        private String correctAnswer;
     }
 
     @Data
     public static class AiQuizOptionDto {
         private String optionText;
-        private Boolean isCorrect;
+        private Object isCorrect;
+        private Boolean correct;
         private Integer orderIndex;
+
+        public boolean getParsedIsCorrect() {
+            if (isCorrect instanceof Boolean) {
+                return (Boolean) isCorrect;
+            }
+            if (isCorrect instanceof String) {
+                return "true".equalsIgnoreCase(((String) isCorrect).trim())
+                        || "1".equals(((String) isCorrect).trim())
+                        || "yes".equalsIgnoreCase(((String) isCorrect).trim());
+            }
+            if (isCorrect instanceof Number) {
+                return ((Number) isCorrect).intValue() == 1;
+            }
+            if (correct != null) {
+                return correct;
+            }
+            return false;
+        }
     }
 }

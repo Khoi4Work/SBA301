@@ -23,7 +23,11 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.MetadataDirective;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -33,6 +37,7 @@ import java.util.UUID;
 import java.net.URLEncoder;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 
 @Service
 @Slf4j
@@ -48,8 +53,14 @@ public class S3StorageServiceImpl implements S3StorageService {
     private final S3Client s3Client;
     private final MediaStorageService cloudinaryService;
 
+    // In-memory cache for document metadata distribution response list
+    private List<DocumentDistributionResponse> cachedDocumentList = null;
+    private Instant cacheExpiry = Instant.MIN;
+    private static final long CACHE_TTL_SECONDS = 300; // 5 minutes
+
     @Override
-    public DocumentUploadResponse uploadDocument(MultipartFile file, String title, String description, MultipartFile image, String imageUrl, String category)
+    public DocumentUploadResponse uploadDocument(MultipartFile file, String title, String description,
+            MultipartFile image, String category)
             throws ApiException {
         log.info("Starting document upload: {}", file.getOriginalFilename());
         // Validate file rỗng
@@ -70,7 +81,7 @@ public class S3StorageServiceImpl implements S3StorageService {
         String asciiFileName = sanitizeFileName(safeFileName);
 
         // Tải ảnh bìa lên Cloudinary (nếu có file image truyền lên)
-        String uploadedImageUrl = imageUrl;
+        String uploadedImageUrl = null;
         if (image != null && !image.isEmpty()) {
             try {
                 log.info("Uploading cover image to Cloudinary for document: {}", originalFileName);
@@ -84,7 +95,7 @@ public class S3StorageServiceImpl implements S3StorageService {
         String key = "documents/" + LocalDate.now() + "/" + UUID.randomUUID() + "-" + asciiFileName;
         try {
             Map<String, String> metadata = new java.util.HashMap<>();
-            
+
             // Mã hóa UTF-8 tiếng Việt cho các trường metadata
             String rawTitle = title != null && !title.isBlank() ? title : originalFileName;
             String rawDescription = description != null && !description.isBlank() ? description : "";
@@ -95,7 +106,7 @@ public class S3StorageServiceImpl implements S3StorageService {
             metadata.put("category", URLEncoder.encode(rawCategory, StandardCharsets.UTF_8.name()));
             metadata.put("original-file-name", URLEncoder.encode(originalFileName, StandardCharsets.UTF_8.name()));
             metadata.put("uploaded-at", LocalDate.now().toString());
-            
+
             if (uploadedImageUrl != null && !uploadedImageUrl.isBlank()) {
                 metadata.put("image-url", uploadedImageUrl);
             }
@@ -123,6 +134,10 @@ public class S3StorageServiceImpl implements S3StorageService {
             throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "File upload failed: " + e.getMessage());
         }
 
+        // Invalidate cache on upload
+        this.cachedDocumentList = null;
+        this.cacheExpiry = Instant.MIN;
+
         // tạo url để truy cập file đã upload
         String url = getS3Url(bucketName, awsRegion, key);
 
@@ -141,17 +156,30 @@ public class S3StorageServiceImpl implements S3StorageService {
 
     @Override
     public List<DocumentDistributionResponse> listDocuments() throws ApiException {
+        Instant now = Instant.now();
+        if (cachedDocumentList != null && now.isBefore(cacheExpiry)) {
+            log.info("Returning cached document list (size: {})", cachedDocumentList.size());
+            return cachedDocumentList;
+        }
+
+        log.info("Cache miss or expired. Fetching document list from S3...");
         try {
             ListObjectsV2Response response = s3Client.listObjectsV2(ListObjectsV2Request.builder()
                     .bucket(bucketName)
                     .prefix("documents/")
                     .build());
 
-            return response.contents().stream()
+            List<DocumentDistributionResponse> documents = response.contents().stream()
                     .filter(object -> object.key() != null && !object.key().endsWith("/"))
                     .sorted((left, right) -> right.lastModified().compareTo(left.lastModified()))
                     .map(this::toDistributionResponse)
                     .toList();
+
+            // Cache the results
+            this.cachedDocumentList = documents;
+            this.cacheExpiry = now.plusSeconds(CACHE_TTL_SECONDS);
+
+            return documents;
         } catch (S3Exception e) {
             log.error("Failed to list S3 documents: {}", e.awsErrorDetails().errorMessage(), e);
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Failed to list documents from S3");
@@ -176,7 +204,7 @@ public class S3StorageServiceImpl implements S3StorageService {
                     .build());
 
             Map<String, String> metadata = headObject.metadata();
-            
+
             // Lấy và giải mã Tiếng Việt từ S3 User Metadata
             String rawFileName = metadata.get("original-file-name");
             String fileName = null;
@@ -190,7 +218,7 @@ public class S3StorageServiceImpl implements S3StorageService {
             if (fileName == null || fileName.isBlank()) {
                 fileName = extractFileNameFromKey(object.key());
             }
-            
+
             String title = metadata.getOrDefault("title", fileName);
             try {
                 title = URLDecoder.decode(title, StandardCharsets.UTF_8.name());
@@ -214,39 +242,41 @@ public class S3StorageServiceImpl implements S3StorageService {
 
             String imageUrl = metadata.get("image-url");
 
-            return new DocumentDistributionResponse(
-                    title,
-                    description,
-                    fileName,
-                    bucketName,
-                    object.key(),
-                    null,
-                    object.size(),
-                    inferContentType(fileName),
-                    object.lastModified() != null
+            return DocumentDistributionResponse.builder()
+                    .title(title)
+                    .description(description)
+                    .fileName(fileName)
+                    .bucket(bucketName)
+                    .key(object.key())
+                    .downloadUrl(null)
+                    .fileSize(object.size())
+                    .contentType(inferContentType(fileName))
+                    .lastModified(object.lastModified() != null
                             ? object.lastModified().atZone(ZoneId.systemDefault())
                                     .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                            : null,
-                    imageUrl,
-                    category);
+                            : null)
+                    .imageUrl(imageUrl)
+                    .category(category)
+                    .build();
         } catch (Exception e) {
             log.warn("Unable to read metadata for S3 object {}: {}", object.key(), e.getMessage());
             String fileName = extractFileNameFromKey(object.key());
-            return new DocumentDistributionResponse(
-                    fileName,
-                    "",
-                    fileName,
-                    bucketName,
-                    object.key(),
-                    null,
-                    object.size(),
-                    inferContentType(fileName),
-                    object.lastModified() != null
+            return DocumentDistributionResponse.builder()
+                    .title(fileName)
+                    .description("")
+                    .fileName(fileName)
+                    .bucket(bucketName)
+                    .key(object.key())
+                    .downloadUrl(null)
+                    .fileSize(object.size())
+                    .contentType(inferContentType(fileName))
+                    .lastModified(object.lastModified() != null
                             ? object.lastModified().atZone(ZoneId.systemDefault())
                                     .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                            : null,
-                    null,
-                    "");
+                            : null)
+                    .imageUrl(null)
+                    .category("")
+                    .build();
         }
     }
 
@@ -307,9 +337,10 @@ public class S3StorageServiceImpl implements S3StorageService {
     }
 
     private String sanitizeFileName(String fileName) {
-        if (fileName == null) return "document";
+        if (fileName == null)
+            return "document";
         // Normalize Vietnamese accents and remove them
-        String normalized = java.text.Normalizer.normalize(fileName, java.text.Normalizer.Form.NFD);
+        String normalized = Normalizer.normalize(fileName, Normalizer.Form.NFD);
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
         String ascii = pattern.matcher(normalized).replaceAll("");
         // Replace 'đ' and 'Đ'
@@ -319,5 +350,80 @@ public class S3StorageServiceImpl implements S3StorageService {
         // Replace multiple underscores with a single underscore
         ascii = ascii.replaceAll("_+", "_");
         return ascii;
+    }
+
+    @Override
+    public void deleteDocument(String key) throws ApiException {
+        log.info("Deleting document from S3 with key: {}", key);
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build());
+            log.info("Successfully deleted S3 object: {}", key);
+
+            // Invalidate cache
+            this.cachedDocumentList = null;
+            this.cacheExpiry = Instant.MIN;
+        } catch (S3Exception e) {
+            log.error("Failed to delete S3 object: {}", e.awsErrorDetails().errorMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Failed to delete file from S3");
+        } catch (Exception e) {
+            log.error("Unexpected error during S3 delete: {}", e.getMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Delete failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateDocumentMetadata(String key, String title, String description, String category,
+            MultipartFile newImage) throws ApiException {
+        log.info("Updating metadata for S3 document: {}", key);
+        try {
+            // Get existing metadata first
+            HeadObjectResponse headObject = s3Client.headObject(HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build());
+            Map<String, String> existingMetadata = headObject.metadata();
+            Map<String, String> newMetadata = new java.util.HashMap<>(existingMetadata);
+
+            if (title != null && !title.isBlank()) {
+                newMetadata.put("title", URLEncoder.encode(title, StandardCharsets.UTF_8.name()));
+            }
+            if (description != null) {
+                newMetadata.put("description", URLEncoder.encode(description, StandardCharsets.UTF_8.name()));
+            }
+            if (category != null && !category.isBlank()) {
+                newMetadata.put("category", URLEncoder.encode(category, StandardCharsets.UTF_8.name()));
+            }
+
+            if (newImage != null && !newImage.isEmpty()) {
+                log.info("Uploading new cover image to Cloudinary for key: {}", key);
+                String uploadedImageUrl = cloudinaryService.uploadImage(newImage, "philosophy/documents")
+                        .getSecureUrl();
+                newMetadata.put("image-url", uploadedImageUrl);
+            }
+
+            s3Client.copyObject(CopyObjectRequest.builder()
+                    .sourceBucket(bucketName)
+                    .sourceKey(key)
+                    .destinationBucket(bucketName)
+                    .destinationKey(key)
+                    .metadata(newMetadata)
+                    .metadataDirective(MetadataDirective.REPLACE)
+                    .build());
+
+            log.info("Successfully updated S3 metadata for key: {}", key);
+
+            // Invalidate cache
+            this.cachedDocumentList = null;
+            this.cacheExpiry = Instant.MIN;
+        } catch (S3Exception e) {
+            log.error("Failed to copy/update S3 metadata: {}", e.awsErrorDetails().errorMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Failed to update S3 metadata");
+        } catch (Exception e) {
+            log.error("Unexpected error during S3 metadata update: {}", e.getMessage(), e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Update failed: " + e.getMessage());
+        }
     }
 }

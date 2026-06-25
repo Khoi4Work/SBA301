@@ -1,80 +1,76 @@
 package com.philosophy.rag.features.learning.entity;
 
-import com.github.f4b6a3.uuid.UuidCreator;
-import com.philosophy.rag.base.persistence.BaseEntity;
-import com.philosophy.rag.features.auth.entity.User;
-import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Thực thể: Lịch sử làm bài (UserQuizResult)
+ * MongoDB Document: Lịch sử làm bài (UserQuizResult)
  * Ghi nhận kết quả mỗi lần người dùng thực hiện thử thách.
- *
- * Logic XP: Khi isCorrectAnswer = true,
- * hệ thống lấy Quiz.xpReward để cộng vào User.totalXp.
+ * Tự động xóa sau 30 ngày (TTL).
  */
-@Entity
-@Table(name = "user_quiz_results",
-        indexes = {
-                @Index(name = "idx_result_user_id", columnList = "user_id"),
-                @Index(name = "idx_result_quiz_id", columnList = "quiz_id"),
-                @Index(name = "idx_result_completed_at", columnList = "completed_at"),
-                @Index(name = "idx_result_correct", columnList = "is_correct_answer")
-        })
+@Document(collection = "user_quiz_results")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserQuizResult extends BaseEntity {
+public class UserQuizResult {
 
-    /** Mã kết quả — Khóa chính, tự tăng */
+    /** Mã kết quả — Khóa chính */
     @Id
-    @Column(name = "result_id", nullable = false, updatable = false)
     private UUID resultId;
 
-    @PrePersist
-    public void generateId() {
-        if (resultId == null) {
-            resultId = UuidCreator.getTimeOrderedEpoch();
-        }
-    }
+    /** ID người dùng làm bài */
+    private UUID userId;
 
-    /**
-     * Người dùng thực hiện bài kiểm tra — Khóa ngoại.
-     * Quan hệ Nhiều-1: nhiều UserQuizResult thuộc một User.
-     */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_result_user"))
-    private User user;
+    /** ID bộ đề ôn tập */
+    private UUID quizSetId;
 
-    /**
-     * Câu hỏi được trả lời — Khóa ngoại.
-     * Quan hệ Nhiều-1: nhiều UserQuizResult thuộc một Quiz.
-     */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "quiz_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_result_quiz"))
-    private Quiz quiz;
+    /** ID của lượt nộp bài (group các câu hỏi cùng lượt) */
+    private UUID submissionId;
 
-    /**
-     * Trạng thái trả lời (IsCorrectAnswer).
-     * True  → trả lời đúng → kích hoạt cộng XP cho User.
-     * False → trả lời sai  → không cộng điểm.
-     */
-    @Column(name = "is_correct_answer", nullable = false)
+    /** Tiêu đề bộ đề ôn tập */
+    private String quizSetTitle;
+
+    /** Tiêu đề tài liệu liên quan */
+    private String documentTitle;
+
+    /** ID câu hỏi được trả lời */
+    private UUID quizId;
+
+    /** Trạng thái trả lời đúng hay sai */
     private Boolean isCorrectAnswer;
 
-    /**
-     * Thời gian hoàn thành bài làm — tự động gán khi persist.
-     * Dùng để thống kê và sắp xếp lịch sử trên Dashboard.
-     */
-    @CreationTimestamp
-    @Column(name = "completed_at", nullable = false, updatable = false)
+    // --- Các thông tin câu trả lời của người dùng ---
+
+    /** Option được chọn (Multiple choice, True/False, Scenario) */
+    private UUID selectedOptionId;
+
+    /** Nội dung điền vào chỗ trống */
+    private String blankText;
+
+    /** Danh sách các cặp ghép nối (Matching) */
+    private List<MongoMatchingPair> matches;
+
+    /** Thứ tự các option được sắp xếp (Timeline) */
+    private List<UUID> orderedOptionIds;
+
+    /** Thời gian hoàn thành bài làm - tự động xóa sau 30 ngày (2,592,000 giây) */
+    @Indexed(expireAfterSeconds = 2592000)
     private Instant completedAt;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class MongoMatchingPair {
+        private String left;
+        private String right;
+    }
 }

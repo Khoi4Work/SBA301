@@ -72,8 +72,8 @@ public class Philosopher extends BaseEntity {
 
     // ── Quan hệ 1-Nhiều ───────────────────────────────────────────────────────
 
-    /** Danh sách tin nhắn hội thoại mà triết gia này tham gia */
+    /** Danh sách các phiên hội thoại mà triết gia này tham gia */
     @OneToMany(mappedBy = "philosopher", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<ChatMessage> chatMessages = new ArrayList<>();
+    private List<ChatSession> chatSessions = new ArrayList<>();
 }

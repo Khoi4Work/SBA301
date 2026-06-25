@@ -48,15 +48,15 @@ public class VoiceController {
 
         LocalDateTime start = LocalDateTime.now();
 
-        // We need to pass the sessionId to voiceService.chat if we want the AI to have context
+        // We need to pass the sessionId to voiceService.chat if we want the AI to have
+        // context
         // But VoiceService.chat takes TtsRequest. TtsRequest is a record (immutable).
         // We must create a new TtsRequest with the sessionId.
         TtsRequest sessionRequest = new TtsRequest(
                 request.text(),
                 request.voice(),
                 request.philosopherId(),
-                sessionId
-        );
+                sessionId);
 
         ChatResponse response = voiceService.chat(sessionRequest);
         LocalDateTime end = LocalDateTime.now();
@@ -64,7 +64,8 @@ public class VoiceController {
         // Update sessionId in response so Frontend can save it
         ChatResponse finalResponse = new ChatResponse(response.text(), response.audioBase64(), sessionId);
 
-        chatHistoryService.saveInteraction(userId, request.philosopherId(), request.text(), response.text(), start, end, sessionId);
+        chatHistoryService.saveInteraction(userId, request.philosopherId(), request.text(), response.text(), start, end,
+                sessionId);
 
         return ApiResponse.success(finalResponse, "Chat response successfully");
     }

@@ -82,12 +82,4 @@ public class Document extends BaseEntity {
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<LearningProgress> learningProgresses = new ArrayList<>();
-
-    /**
-     * Danh sách câu hỏi thử thách liên kết với tài liệu này.
-     * Quiz được mở khi LearningProgress.isCompleted = true.
-     */
-    @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Quiz> quizzes = new ArrayList<>();
 }
