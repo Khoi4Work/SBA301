@@ -217,7 +217,7 @@ export default function UserManagement() {
                 <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Email</th>
                 {/*<th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Vai trò</th>*/}
                 <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Ngày tham gia</th>
-                {/*<th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Trạng thái</th>*/}
+                <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Trạng thái</th>
                 <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest text-right">Hành động</th>
               </tr>
             </thead>
@@ -267,14 +267,14 @@ export default function UserManagement() {
                               : "-"}
                       </td>
 
-          {/*            <td className="px-6 py-5">*/}
-          {/*                <div className="flex items-center gap-2">*/}
-          {/*                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>*/}
-          {/*                    <span className="text-xs text-on-surface-variant uppercase font-semibold">*/}
-          {/*  Hoạt động*/}
-          {/*</span>*/}
-          {/*                </div>*/}
-          {/*            </td>*/}
+                      <td className="px-6 py-5">
+                          <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                              <span className="text-xs text-on-surface-variant uppercase font-semibold">
+            Hoạt động
+          </span>
+                          </div>
+                      </td>
 
                       <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
                           {/*<button*/}

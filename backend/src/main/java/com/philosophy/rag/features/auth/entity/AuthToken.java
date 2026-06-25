@@ -2,6 +2,7 @@ package com.philosophy.rag.features.auth.entity;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.philosophy.rag.base.persistence.BaseEntity;
+import com.philosophy.rag.features.auth.entity.enums.TokenType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
@@ -12,28 +13,34 @@ import java.util.UUID;
  * Lưu trữ token dài hạn để cấp mới Access Token mà không cần login lại.
  */
 @Entity
-@Table(name = "refresh_tokens")
+@Table(name = "auth_tokens")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RefreshToken extends BaseEntity {
+public class AuthToken extends BaseEntity {
 
     /** Mã token — Khóa chính */
     @Id
-    @Column(name = "refresh_token_id", nullable = false, updatable = false)
-    private UUID refreshTokenId;
+    @Column(name = "auth_token_id", nullable = false, updatable = false)
+    private UUID authTokenId;
 
     @PrePersist
     public void generateId() {
-        if (refreshTokenId == null) {
-            refreshTokenId = UuidCreator.getTimeOrderedEpoch();
+        if (authTokenId == null) {
+            authTokenId = UuidCreator.getTimeOrderedEpoch();
         }
     }
 
     @Column(nullable = false, unique = true, columnDefinition = "text")
     private String token;
+
+    @Enumerated(EnumType.STRING)
+    private TokenType tokenType;
+
+    @Column(name = "used_at")
+    private Instant usedAt;
 
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
@@ -41,4 +48,8 @@ public class RefreshToken extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    public boolean isExpired() {
+        return Instant.now().isAfter(expiresAt);
+    }
 }

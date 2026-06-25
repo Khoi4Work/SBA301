@@ -1,5 +1,10 @@
 import apiClient from "@/services/apiClient.js";
 
+export const TOKEN_TYPES = {
+    REFRESH_TOKEN: 'REFRESH_TOKEN',
+    PASSWORD_RESET: 'PASSWORD_RESET',
+};
+
 
 export const login = (credentials) => {
     return apiClient.post('/auth/login', credentials);
@@ -31,9 +36,10 @@ export const forgotPassword = (email) => {
     return apiClient.post('/auth/forgot-password', { email });
 };
 
-export const resetPassword = (token, newPassword) => {
+export const resetPassword = (token, newPassword, tokenType = TOKEN_TYPES.PASSWORD_RESET) => {
     return apiClient.post('/auth/reset-password', {
         token,
         newPassword,
+        tokenType
     });
 };

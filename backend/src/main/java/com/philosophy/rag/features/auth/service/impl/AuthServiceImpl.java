@@ -8,12 +8,11 @@ import com.philosophy.rag.features.auth.dto.LoginRequest;
 import com.philosophy.rag.features.auth.dto.RegisterRequest;
 import com.philosophy.rag.features.auth.dto.ResetPasswordRequest;
 import com.philosophy.rag.features.auth.dto.AuthResponse;
-import com.philosophy.rag.features.auth.entity.PasswordResetToken;
-import com.philosophy.rag.features.auth.entity.RefreshToken;
+import com.philosophy.rag.features.auth.entity.AuthToken;
 import com.philosophy.rag.features.auth.entity.TokenBlacklist;
 import com.philosophy.rag.features.auth.entity.User;
-import com.philosophy.rag.features.auth.repository.PasswordResetTokenRepository;
-import com.philosophy.rag.features.auth.repository.RefreshTokenRepository;
+import com.philosophy.rag.features.auth.entity.enums.TokenType;
+import com.philosophy.rag.features.auth.repository.AuthTokenRepository;
 import com.philosophy.rag.features.auth.repository.TokenBlacklistRepository;
 import com.philosophy.rag.features.auth.repository.UserRepository;
 import com.philosophy.rag.features.auth.service.AuthService;
@@ -46,12 +45,11 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final TokenBlacklistRepository tokenBlacklistRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final AuthTokenRepository authTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -73,6 +71,7 @@ public class AuthServiceImpl implements AuthService {
                 .username(request.username())
                 .email(request.email())
                 .passwordHash(passwordEncoder.encode(request.password()))
+                .active(true)
                 .build();
         userRepository.save(user);
 
@@ -105,6 +104,12 @@ public class AuthServiceImpl implements AuthService {
                                 "User not found: " + request.usernameOrEmail()
                                 );
                 });
+
+        if (Boolean.FALSE.equals(user.getActive())) {
+            log.warn("Blocked login attempt for inactive user: {}", user.getUsername());
+            throw new ApiException(ErrorCode.INVALID_INPUT, "Tài khoản đã bị khóa");
+        }
+
         Long currentVersion = user.getTokenVersion() == null ? 0L : user.getTokenVersion();
         user.setTokenVersion(currentVersion + 1);
         userRepository.save(user);
@@ -129,21 +134,25 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_INPUT, "User not found"));
 
-        refreshTokenRepository.deleteByUser_UserId(user.getUserId());
+        authTokenRepository.deleteByUser_UserId(user.getUserId());
     }
 
     @Override
     @Transactional
     public AuthResponse refreshAccessToken(String refreshTokenString) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenString)
+        AuthToken authToken = authTokenRepository.findByToken(refreshTokenString)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_INPUT, "Refresh token not found or invalid"));
 
-        if (refreshToken.getExpiresAt().isBefore(Instant.now())) {
-            refreshTokenRepository.delete(refreshToken);
+        if (authToken.getExpiresAt().isBefore(Instant.now())) {
+            authTokenRepository.delete(authToken);
             throw new ApiException(ErrorCode.INVALID_INPUT, "Refresh token expired");
         }
 
-        User user = refreshToken.getUser();
+        User user = authToken.getUser();
+        if (Boolean.FALSE.equals(user.getActive())) {
+            authTokenRepository.delete(authToken);
+            throw new ApiException(ErrorCode.INVALID_INPUT, "Tài khoản đã bị khóa");
+        }
         String newAccessToken = jwtTokenProvider.createToken(user.getUsername(), user.getRole().name(), user.getTokenVersion(), JwtTokenProvider.ACCESS_TOKEN_VALIDITY);
 
         return AuthResponse.builder()
@@ -157,22 +166,23 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @jakarta.transaction.Transactional
+    @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         userRepository.findByEmail(request.email())
                 .ifPresent(user -> {
-                    passwordResetTokenRepository.deleteUnusedTokensByUserId(user.getUserId());
+                    authTokenRepository.deleteUnusedTokensByUserId(user.getUserId());
 
                     String rawToken = generateRawToken();
                     String tokenHash = hashToken(rawToken);
 
-                    PasswordResetToken resetToken = PasswordResetToken.builder()
+                    AuthToken resetToken = AuthToken.builder()
                             .user(user)
-                            .tokenHash(tokenHash)
+                            .token(tokenHash)
+                            .tokenType(TokenType.PASSWORD_RESET)
                             .expiresAt(Instant.now().plus(tokenMinutes, ChronoUnit.MINUTES))
                             .build();
 
-                    passwordResetTokenRepository.save(resetToken);
+                    authTokenRepository.save(resetToken);
 
                     String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
 
@@ -181,16 +191,16 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @jakarta.transaction.Transactional
+    @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         String tokenHash = hashToken(request.token());
 
-        PasswordResetToken resetToken = passwordResetTokenRepository
-                .findByTokenHashAndUsedAtIsNull(tokenHash)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired reset token"));
+        AuthToken resetToken = authTokenRepository
+                .findByTokenAndUsedAtIsNull(tokenHash)
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_INPUT, "Liên kết khôi phục không hợp lệ hoặc đã hết hạn"));
 
         if (resetToken.isExpired()) {
-            throw new IllegalArgumentException("Reset token has expired");
+            throw new ApiException(ErrorCode.INVALID_INPUT, "Liên kết khôi phục đã hết hạn");
         }
 
         User user = resetToken.getUser();
@@ -203,10 +213,9 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        refreshTokenRepository.deleteAllByUser_UserId(user.getUserId());
 
-        resetToken.markAsUsed();
-        passwordResetTokenRepository.save(resetToken);
+        resetToken.setUsedAt(Instant.now());
+        authTokenRepository.save(resetToken);
     }
 
     private String generateRawToken() {
@@ -237,12 +246,12 @@ public class AuthServiceImpl implements AuthService {
 
         // Create Refresh Token
         String refreshTokenString = UUID.randomUUID().toString();
-        RefreshToken refreshToken = RefreshToken.builder()
+        AuthToken authToken = AuthToken.builder()
                 .token(refreshTokenString)
                 .user(user)
                 .expiresAt(Instant.now().plusMillis(JwtTokenProvider.REFRESH_TOKEN_VALIDITY))
                 .build();
-        refreshTokenRepository.save(refreshToken);
+        authTokenRepository.save(authToken);
         log.debug("Refresh token generated and saved for user: {}", user.getUsername());
 
         return AuthResponse.builder()

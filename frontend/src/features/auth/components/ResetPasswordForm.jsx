@@ -165,6 +165,7 @@ export default function ResetPasswordForm() {
         setLoading(true);
 
         try {
+
             await resetPassword(token, newPassword);
 
             sessionStorage.removeItem("passwordResetToken");
