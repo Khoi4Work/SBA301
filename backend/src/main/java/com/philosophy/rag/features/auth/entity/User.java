@@ -2,7 +2,6 @@ package com.philosophy.rag.features.auth.entity;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.philosophy.rag.base.persistence.BaseEntity;
-import com.philosophy.rag.features.ai.entity.ChatMessage;
 import com.philosophy.rag.features.ai.entity.GeneratedContent;
 import com.philosophy.rag.features.auth.entity.enums.Role;
 import com.philosophy.rag.features.learning.entity.LearningProgress;
@@ -98,10 +97,6 @@ public class User extends BaseEntity {
 
     // ── Quan hệ 1-Nhiều ───────────────────────────────────────────────────────
 
-    /** Danh sách tin nhắn hội thoại của người dùng */
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<ChatMessage> chatMessages = new ArrayList<>();
 
     /** Danh sách nội dung sáng tạo do người dùng tạo */
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

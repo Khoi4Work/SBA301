@@ -70,10 +70,4 @@ public class Philosopher extends BaseEntity {
     @Column(name = "system_prompt", columnDefinition = "TEXT", nullable = false)
     private String systemPrompt;
 
-    // ── Quan hệ 1-Nhiều ───────────────────────────────────────────────────────
-
-    /** Danh sách tin nhắn hội thoại mà triết gia này tham gia */
-    @OneToMany(mappedBy = "philosopher", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<ChatMessage> chatMessages = new ArrayList<>();
 }
