@@ -182,11 +182,11 @@ export default function UserManagement() {
             </div>
         </div>
 
-        <div className="bg-surface-container-low border border-secondary/10 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors">
-          <p className="text-on-surface-variant text-xs uppercase tracking-widest font-semibold group-hover:text-secondary transition-colors">Hiền Triết (Sage)</p>
-          <p className="font-display text-4xl font-semibold text-secondary">142</p>
-          <div className="text-xs text-on-surface-variant opacity-80">Hội đồng tối cao</div>
-        </div>
+        {/*<div className="bg-surface-container-low border border-secondary/10 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors">*/}
+        {/*  <p className="text-on-surface-variant text-xs uppercase tracking-widest font-semibold group-hover:text-secondary transition-colors">Hiền Triết (Sage)</p>*/}
+        {/*  <p className="font-display text-4xl font-semibold text-secondary">142</p>*/}
+        {/*  <div className="text-xs text-on-surface-variant opacity-80">Hội đồng tối cao</div>*/}
+        {/*</div>*/}
 
         <div className="bg-surface-container-low border border-secondary/10 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors">
           <p className="text-on-surface-variant text-xs uppercase tracking-widest font-semibold group-hover:text-secondary transition-colors">Đang Hoạt Động</p>
@@ -197,14 +197,14 @@ export default function UserManagement() {
           </div>
         </div>
         
-        <div className="bg-surface-container-low border border-error/20 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-            <span className="material-symbols-outlined text-6xl text-error">warning</span>
-          </div>
-          <p className="text-error text-xs uppercase tracking-widest font-semibold">Yêu Cầu Mới</p>
-          <p className="font-display text-4xl font-semibold text-error">24</p>
-          <p className="text-xs text-error/80 italic font-medium">Chờ phê duyệt</p>
-        </div>
+        {/*<div className="bg-surface-container-low border border-error/20 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors relative overflow-hidden">*/}
+        {/*  <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">*/}
+        {/*    <span className="material-symbols-outlined text-6xl text-error">warning</span>*/}
+        {/*  </div>*/}
+        {/*  <p className="text-error text-xs uppercase tracking-widest font-semibold">Yêu Cầu Mới</p>*/}
+        {/*  <p className="font-display text-4xl font-semibold text-error">24</p>*/}
+        {/*  <p className="text-xs text-error/80 italic font-medium">Chờ phê duyệt</p>*/}
+        {/*</div>*/}
       </div>
 
       {/* Main Table Section */}
@@ -215,9 +215,9 @@ export default function UserManagement() {
               <tr className="bg-surface-container-high/30 border-b border-secondary/20">
                 <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Học giả</th>
                 <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Email</th>
-                <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Vai trò</th>
+                {/*<th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Vai trò</th>*/}
                 <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Ngày tham gia</th>
-                <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Trạng thái</th>
+                {/*<th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest">Trạng thái</th>*/}
                 <th className="px-6 py-5 font-semibold text-secondary/80 text-[11px] uppercase tracking-widest text-right">Hành động</th>
               </tr>
             </thead>
@@ -247,9 +247,6 @@ export default function UserManagement() {
                                       {user.fullName || user.username || "Unknown User"}
                                   </p>
 
-                                  <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1 font-semibold">
-                                      ID: {user.userId}
-                                  </p>
                               </div>
                           </div>
                       </td>
@@ -258,11 +255,11 @@ export default function UserManagement() {
                           {user.email || "-"}
                       </td>
 
-                      <td className="px-6 py-5">
-        <span className="px-2 py-1 bg-surface-container border border-outline/30 text-on-surface-variant text-[10px] uppercase font-bold tracking-widest shadow-sm">
-          {user.role || "User"}
-        </span>
-                      </td>
+                      {/*<td className="px-6 py-5">*/}
+                      {/*  <span className="px-2 py-1 bg-surface-container border border-outline/30 text-on-surface-variant text-[10px] uppercase font-bold tracking-widest shadow-sm">*/}
+                      {/*    {user.role || "User"}*/}
+                      {/*  </span>*/}
+                      {/*</td>*/}
 
                       <td className="px-6 py-5 text-on-surface-variant text-sm">
                           {user.createdAt
@@ -270,26 +267,26 @@ export default function UserManagement() {
                               : "-"}
                       </td>
 
-                      <td className="px-6 py-5">
-                          <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                              <span className="text-xs text-on-surface-variant uppercase font-semibold">
-            Hoạt động
-          </span>
-                          </div>
-                      </td>
+          {/*            <td className="px-6 py-5">*/}
+          {/*                <div className="flex items-center gap-2">*/}
+          {/*                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>*/}
+          {/*                    <span className="text-xs text-on-surface-variant uppercase font-semibold">*/}
+          {/*  Hoạt động*/}
+          {/*</span>*/}
+          {/*                </div>*/}
+          {/*            </td>*/}
 
                       <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
-                          <button
-                              type="button"
-                              className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"
-                              title="Xem hồ sơ"
-                              onClick={() => console.log("View user:", user)}
-                          >
-          <span className="material-symbols-outlined text-[20px]">
-            visibility
-          </span>
-                          </button>
+                          {/*<button*/}
+                          {/*    type="button"*/}
+                          {/*    className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"*/}
+                          {/*    title="Xem hồ sơ"*/}
+                          {/*    onClick={() => console.log("View user:", user)}*/}
+                          {/*>*/}
+                          {/*<span className="material-symbols-outlined text-[20px]">*/}
+                          {/*  visibility*/}
+                          {/*</span>*/}
+                          {/*</button>*/}
 
                           <button
                               type="button"

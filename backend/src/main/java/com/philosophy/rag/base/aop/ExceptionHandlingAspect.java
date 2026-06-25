@@ -42,11 +42,11 @@ public class ExceptionHandlingAspect {
     // ──────────────────────────────────────────────────────────────────────────
 
     /** Tất cả method trong service layer */
-    @Pointcut("within(com.philosophy.rag.service..*)")
+    @Pointcut("within(com.philosophy.rag.features.*.service..*)")
     public void serviceLayer() {}
 
     /** Tất cả method trong repository layer */
-    @Pointcut("within(com.philosophy.rag.repository..*)")
+    @Pointcut("within(com.philosophy.rag.features.*.repository..*)")
     public void repositoryLayer() {}
 
     /** Service + Repository */

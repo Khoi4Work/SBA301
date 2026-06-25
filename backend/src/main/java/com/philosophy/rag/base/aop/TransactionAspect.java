@@ -47,7 +47,7 @@ public class TransactionAspect {
     /**
      * Tất cả method trong tầng service — thường là nơi logic DB xảy ra.
      */
-    @Pointcut("within(com.philosophy.rag.service..*)")
+    @Pointcut("within(com.philosophy.rag.features.*.service..*)")
     public void serviceLayer() {
     }
 

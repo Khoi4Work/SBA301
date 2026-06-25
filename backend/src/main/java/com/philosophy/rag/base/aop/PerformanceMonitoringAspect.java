@@ -50,11 +50,11 @@ public class PerformanceMonitoringAspect {
     public void monitorPerformanceAnnotated() {}
 
     /** Tất cả method trong service layer */
-    @Pointcut("within(com.philosophy.rag.service..*)")
+    @Pointcut("within(com.philosophy.rag.features.*.service..*)")
     public void serviceLayer() {}
 
     /** Tất cả method trong controller layer */
-    @Pointcut("within(com.philosophy.rag.controller..*)")
+    @Pointcut("within(com.philosophy.rag.features.*.controller..*)")
     public void controllerLayer() {}
 
     // ──────────────────────────────────────────────────────────────────────────

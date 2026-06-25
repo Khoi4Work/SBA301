@@ -36,12 +36,12 @@ public class LoggingAspect {
     // ──────────────────────────────────────────────────────────────────────────
 
     /** Tất cả method trong package controller */
-    @Pointcut("within(com.philosophy.rag.controller..*)")
+    @Pointcut("within(com.philosophy.rag.features.*.controller..*)")
     public void controllerLayer() {
     }
 
     /** Tất cả method trong package service */
-    @Pointcut("within(com.philosophy.rag.service..*)")
+    @Pointcut("within(com.philosophy.rag.features.*.service..*)")
     public void serviceLayer() {
     }
 

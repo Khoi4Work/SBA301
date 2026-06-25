@@ -182,6 +182,7 @@ public class UserServiceImpl implements UserService {
                 .avatarUrl(user.getAvatarUrl())
                 .totalXp(user.getTotalXp())
                 .streak(user.getStreak())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 

@@ -361,7 +361,7 @@ public class S3StorageServiceImpl implements S3StorageService {
                     .key(key)
                     .build());
             log.info("Successfully deleted S3 object: {}", key);
-            
+
             // Invalidate cache
             this.cachedDocumentList = null;
             this.cacheExpiry = Instant.MIN;
@@ -375,7 +375,8 @@ public class S3StorageServiceImpl implements S3StorageService {
     }
 
     @Override
-    public void updateDocumentMetadata(String key, String title, String description, String category, MultipartFile newImage) throws ApiException {
+    public void updateDocumentMetadata(String key, String title, String description, String category,
+            MultipartFile newImage) throws ApiException {
         log.info("Updating metadata for S3 document: {}", key);
         try {
             // Get existing metadata first
@@ -385,7 +386,7 @@ public class S3StorageServiceImpl implements S3StorageService {
                     .build());
             Map<String, String> existingMetadata = headObject.metadata();
             Map<String, String> newMetadata = new java.util.HashMap<>(existingMetadata);
-            
+
             if (title != null && !title.isBlank()) {
                 newMetadata.put("title", URLEncoder.encode(title, StandardCharsets.UTF_8.name()));
             }
@@ -395,13 +396,14 @@ public class S3StorageServiceImpl implements S3StorageService {
             if (category != null && !category.isBlank()) {
                 newMetadata.put("category", URLEncoder.encode(category, StandardCharsets.UTF_8.name()));
             }
-            
+
             if (newImage != null && !newImage.isEmpty()) {
                 log.info("Uploading new cover image to Cloudinary for key: {}", key);
-                String uploadedImageUrl = cloudinaryService.uploadImage(newImage, "philosophy/documents").getSecureUrl();
+                String uploadedImageUrl = cloudinaryService.uploadImage(newImage, "philosophy/documents")
+                        .getSecureUrl();
                 newMetadata.put("image-url", uploadedImageUrl);
             }
-            
+
             s3Client.copyObject(CopyObjectRequest.builder()
                     .sourceBucket(bucketName)
                     .sourceKey(key)
@@ -410,9 +412,9 @@ public class S3StorageServiceImpl implements S3StorageService {
                     .metadata(newMetadata)
                     .metadataDirective(MetadataDirective.REPLACE)
                     .build());
-            
+
             log.info("Successfully updated S3 metadata for key: {}", key);
-            
+
             // Invalidate cache
             this.cachedDocumentList = null;
             this.cacheExpiry = Instant.MIN;

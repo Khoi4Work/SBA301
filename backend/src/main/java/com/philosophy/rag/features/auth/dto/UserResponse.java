@@ -1,6 +1,7 @@
 package com.philosophy.rag.features.auth.dto;
 
 import lombok.Builder;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Builder
@@ -12,5 +13,6 @@ public record UserResponse(
     String biography,
     String avatarUrl,
     Integer totalXp,
-    Integer streak
+    Integer streak,
+    LocalDateTime createdAt
 ) {}
