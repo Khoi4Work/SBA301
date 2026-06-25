@@ -28,16 +28,12 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
 
     private final ChatHistoryRepository chatHistoryRepository;
     private final ChatSessionRepository chatSessionRepository;
-    private final UserRepository userRepository;
     private final PhilosopherRepository philosopherRepository;
 
     @Override
     @Transactional
     public ChatHistory saveInteraction(UUID userId, UUID philosopherId, String query, String response, LocalDateTime start, LocalDateTime end, UUID sessionId) {
-        log.info("Saving chat interaction for user: {}, philosopher: {}, session: {}", userId, philosopherId, sessionId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        log.info("Saving chat interaction for philosopher: {}, session: {}", philosopherId, sessionId);
 
         ChatSession session = null;
         if (sessionId != null) {
@@ -48,7 +44,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
         long duration = Duration.between(start, end).toMillis();
 
         ChatHistory history = ChatHistory.builder()
-                .user(user)
                 .session(session)
                 .query(query)
                 .response(response)
@@ -63,7 +58,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     @Override
     @Transactional(readOnly = true)
     public List<ChatHistoryResponse> getUserHistory(UUID userId) {
-        return chatHistoryRepository.findByUser_UserIdOrderByCreatedAtDesc(userId)
+        return chatHistoryRepository.findBySession_User_UserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -95,7 +90,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
 
         return ChatHistoryResponse.builder()
                 .historyId(history.getHistoryId())
-                .userId(history.getUser().getUserId())
+                .userId(history.getSession() != null ? history.getSession().getUser().getUserId() : null)
                 .philosopherId(philosopher != null ? philosopher.getPhilosopherId() : null)
                 .philosopherName(philosopher != null ? philosopher.getName() : "AI")
                 .query(history.getQuery())

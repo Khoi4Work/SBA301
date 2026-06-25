@@ -15,7 +15,7 @@ public interface ChatHistoryRepository extends JpaRepository<ChatHistory, UUID> 
     /**
      * Retrieve chat history for a user, sorted by newest first.
      */
-    List<ChatHistory> findByUser_UserIdOrderByCreatedAtDesc(UUID userId);
+    List<ChatHistory> findBySession_User_UserIdOrderByCreatedAtDesc(UUID userId);
 
     /**
      * Retrieve the most recent messages in a specific conversation session.
@@ -24,10 +24,11 @@ public interface ChatHistoryRepository extends JpaRepository<ChatHistory, UUID> 
 
     @Query(value = "SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (max_end - min_start)) / 3600.0), 0) " +
                    "FROM ( " +
-                   "    SELECT MIN(start_time) as min_start, MAX(end_time) as max_end " +
-                   "    FROM chat_histories " +
-                   "    WHERE user_id = :userId " +
-                   "    GROUP BY session_id " +
+                   "    SELECT MIN(h.start_time) as min_start, MAX(h.end_time) as max_end " +
+                   "    FROM chat_histories h " +
+                   "    JOIN chat_sessions s ON h.session_id = s.session_id " +
+                   "    WHERE s.user_id = :userId " +
+                   "    GROUP BY h.session_id " +
                    ") as session_durations", nativeQuery = true)
     Double calculateTotalChatHours(@Param("userId") UUID userId);
 }
