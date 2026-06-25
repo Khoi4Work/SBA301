@@ -361,19 +361,7 @@ public class RagServiceImpl implements RagService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Uses Cohere Rerank to order candidate documents by relevance.
-     * Falls back to the top-30 candidates if the API call fails.
-     */
-    private List<Document> rerankWithCohere(String query, List<Document> candidates) {
-        try {
-            log.info("[RAG] Reranking {} candidates with Cohere...", candidates.size());
-            return cohereRerankService.rerank(query, candidates);
-        } catch (Exception e) {
-            log.error("[RAG] Cohere Rerank failed, falling back to top-30: {}", e.getMessage());
-            return candidates.stream().limit(30).collect(Collectors.toList());
-        }
-    }
+
 
     private String buildContext(List<Document> docs) {
         StringBuilder sb = new StringBuilder();

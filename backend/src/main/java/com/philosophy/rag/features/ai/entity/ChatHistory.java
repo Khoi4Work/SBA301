@@ -40,22 +40,17 @@ public class ChatHistory extends BaseEntity {
      * Phiên hội thoại chứa tương tác này.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id", foreignKey = @ForeignKey(name = "fk_chat_history_session"))
+    @JoinColumn(name = "session_id",
+                foreignKey = @ForeignKey(name = "fk_chat_history_session"))
     private ChatSession session;
 
     /**
      * Người dùng tham gia hội thoại.
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_chat_history_user"))
+    @JoinColumn(name = "user_id", nullable = false,
+                foreignKey = @ForeignKey(name = "fk_chat_history_user"))
     private User user;
-
-    /**
-     * Triết gia tham gia hội thoại (Có thể null nếu không chọn triết gia cụ thể).
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "philosopher_id", foreignKey = @ForeignKey(name = "fk_chat_history_philosopher"))
-    private Philosopher philosopher;
 
     /**
      * Nội dung câu hỏi của người dùng.

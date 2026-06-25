@@ -39,11 +39,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Philosopher philosopher = null;
-        if (philosopherId != null) {
-            philosopher = philosopherRepository.findById(philosopherId).orElse(null);
-        }
-
         ChatSession session = null;
         if (sessionId != null) {
             session = chatSessionRepository.findById(sessionId)
@@ -54,7 +49,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
 
         ChatHistory history = ChatHistory.builder()
                 .user(user)
-                .philosopher(philosopher)
                 .session(session)
                 .query(query)
                 .response(response)
@@ -97,11 +91,13 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     }
 
     private ChatHistoryResponse toResponse(ChatHistory history) {
+        Philosopher philosopher = (history.getSession() != null) ? history.getSession().getPhilosopher() : null;
+
         return ChatHistoryResponse.builder()
                 .historyId(history.getHistoryId())
                 .userId(history.getUser().getUserId())
-                .philosopherId(history.getPhilosopher() != null ? history.getPhilosopher().getPhilosopherId() : null)
-                .philosopherName(history.getPhilosopher() != null ? history.getPhilosopher().getName() : "AI")
+                .philosopherId(philosopher != null ? philosopher.getPhilosopherId() : null)
+                .philosopherName(philosopher != null ? philosopher.getName() : "AI")
                 .query(history.getQuery())
                 .response(history.getResponse())
                 .startTime(history.getStartTime())
