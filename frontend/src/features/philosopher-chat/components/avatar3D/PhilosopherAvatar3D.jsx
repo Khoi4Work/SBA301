@@ -1,25 +1,32 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, useAnimations, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
-function Model({ isTalking, isThinking }) {
-    // 1. Load 3 file Model
-    const { scene, animations: idleAnims } = useGLTF('/model/Ph-Annghen-Standing.glb');
-    const { animations: talkAnims } = useGLTF('/model/Ph-Annghen-Animation.glb');
-    const { animations: thinkAnims } = useGLTF('/model/Ph-Annghen-Thinking.glb');
+function Model({ idleUrl, talkingUrl, thinkingUrl, isTalking, isThinking }) {
+    // Load 3 files from Cloudinary URLs
+    const { scene, animations: idleAnims } = useGLTF(idleUrl || '');
+    const { animations: talkAnims } = useGLTF(talkingUrl || '');
+    const { animations: thinkAnims } = useGLTF(thinkingUrl || '');
 
-    // 2. Change name to easy call
-    idleAnims[0].name = 'Idle';
-    talkAnims[0].name = 'Talking';
-    thinkAnims[0].name = 'Thinking';
+    // Rename animations to consistent labels
+    useMemo(() => {
+        if (idleAnims && idleAnims[0]) idleAnims[0].name = 'Idle';
+        if (talkAnims && talkAnims[0]) talkAnims[0].name = 'Talking';
+        if (thinkAnims && thinkAnims[0]) thinkAnims[0].name = 'Thinking';
+    }, [idleAnims, talkAnims, thinkAnims]);
 
-    // 3. Combine 3 animation
-    const { actions } = useAnimations([idleAnims[0], talkAnims[0], thinkAnims[0]], scene);
+    // Combine animations
+    const { actions } = useAnimations(
+        [
+            idleAnims?.[0],
+            talkAnims?.[0],
+            thinkAnims?.[0]
+        ].filter(Boolean),
+        scene
+    );
 
-    // 4. Xử lý Animation chuẩn bằng Cleanup Function
     useEffect(() => {
-        // Xác định hành động hiện tại
         let currentAction = 'Idle';
         if (isTalking) currentAction = 'Talking';
         else if (isThinking) currentAction = 'Thinking';
@@ -41,7 +48,11 @@ function Model({ isTalking, isThinking }) {
     return <primitive object={scene} scale={2} position={[0, -1.5, 0]} />;
 }
 
-export default function Ph_Annghen({ isTalking, isThinking }) {
+export default function PhilosopherAvatar3D({ idleUrl, talkingUrl, thinkingUrl, isTalking, isThinking }) {
+    if (!idleUrl && !talkingUrl && !thinkingUrl) {
+        return <div style={{ color: 'white', textAlign: 'center', marginTop: '20px' }}>Loading 3D Model...</div>;
+    }
+
     return (
         <div style={{ height: '100%', width: '100%', background: 'transparent', position: 'absolute', inset: 0 }}>
             <Canvas camera={{ position: [0, 1.5, 5.5], fov: 50 }} shadows>
@@ -50,7 +61,13 @@ export default function Ph_Annghen({ isTalking, isThinking }) {
                 <Environment preset="city" />
 
                 <Suspense fallback={null}>
-                    <Model isTalking={isTalking} isThinking={isThinking} />
+                    <Model
+                        idleUrl={idleUrl}
+                        talkingUrl={talkingUrl}
+                        thinkingUrl={thinkingUrl}
+                        isTalking={isTalking}
+                        isThinking={isThinking}
+                    />
                 </Suspense>
 
                 <ContactShadows position={[0, -2.5, 0]} opacity={0.6} scale={5} blur={2.5} far={4} color="#000000" />
@@ -65,8 +82,3 @@ export default function Ph_Annghen({ isTalking, isThinking }) {
         </div>
     );
 }
-
-// Khai báo trước 3 file
-useGLTF.preload('/model/Ph-Annghen-Standing.glb');
-useGLTF.preload('/model/Ph-Annghen-Animation.glb');
-useGLTF.preload('/model/Ph-Annghen-Thinking.glb');

@@ -1,7 +1,6 @@
 import React, {useState, useRef, useEffect} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Ph_Annghen from '../components/avatar3D/Ph_Annghen.jsx';
-import Karl_Marx from '../components/avatar3D/Karl_Marx.jsx';
+import PhilosopherAvatar3D from '../components/avatar3D/PhilosopherAvatar3D.jsx';
 import SmartChatAI from "@/features/philosopher-chat/components/SmartChatAI.jsx";
 import MicButton from "@/features/philosopher-chat/components/MicButton.jsx";
 import ChatPanel from "@/features/philosopher-chat/components/ChatPanel.jsx";
@@ -136,12 +135,13 @@ const VirtualAssistantPage = () => {
                             transition: 'all 0.3s ease'
                         }}>
                             {(() => {
-                                const name = philosopher?.name || "";
-                                if (name.includes("Marx")) {
-                                    return <Karl_Marx isTalking={isAiTalking} isThinking={isAiThinking} />;
-                                }
-                                // Mặc định là Ph_Annghen cho các trường hợp còn lại hoặc khi là Ăng-ghen
-                                return <Ph_Annghen isTalking={isAiTalking} isThinking={isAiThinking} />;
+                                return <PhilosopherAvatar3D
+                                    idleUrl={philosopher?.idleModelUrl}
+                                    talkingUrl={philosopher?.talkingModelUrl}
+                                    thinkingUrl={philosopher?.thinkingModelUrl}
+                                    isTalking={isAiTalking}
+                                    isThinking={isAiThinking}
+                                />;
                             })()}
 
                             <div style={{

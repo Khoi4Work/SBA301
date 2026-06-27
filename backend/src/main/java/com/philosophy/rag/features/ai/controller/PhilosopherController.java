@@ -40,8 +40,11 @@ public class PhilosopherController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PhilosopherResponse>> createPhilosopher(
             @ModelAttribute @Valid PhilosopherRequest request,
-            @RequestParam(value = "file", required = false) MultipartFile file) {
-        PhilosopherResponse response = philosopherService.createPhilosopher(request, file);
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "idleFile", required = false) MultipartFile idleFile,
+            @RequestParam(value = "talkingFile", required = false) MultipartFile talkingFile,
+            @RequestParam(value = "thinkingFile", required = false) MultipartFile thinkingFile) {
+        PhilosopherResponse response = philosopherService.createPhilosopher(request, file, idleFile, talkingFile, thinkingFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response, "Successfully added philosopher"));
     }
 
@@ -51,8 +54,11 @@ public class PhilosopherController {
     public ResponseEntity<ApiResponse<PhilosopherResponse>> updatePhilosopher(
             @PathVariable UUID id,
             @ModelAttribute @Valid PhilosopherRequest request,
-            @RequestParam(value = "file", required = false) MultipartFile file) {
-        PhilosopherResponse response = philosopherService.updatePhilosopher(id, request, file);
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "idleFile", required = false) MultipartFile idleFile,
+            @RequestParam(value = "talkingFile", required = false) MultipartFile talkingFile,
+            @RequestParam(value = "thinkingFile", required = false) MultipartFile thinkingFile) {
+        PhilosopherResponse response = philosopherService.updatePhilosopher(id, request, file, idleFile, talkingFile, thinkingFile);
         return ResponseEntity.ok(ApiResponse.success(response, "Successfully updated philosopher"));
     }
 

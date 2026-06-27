@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Home from './pages/Home';
-import Karl_Marx from "./features/philosopher-chat/components/avatar3D/Karl_Marx.jsx";
 import PhiloVerse from "@/pages/PhiloVerse.jsx";
 import { AuthProvider } from "@/contexts/AuthContext.jsx";
 import { SessionProvider } from "@/contexts/SessionContext.jsx";
@@ -17,7 +16,7 @@ import ProtectedRoute from "@/contexts/ProtectedRoute.jsx";
 import ProfilePage from "@/features/profile/pages/ProfilePage.jsx";
 import ConsumeristEscape from "@/features/learning-space/components/ConsumeristEscape.jsx";
 import DialecticalDebate from "@/features/learning-space/components/DialecticalDebate.jsx";
-import ForgotPassword from "@/features/auth/pages/ForgotPasswordPage.jsx";
+import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage.jsx";
 import AdminLayout from "@/components/AdminLayout.jsx";
 import AdminDashboard from "@/pages/admin/AdminDashboard.jsx";
@@ -26,7 +25,7 @@ import UserManagement from "@/pages/admin/UserManagement.jsx";
 import AcademyChaptersManagement from "@/pages/admin/AcademyChaptersManagement.jsx";
 import LoginPage from "@/features/auth/pages/LoginPage.jsx";
 import RegisterPage from "@/features/auth/pages/RegisterPage.jsx";
-import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage.jsx";
+import PhilosopherAvatar3D from "@/features/philosopher-chat/components/avatar3D/PhilosopherAvatar3D.jsx";
 
 
 const MainLayout = ({ children }) => (
@@ -62,7 +61,7 @@ function AppRoutes() {
             {/* ==========================================
                 GROUP 3: CÁC TRANG PROTECTED DÙNG MAIN LAYOUT
                 ========================================== */}
-            <Route path="/model" element={<ProtectedRoute><MainLayout><Karl_Marx /></MainLayout></ProtectedRoute>} />
+            <Route path="/model" element={<ProtectedRoute><MainLayout><PhilosopherAvatar3D /></MainLayout></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><MainLayout><PhiloVerse /></MainLayout></ProtectedRoute>} />
             <Route path="/study" element={<ProtectedRoute><MainLayout><StudyingPage /></MainLayout></ProtectedRoute>} />
             <Route path="/ai" element={<ProtectedRoute><MainLayout><VirtualAssistantPage /></MainLayout></ProtectedRoute>} />

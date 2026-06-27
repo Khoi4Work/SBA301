@@ -8,6 +8,8 @@ export default function AIPhilosophersManagement() {
         shortQuote: "",
         category: "",
         core: "",
+        biography: "",
+        systemPrompt: "",
     };
 
     const [philosophers, setPhilosophers] = useState([]);
@@ -18,6 +20,9 @@ export default function AIPhilosophersManagement() {
     const [selectedPhilosopher, setSelectedPhilosopher] = useState(null);
     const [form, setForm] = useState(emptyForm);
     const [file, setFile] = useState(null);
+    const [idleFile, setIdleFile] = useState(null);
+    const [talkingFile, setTalkingFile] = useState(null);
+    const [thinkingFile, setThinkingFile] = useState(null);
     const [saving, setSaving] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
     const [modalError, setModalError] = useState("");
@@ -60,6 +65,9 @@ export default function AIPhilosophersManagement() {
         setSelectedPhilosopher(null);
         setForm(emptyForm);
         setFile(null);
+        setIdleFile(null);
+        setTalkingFile(null);
+        setThinkingFile(null);
         setModalMessage("");
         setModalError("");
     };
@@ -74,9 +82,14 @@ export default function AIPhilosophersManagement() {
             shortQuote: philosopher.quote || "",
             category: philosopher.category || "",
             core: philosopher.core || "",
+            biography: philosopher.biography || "",
+            systemPrompt: philosopher.systemPrompt || "",
         });
 
         setFile(null);
+        setIdleFile(null);
+        setTalkingFile(null);
+        setThinkingFile(null);
         setModalMessage("");
         setModalError("");
     };
@@ -86,6 +99,9 @@ export default function AIPhilosophersManagement() {
         setSelectedPhilosopher(null);
         setForm(emptyForm);
         setFile(null);
+        setIdleFile(null);
+        setTalkingFile(null);
+        setThinkingFile(null);
         setModalMessage("");
         setModalError("");
     };
@@ -106,12 +122,12 @@ export default function AIPhilosophersManagement() {
             setModalError("");
 
             if (modalMode === "create") {
-                await philosopherService.create(form, file);
+                await philosopherService.create(form, file, idleFile, talkingFile, thinkingFile);
                 setModalMessage("Thêm triết gia thành công.");
             }
 
             if (modalMode === "edit" && selectedPhilosopher?.id) {
-                await philosopherService.update(selectedPhilosopher.id, form, file);
+                await philosopherService.update(selectedPhilosopher.id, form, file, idleFile, talkingFile, thinkingFile);
                 setModalMessage("Cập nhật triết gia thành công.");
             }
 
@@ -246,7 +262,7 @@ export default function AIPhilosophersManagement() {
                                 <span
                                     className="text-on-surface opacity-80 uppercase leading-relaxed break-words whitespace-normal text-right line-clamp-2"
                                     title={philosopher.core || "-"}
-                                                            >
+                                >
                                     {philosopher.core || "-"}
                                 </span>
                             </div>
@@ -476,6 +492,22 @@ export default function AIPhilosophersManagement() {
                                                 className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
                                             />
                                         </EditRow>
+                                        <EditRow label="Biography">
+                                            <textarea
+                                                value={form.biography}
+                                                onChange={(event) => handleChange("biography", event.target.value)}
+                                                className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary resize-none"
+                                                rows="4"
+                                            />
+                                        </EditRow>
+                                        <EditRow label="System Prompt">
+                                            <textarea
+                                                value={form.systemPrompt}
+                                                onChange={(event) => handleChange("systemPrompt", event.target.value)}
+                                                className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary resize-none"
+                                                rows="6"
+                                            />
+                                        </EditRow>
 
                                         <EditRow label="Avatar URL">
                                             <input
@@ -487,12 +519,48 @@ export default function AIPhilosophersManagement() {
                                         </EditRow>
 
                                         <EditRow label="Upload Avatar">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(event) => setFile(event.target.files?.[0] || null)}
-                                                className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
-                                            />
+                                            <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between">
+                                                <span className="truncate">{file ? file.name : "Choose File..."}</span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(event) => setFile(event.target.files?.[0] || null)}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </EditRow>
+                                        <EditRow label="Model 3D: Idle (.glb)">
+                                            <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between">
+                                                <span className="truncate">{idleFile ? idleFile.name : "Choose File..."}</span>
+                                                <input
+                                                    type="file"
+                                                    accept=".glb"
+                                                    onChange={(event) => setIdleFile(event.target.files?.[0] || null)}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </EditRow>
+                                        <EditRow label="Model 3D: Talking (.glb)">
+                                            <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between">
+                                                <span className="truncate">{talkingFile ? talkingFile.name : "Choose File..."}</span>
+                                                <input
+                                                    type="file"
+                                                    accept=".glb"
+                                                    onChange={(event) => setTalkingFile(event.target.files?.[0] || null)}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </EditRow>
+                                        <EditRow label="Model 3D: Thinking (.glb)">
+                                            <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between">
+                                                <span className="truncate">{thinkingFile ? thinkingFile.name : "Choose File..."}</span>
+                                                <input
+                                                    type="file"
+                                                    accept=".glb"
+                                                    onChange={(event) => setThinkingFile(event.target.files?.[0] || null)}
+                                                    className="hidden"
+                                                />
+                                            </label>
                                         </EditRow>
 
                                         </tbody>

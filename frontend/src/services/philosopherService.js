@@ -4,7 +4,7 @@ const unwrap = (response) => {
     return response.data?.data ?? response.data?.result ?? response.data;
 };
 
-const buildFormData = (payload, file) => {
+const buildFormData = (payload, file, idleFile, talkingFile, thinkingFile) => {
     const formData = new FormData();
 
     formData.append("name", payload.name || "");
@@ -12,9 +12,20 @@ const buildFormData = (payload, file) => {
     formData.append("shortQuote", payload.shortQuote || "");
     formData.append("category", payload.category || "");
     formData.append("core", payload.core || "");
+    formData.append("biography", payload.biography || "");
+    formData.append("systemPrompt", payload.systemPrompt || "");
 
     if (file) {
         formData.append("file", file);
+    }
+    if (idleFile) {
+        formData.append("idleFile", idleFile);
+    }
+    if (talkingFile) {
+        formData.append("talkingFile", talkingFile);
+    }
+    if (thinkingFile) {
+        formData.append("thinkingFile", thinkingFile);
     }
 
     return formData;
@@ -26,8 +37,8 @@ export const philosopherService = {
         return unwrap(res);
     },
 
-    create: async (payload, file) => {
-        const formData = buildFormData(payload, file);
+    create: async (payload, file, idleFile, talkingFile, thinkingFile) => {
+        const formData = buildFormData(payload, file, idleFile, talkingFile, thinkingFile);
 
         const res = await apiClient.post("/philosophers/", formData, {
             headers: {
@@ -38,8 +49,8 @@ export const philosopherService = {
         return unwrap(res);
     },
 
-    update: async (id, payload, file) => {
-        const formData = buildFormData(payload, file);
+    update: async (id, payload, file, idleFile, talkingFile, thinkingFile) => {
+        const formData = buildFormData(payload, file, idleFile, talkingFile, thinkingFile);
 
         const res = await apiClient.put(`/philosophers/${id}`, formData, {
             headers: {

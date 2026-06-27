@@ -30,6 +30,17 @@ public class CloudinaryController {
         UploadResponse response = cloudinaryService.uploadImage(file, folder);
         return ResponseEntity.ok(ApiResponse.success(response, "Image uploaded successfully"));
     }
+//
+//    @Operation(summary = "Upload a 3D model (.glb) to Cloudinary")
+//    @PostMapping(value = "/model", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<ApiResponse<UploadResponse>> uploadModel(
+//            @RequestPart("file") MultipartFile file,
+//            @RequestParam(value = "folder", defaultValue = "philosophy/models") String folder) throws ApiException {
+//
+//        log.info("Received request to upload 3D model: {}", file.getOriginalFilename());
+//        UploadResponse response = cloudinaryService.uploadModel(file, folder);
+//        return ResponseEntity.ok(ApiResponse.success(response, "Model uploaded successfully"));
+//    }
 
     @Operation(summary = "Delete an image from Cloudinary by public ID")
     @DeleteMapping

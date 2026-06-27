@@ -10,5 +10,10 @@ public record PhilosopherResponse(
     String category,
     String quote,
     String core,
-    String imageUrl
+    String imageUrl,
+    String idleModelUrl,
+    String talkingModelUrl,
+    String thinkingModelUrl,
+    String biography,
+    String systemPrompt
 ) {}
