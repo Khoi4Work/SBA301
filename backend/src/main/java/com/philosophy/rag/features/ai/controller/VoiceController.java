@@ -10,8 +10,14 @@ import com.philosophy.rag.features.auth.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import reactor.core.publisher.Flux;
 
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -25,49 +31,35 @@ import java.time.LocalDateTime;
 public class VoiceController {
 
     private final VoiceService voiceService;
-    private final ChatHistoryService chatHistoryService;
-    private final UserService userService;
-    private final ChatSessionService chatSessionService;
 
-    @PostMapping("/speak")
-    public ApiResponse<String> textToSpeak(@Valid @RequestBody TtsRequest request) {
-        return ApiResponse.success(
-                voiceService.textToSpeak(request),
-                "Tạo giọng nói thành công");
+    @GetMapping(value = "/speak", produces = "audio/mpeg")
+    public ResponseEntity<StreamingResponseBody> textToSpeak(
+            @RequestParam String text,
+            @RequestParam(required = false) String voice,
+            @RequestParam(required = false) UUID philosopherId,
+            @RequestParam(required = false) UUID sessionId
+    ) {
+        TtsRequest request = new TtsRequest(text, voice, philosopherId, sessionId);
+
+        // 1. Lấy luồng Flux từ Service
+        Flux<DataBuffer> audioFlux = voiceService.textToSpeak(request);
+
+        // 2. Chuyển đổi Flux thành luồng tương thích với Spring MVC
+        StreamingResponseBody responseBody = outputStream -> {
+            try {
+                // Ghi trực tiếp các gói DataBuffer vào đường truyền HTTP của client
+                DataBufferUtils.write(audioFlux, outputStream)
+                        .blockLast(); // Ép luồng phải chờ đến khi ghi xong toàn bộ
+            } catch (Exception e) {
+                log.error("Lỗi khi ghi luồng âm thanh ra client: ", e);
+            }
+        };
+
+        // 3. Trả về Response với Header khai báo "Tôi đang gửi dữ liệu dạng chunk (từng mảnh)"
+        return ResponseEntity.ok()
+                .header(HttpHeaders.TRANSFER_ENCODING, "chunked")
+                .body(responseBody);
     }
 
-    @PostMapping("/chat")
-    public ApiResponse<ChatResponse> chat(@Valid @RequestBody TtsRequest request) {
-        UUID userId = userService.getCurrentUserId();
-        UUID sessionId = request.sessionId();
-
-        if (sessionId == null) {
-            sessionId = chatSessionService.createSession(userId, request.philosopherId()).getSessionId();
-            log.info("Created new chat session for voice chat: {}", sessionId);
-        }
-
-        LocalDateTime start = LocalDateTime.now();
-
-        // We need to pass the sessionId to voiceService.chat if we want the AI to have
-        // context
-        // But VoiceService.chat takes TtsRequest. TtsRequest is a record (immutable).
-        // We must create a new TtsRequest with the sessionId.
-        TtsRequest sessionRequest = new TtsRequest(
-                request.text(),
-                request.voice(),
-                request.philosopherId(),
-                sessionId);
-
-        ChatResponse response = voiceService.chat(sessionRequest);
-        LocalDateTime end = LocalDateTime.now();
-
-        // Update sessionId in response so Frontend can save it
-        ChatResponse finalResponse = new ChatResponse(response.text(), response.audioBase64(), sessionId);
-
-        chatHistoryService.saveInteraction(userId, request.philosopherId(), request.text(), response.text(), start, end,
-                sessionId);
-
-        return ApiResponse.success(finalResponse, "Chat response successfully");
-    }
 
 }

@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 
 const AudioPlayer = ({
-                         base64Data,
+                         audioUrl,
                          autoPlay = true,
                          onEnded,
                          onPause,
@@ -14,17 +14,15 @@ const AudioPlayer = ({
     const [error, setError] = useState(false);
 
     useEffect(() => {
-        if (autoPlay && audioRef.current && base64Data) {
+        // Tự động phát khi có URL mới
+        if (autoPlay && audioRef.current && audioUrl) {
             audioRef.current.play().catch(err => {
-                console.warn("Trình duyệt chặn autoplay:", err);
+                console.warn("Trình duyệt chặn autoplay (cần user tương tác trước):", err);
             });
         }
-    }, [base64Data, autoPlay]);
+    }, [audioUrl, autoPlay]);
 
-    // Nếu không có data, không render thẻ audio để tránh lỗi NotSupportedError
-    if (!base64Data || base64Data === 'undefined') {
-        return null;
-    }
+    if (!audioUrl) return null;
 
     const handleEnded = () => {
         if (onEnded) onEnded();
@@ -48,7 +46,7 @@ const AudioPlayer = ({
             <audio
                 ref={audioRef}
                 controls={showControls}
-                src={`data:audio/mpeg;base64,${base64Data}`}
+                src={audioUrl}
                 onEnded={handleEnded}
                 onPlay={handlePlay}
                 onError={handleError}

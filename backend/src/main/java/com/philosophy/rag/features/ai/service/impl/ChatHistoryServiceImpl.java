@@ -42,6 +42,8 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
         }
 
         long duration = Duration.between(start, end).toMillis();
+        assert session != null;
+        log.info("[USER ID] CURRENT USER IS {}", session.getUser().getUserId());
 
         ChatHistory history = ChatHistory.builder()
                 .session(session)
