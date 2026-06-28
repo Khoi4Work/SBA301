@@ -1,8 +1,9 @@
 package com.philosophy.rag.features.ai.service.impl;
 
+import com.cloudinary.Api;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
-import com.philosophy.rag.base.persistence.Prompt;
+import com.philosophy.rag.features.ai.persistence.Prompt;
 import com.philosophy.rag.features.ai.entity.ChatHistory;
 import com.philosophy.rag.features.ai.entity.Philosopher;
 import com.philosophy.rag.features.ai.repository.VectorStoreRepository;
@@ -55,6 +56,7 @@ public class RagServiceImpl implements RagService {
     private final ChatSessionService chatSessionService;
     private final CohereRerankService cohereRerankService;
     private final DocumentRepository documentRepository;
+    private static final int NUM_LAST_CONVERSATION_CHAT = 10;
 
     private static final TextSplitter TEXT_SPLITTER = new TokenTextSplitter(800, 400, 5, 10000, true,
             List.of('\n', '\r', ' '));
@@ -84,7 +86,7 @@ public class RagServiceImpl implements RagService {
         String filename = file.getOriginalFilename();
         if (filename == null
                 || (!filename.toLowerCase().endsWith(".pdf")
-                        && !filename.toLowerCase().endsWith(".md"))) {
+                && !filename.toLowerCase().endsWith(".md"))) {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR,
                     "Unsupported file format. Only PDF and MD files are allowed.");
         }
@@ -127,18 +129,15 @@ public class RagServiceImpl implements RagService {
         }
 
         LocalDateTime start = LocalDateTime.now();
-
+        // Retrieve context for chat's answer
         List<Document> candidates = retrieveCandidates(query);
         List<Document> prioritizedDocs = rankDocuments(query, candidates);
-
+        // Build context based on reranked docs
         String context = buildContext(prioritizedDocs);
+        // Build Prompt with role, persona, chat_history, context and user's query
         String prompt = buildPrompt(query, context, philosopherId, sessionId);
 
-        String result = chatClient.prompt()
-                .user(prompt)
-                .call()
-                .content();
-
+        String result = prompt(prompt);
         LocalDateTime end = LocalDateTime.now();
 
         chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
@@ -151,7 +150,7 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public RagAskResponse askContextual(UUID userId, String query, String s3Key, String selectedText,
-            UUID philosopherId, UUID sessionId) {
+                                        UUID philosopherId, UUID sessionId) {
         log.info("[Gemini Contextual AI] Processing query: {}, UserID: {}, S3Key: {}, PhilosopherID: {}, SessionID: {}",
                 query, userId, s3Key, philosopherId, sessionId);
 
@@ -362,7 +361,6 @@ public class RagServiceImpl implements RagService {
     }
 
 
-
     private String buildContext(List<Document> docs) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < docs.size(); i++) {
@@ -374,40 +372,34 @@ public class RagServiceImpl implements RagService {
     }
 
     private String buildPrompt(String query, String context,
-            UUID philosopherId, UUID sessionId) {
-        // Build system persona
-        String persona;
-        if (philosopherId != null) {
-            Optional<Philosopher> philosopher = philosopherRepository.findById(philosopherId);
-            persona = philosopher.map(Philosopher::getSystemPrompt)
-                    .orElse("You are an expert academic professor.");
-        } else {
-            persona = "You are an expert academic professor.";
-        }
+                               UUID philosopherId, UUID sessionId) {
 
-        // Build the instruction block from the template (context + query already
-        // substituted)
-        String instructions = Prompt.RAG_ACADEMIC_PROFESSOR
-                .replace("{context}", context)
-                .replace("{query}", query);
+        Philosopher philosopher = philosopherRepository.findById(philosopherId)
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_INPUT, "Triết gia này không tồn tại!"));
+        String persona = philosopher.getSystemPrompt() != null ? philosopher.getSystemPrompt() : "You are an expert academic professor.";
 
-        // Prepend the persona
-        String systemBlock = persona + "\n\n" + instructions;
 
         // Append the last 10 turns of conversation history (if any)
+        StringBuilder historyBlock = new StringBuilder();
         if (sessionId != null) {
-            List<ChatHistory> history = chatHistoryService.getRecentHistoryBySession(sessionId, 10);
+            List<ChatHistory> history = chatHistoryService.getRecentHistoryBySession(sessionId, NUM_LAST_CONVERSATION_CHAT);
             if (!history.isEmpty()) {
-                StringBuilder historyBlock = new StringBuilder("\n\n### Conversation History:\n");
+                historyBlock = new StringBuilder("\n\n### Conversation History:\n");
                 for (ChatHistory turn : history) {
                     historyBlock.append("User: ").append(turn.getQuery()).append("\n");
                     historyBlock.append("AI: ").append(turn.getResponse()).append("\n");
                 }
-                return systemBlock + historyBlock;
+            }else {
+                historyBlock = new StringBuilder("\n\n### There have no conversation yet!\n");
             }
         }
 
-        return systemBlock;
+        return Prompt.RAG_PHILOSOPHER_ROLEPLAY
+                .replace("{philosopher_name}", philosopher.getName())
+                .replace("{persona}", persona)
+                .replace("{chat_history}", historyBlock.toString())
+                .replace("{context}", context)
+                .replace("{query}", query);
     }
 
     private void deleteTempFile(Path filePath) {

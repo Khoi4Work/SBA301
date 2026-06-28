@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
-import com.philosophy.rag.base.persistence.Prompt;
+import com.philosophy.rag.features.ai.persistence.Prompt;
 import com.philosophy.rag.features.ai.service.RagService;
 import com.philosophy.rag.features.learning.dto.QuizGenerateResponse;
 import com.philosophy.rag.features.learning.dto.QuizQuestion;

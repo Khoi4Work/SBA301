@@ -1,6 +1,6 @@
 package com.philosophy.rag.features.learning.service.impl;
 
-import com.philosophy.rag.base.persistence.Prompt;
+import com.philosophy.rag.features.ai.persistence.Prompt;
 import com.philosophy.rag.features.ai.service.RagService;
 import com.philosophy.rag.features.auth.entity.User;
 import com.philosophy.rag.features.auth.repository.UserRepository;
