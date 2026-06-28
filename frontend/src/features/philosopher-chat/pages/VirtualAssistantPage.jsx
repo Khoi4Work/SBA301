@@ -1,6 +1,6 @@
 import React, {useState, useRef, useEffect} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import PhilosopherAvatar3D from '../components/avatar3D/PhilosopherAvatar3D.jsx';
+import PhilosopherAvatar3D from '../components/PhilosopherAvatar3D.jsx';
 import SmartChatAI from "@/features/philosopher-chat/components/SmartChatAI.jsx";
 import MicButton from "@/features/philosopher-chat/components/MicButton.jsx";
 import ChatPanel from "@/features/philosopher-chat/components/ChatPanel.jsx";

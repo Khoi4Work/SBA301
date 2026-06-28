@@ -25,7 +25,7 @@ import UserManagement from "@/pages/admin/UserManagement.jsx";
 import AcademyChaptersManagement from "@/pages/admin/AcademyChaptersManagement.jsx";
 import LoginPage from "@/features/auth/pages/LoginPage.jsx";
 import RegisterPage from "@/features/auth/pages/RegisterPage.jsx";
-import PhilosopherAvatar3D from "@/features/philosopher-chat/components/avatar3D/PhilosopherAvatar3D.jsx";
+import PhilosopherAvatar3D from "@/features/philosopher-chat/components/PhilosopherAvatar3D.jsx";
 
 
 const MainLayout = ({ children }) => (
