@@ -9,10 +9,8 @@ import com.philosophy.rag.features.ai.entity.Philosopher;
 import com.philosophy.rag.features.ai.repository.VectorStoreRepository;
 import com.philosophy.rag.features.ai.repository.PhilosopherRepository;
 import com.philosophy.rag.features.ai.dto.RagAskResponse;
-import com.philosophy.rag.features.ai.service.ChatHistoryService;
-import com.philosophy.rag.features.ai.service.ChatSessionService;
-import com.philosophy.rag.features.ai.service.RagService;
-import com.philosophy.rag.features.ai.service.CohereRerankService;
+import com.philosophy.rag.features.ai.service.*;
+import com.philosophy.rag.features.ai.tool.PhilosopherTools;
 import com.philosophy.rag.utils.dto.DocumentContent;
 import com.philosophy.rag.utils.repository.DocumentRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -54,8 +52,9 @@ public class RagServiceImpl implements RagService {
     private final ChatClient chatClient;
     private final ChatHistoryService chatHistoryService;
     private final ChatSessionService chatSessionService;
-    private final CohereRerankService cohereRerankService;
     private final DocumentRepository documentRepository;
+    private final PhilosopherTools philosopherTools;
+    private final KnowledgeRetrievalService knowledgeRetrievalService;
     private static final int NUM_LAST_CONVERSATION_CHAT = 10;
 
     private static final TextSplitter TEXT_SPLITTER = new TokenTextSplitter(800, 400, 5, 10000, true,
@@ -67,16 +66,18 @@ public class RagServiceImpl implements RagService {
             PhilosopherRepository philosopherRepository,
             @Qualifier("googleGenAiChatModel") ChatModel chatModel,
             ChatHistoryService chatHistoryService, ChatSessionService chatSessionService,
-            CohereRerankService cohereRerankService,
-            DocumentRepository documentRepository) {
+            DocumentRepository documentRepository,
+            PhilosopherTools philosopherTools,
+            KnowledgeRetrievalService knowledgeRetrievalService) {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
         this.philosopherRepository = philosopherRepository;
         this.chatClient = ChatClient.builder(chatModel).build();
         this.chatHistoryService = chatHistoryService;
         this.chatSessionService = chatSessionService;
-        this.cohereRerankService = cohereRerankService;
         this.documentRepository = documentRepository;
+        this.philosopherTools = philosopherTools;
+        this.knowledgeRetrievalService = knowledgeRetrievalService;
     }
 
     // ── Upload & Indexing ──────────────────────────────────────────────────────
@@ -123,27 +124,27 @@ public class RagServiceImpl implements RagService {
         log.info("[Gemini RAG] Processing query: {}, UserID: {}, PhilosopherID: {}, SessionID: {}", query, userId,
                 philosopherId, sessionId);
 
-
-
         LocalDateTime start = LocalDateTime.now();
-        // Retrieve context for chat's answer
-        List<Document> candidates = retrieveCandidates(query);
-        List<Document> prioritizedDocs = rankDocuments(query, candidates);
-        // Build context based on reranked docs
-        String context = buildContext(prioritizedDocs);
-        // Build Prompt with role, persona, chat_history, context and user's query
-        String prompt = buildPrompt(query, context, philosopherId, sessionId);
 
-        String result = prompt(prompt);
+        // Build Prompt without context (handled by tool calling)
+        String prompt = buildPrompt(query, philosopherId, sessionId);
+
+        String result = chatClient.prompt()
+                .user(prompt)
+                .tools(philosopherTools)
+                .call()
+                .content();
+
         LocalDateTime end = LocalDateTime.now();
 
         if (sessionId == null) {
             sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
             log.info("[Gemini RAG] Created new chat session: {}", sessionId);
-        }else{
-            log.info("[Gemini RAG] Save Interaction : {}", sessionId);
+        } else {
+            log.info("[Gemini RAG] Saving Interaction for session: {}", sessionId);
             chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
         }
+
 
         return RagAskResponse.builder()
                 .answer(result)
@@ -293,13 +294,7 @@ public class RagServiceImpl implements RagService {
     }
 
     private List<Document> rankDocuments(String query, List<Document> candidates) {
-        try {
-            log.info("[Gemini RAG] Reranking {} candidates with Cohere...", candidates.size());
-            return cohereRerankService.rerank(query, candidates);
-        } catch (Exception e) {
-            log.error("[Gemini RAG] Cohere Rerank failed, falling back to basic top-K: {}", e.getMessage());
-            return candidates.stream().limit(30).collect(Collectors.toList());
-        }
+        return knowledgeRetrievalService.rankDocuments(query, candidates);
     }
 
     private String extractTextFromPdf(Path path) {
@@ -342,40 +337,7 @@ public class RagServiceImpl implements RagService {
         return new Document(content, metadata);
     }
 
-    /**
-     * Performs two similarity searches (original query + cleaned keyword query)
-     * and merges the distinct results as retrieval candidates.
-     */
-    private List<Document> retrieveCandidates(String query) {
-        // Strip common Vietnamese question words to create a keyword-only variant
-        String keywordQuery = query
-                .replaceAll("(?i)có\\s+không|có\\s+phải\\s+là|là\\s+gì|tại\\s+sao", " ")
-                .replaceAll("\\s{2,}", " ")
-                .trim();
-
-        List<Document> queryDocs = vectorStore.similaritySearch(
-                SearchRequest.builder().query(query).topK(150).similarityThreshold(0.5).build());
-        List<Document> keywordDocs = vectorStore.similaritySearch(
-                SearchRequest.builder().query(keywordQuery).topK(150).similarityThreshold(0.5).build());
-
-        return Stream.concat(queryDocs.stream(), keywordDocs.stream())
-                .distinct()
-                .collect(Collectors.toList());
-    }
-
-
-    private String buildContext(List<Document> docs) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < docs.size(); i++) {
-            sb.append("[Source ").append(i + 1).append("]: ")
-                    .append(docs.get(i).getText())
-                    .append("\n\n");
-        }
-        return sb.toString();
-    }
-
-    private String buildPrompt(String query, String context,
-                               UUID philosopherId, UUID sessionId) {
+    private String buildPrompt(String query, UUID philosopherId, UUID sessionId) {
 
         Philosopher philosopher = philosopherRepository.findById(philosopherId)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_INPUT, "Triết gia này không tồn tại!"));
@@ -392,7 +354,7 @@ public class RagServiceImpl implements RagService {
                     historyBlock.append("User: ").append(turn.getQuery()).append("\n");
                     historyBlock.append("AI: ").append(turn.getResponse()).append("\n");
                 }
-            }else {
+            } else {
                 historyBlock = new StringBuilder("\n\n### There have no conversation yet!\n");
             }
         }
@@ -401,7 +363,6 @@ public class RagServiceImpl implements RagService {
                 .replace("{philosopher_name}", philosopher.getName())
                 .replace("{persona}", persona)
                 .replace("{chat_history}", historyBlock.toString())
-                .replace("{context}", context)
                 .replace("{query}", query);
     }
 
