@@ -123,10 +123,7 @@ public class RagServiceImpl implements RagService {
         log.info("[Gemini RAG] Processing query: {}, UserID: {}, PhilosopherID: {}, SessionID: {}", query, userId,
                 philosopherId, sessionId);
 
-        if (sessionId == null) {
-            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
-            log.info("[Gemini RAG] Created new chat session: {}", sessionId);
-        }
+
 
         LocalDateTime start = LocalDateTime.now();
         // Retrieve context for chat's answer
@@ -140,7 +137,13 @@ public class RagServiceImpl implements RagService {
         String result = prompt(prompt);
         LocalDateTime end = LocalDateTime.now();
 
-        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
+        if (sessionId == null) {
+            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
+            log.info("[Gemini RAG] Created new chat session: {}", sessionId);
+        }else{
+            log.info("[Gemini RAG] Save Interaction : {}", sessionId);
+            chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
+        }
 
         return RagAskResponse.builder()
                 .answer(result)

@@ -117,7 +117,9 @@ const SmartChatAI = forwardRef(({
 
             if (data.code === 1000 && data.result) {
                 // Lưu lại sessionId mới từ backend (hoặc session hiện tại)
+                const effectiveSessionId = data.result.sessionId || currentSessionId;
                 if (data.result.sessionId) {
+                    console.log("Saving session Id" + data.result.sessionId);
                     justReceivedResponseRef.current = true;
                     setSessionId(data.result.sessionId);
                 }
@@ -126,7 +128,7 @@ const SmartChatAI = forwardRef(({
                     text: data.result.answer,
                     voice: voiceId,
                     philosopherId: philosopherId,
-                    sessionId: currentSessionId
+                    sessionId: effectiveSessionId
                 });
                 const streamUrl = `http://localhost:8080/api/voice/speak?${params.toString()}`;
                 setMessages(prev => [
