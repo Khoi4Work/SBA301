@@ -35,6 +35,13 @@ public class PhilosopherController {
         return ResponseEntity.ok(ApiResponse.success(philosophers, "Successfully retrieved philosopher list"));
     }
 
+    @Operation(summary = "Get philosopher by ID (Requires authentication)")
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<PhilosopherResponse>> getPhilosopherById(@PathVariable UUID id) {
+        PhilosopherResponse response = philosopherService.findPhilosopherById(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Successfully retrieved philosopher details"));
+    }
+
     @Operation(summary = "Add new philosopher (Requires ADMIN, STAFF or INSTRUCTOR)")
     @PostMapping(value = "/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")

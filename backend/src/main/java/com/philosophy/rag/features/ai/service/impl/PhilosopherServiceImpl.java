@@ -33,6 +33,13 @@ public class PhilosopherServiceImpl implements PhilosopherService {
     }
 
     @Override
+    public PhilosopherResponse findPhilosopherById(UUID id) {
+        Philosopher philosopher = philosopherRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND));
+        return mapToResponse(philosopher);
+    }
+
+    @Override
     @Transactional
     public PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file, MultipartFile idleFile, MultipartFile talkingFile, MultipartFile thinkingFile) {
         String avatarUrl = request.avatarUrl();

@@ -267,12 +267,12 @@ export default function AIPhilosophersManagement() {
                                 </span>
                             </div>
 
-                            <div className="flex justify-between text-xs font-semibold">
-                                <span className="text-on-surface-variant opacity-60 uppercase">
-                                    Độ tin cậy AI
-                                </span>
-                                <span className="text-secondary text-base">Ready</span>
-                            </div>
+                            {/*<div className="flex justify-between text-xs font-semibold">*/}
+                            {/*    <span className="text-on-surface-variant opacity-60 uppercase">*/}
+                            {/*        Độ tin cậy AI*/}
+                            {/*    </span>*/}
+                            {/*    <span className="text-secondary text-base">Ready</span>*/}
+                            {/*</div>*/}
                         </div>
                     </div>
                 ))}

@@ -7,14 +7,15 @@ import ChatPanel from "@/features/philosopher-chat/components/ChatPanel.jsx";
 import { useSpeechToText } from '@/hooks/useSpeechToText.js';
 import { Sidebar } from "@/components/Sidebar.jsx";
 import { useSession } from '@/contexts/SessionContext.jsx';
+import { philosopherService } from '@/services/philosopherService.js';
 import "@/assets/styles/philoverse-chat.css";
 
 const VirtualAssistantPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const philosopher = location.state?.philosopher;
     const { currentPhilosopherId, setPhilosopherId, clearSession } = useSession();
 
+    const [philosopherDetails, setPhilosopherDetails] = useState(location.state?.philosopher);
     const [isAiTalking, setIsAiTalking] = useState(false);
     const [isAiThinking, setIsAiThinking] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
@@ -23,19 +24,39 @@ const VirtualAssistantPage = () => {
         if (location.state?.openChat) {
             setIsChatOpen(true);
         }
+        // Reset trạng thái animation khi chuyển session/triết gia
+        setIsAiTalking(false);
+        setIsAiThinking(false);
     }, [location.state]);
+
+    useEffect(() => {
+        const fetchFullDetails = async () => {
+            const statePhil = location.state?.philosopher;
+            if (statePhil?.id && (!philosopherDetails?.idleModelUrl)) {
+                try {
+                    const fullDetails = await philosopherService.getById(statePhil.id);
+                    if (fullDetails) {
+                        setPhilosopherDetails(fullDetails);
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch philosopher details:", err);
+                }
+            }
+        };
+        fetchFullDetails();
+    }, [location.state?.philosopher?.id, philosopherDetails]);
+
+    useEffect(() => {
+        if (philosopherDetails?.id) {
+            if (currentPhilosopherId && currentPhilosopherId !== philosopherDetails.id) {
+                clearSession();
+            }
+            setPhilosopherId(philosopherDetails.id);
+        }
+    }, [philosopherDetails?.id, currentPhilosopherId, setPhilosopherId, clearSession]);
 
     const chatRef = useRef(null);
     const autoSendTimerRef = useRef(null);
-
-    useEffect(() => {
-        if (philosopher?.id) {
-            if (currentPhilosopherId && currentPhilosopherId !== philosopher.id) {
-                clearSession();
-            }
-            setPhilosopherId(philosopher.id);
-        }
-    }, [philosopher?.id, currentPhilosopherId, setPhilosopherId, clearSession]);
 
     // Voice Recognition Hook
     const { isListening, toggleListening, stopListening, error: micError } = useSpeechToText({
@@ -118,7 +139,7 @@ const VirtualAssistantPage = () => {
                 <div className="flex-1 transition-all duration-500 lg:ml-64 relative overflow-hidden">
                     <div className="flex justify-start pt-22 pl-6 relative z-20">
                         <p className="text-[11px] uppercase tracking-[0.4em] text-secondary/60">
-                            Đàm đạo cùng {philosopher?.name || "Triết gia"}
+                            Đàm đạo cùng {philosopherDetails?.name || "Triết gia"}
                         </p>
                     </div>
                     <div style={{
@@ -136,9 +157,9 @@ const VirtualAssistantPage = () => {
                         }}>
                             {(() => {
                                 return <PhilosopherAvatar3D
-                                    idleUrl={philosopher?.idleModelUrl}
-                                    talkingUrl={philosopher?.talkingModelUrl}
-                                    thinkingUrl={philosopher?.thinkingModelUrl}
+                                    idleUrl={philosopherDetails?.idleModelUrl}
+                                    talkingUrl={philosopherDetails?.talkingModelUrl}
+                                    thinkingUrl={philosopherDetails?.thinkingModelUrl}
                                     isTalking={isAiTalking}
                                     isThinking={isAiThinking}
                                 />;
@@ -168,7 +189,7 @@ const VirtualAssistantPage = () => {
                             onToggle={() => setIsChatOpen(!isChatOpen)}
                         >
                             <SmartChatAI
-                                title={philosopher?.name || "Trợ Lý Ảo Thông Minh"}
+                                title={philosopherDetails?.name || "Trợ Lý Ảo Thông Minh"}
                             ref={chatRef}
                                 visible={isChatOpen}
                                 isListening={isListening}
@@ -177,7 +198,7 @@ const VirtualAssistantPage = () => {
                                 micError={micError}
                                 setAiTalking={setIsAiTalking}
                                 setAiThinking={setIsAiThinking}
-                                philosopherId={philosopher?.id}
+                                philosopherId={philosopherDetails?.id}
                             />
                         </ChatPanel>
                     </div>

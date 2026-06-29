@@ -65,4 +65,9 @@ export const philosopherService = {
         const res = await apiClient.delete(`/philosophers/${id}`);
         return unwrap(res);
     },
+
+    getById: async (id) => {
+        const res = await apiClient.get(`/philosophers/${id}`);
+        return unwrap(res);
+    },
 };
