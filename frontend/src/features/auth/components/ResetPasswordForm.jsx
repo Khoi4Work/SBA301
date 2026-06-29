@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronLeft, LockKeyhole } from "lucide-react";
+import { ArrowRight, ChevronLeft } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "@/features/auth/services/authService";
 
@@ -210,13 +210,9 @@ export default function ResetPasswordForm() {
                             onChange={(e) => handlePasswordChange(e.target.value)}
                             onBlur={() => handleBlur("newPassword")}
                             onFocus={() => handleFocus("newPassword")}
-                            className="w-full bg-transparent border border-outline-variant/60 outline-none text-on-surface placeholder:text-outline-variant px-4 py-3.5 pr-11 text-sm transition-colors focus:border-secondary/70 focus:bg-primary-container/20"
+                            className="w-full bg-transparent border border-outline-variant/60 outline-none text-on-surface placeholder:text-outline-variant px-4 py-3.5 text-sm transition-colors focus:border-secondary/70 focus:bg-primary-container/20"
                             required
                         />
-
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-secondary/50 transition-colors pointer-events-none">
-                            <LockKeyhole size={16} strokeWidth={1.5} />
-                        </div>
                     </div>
 
                     {(focusedField === "newPassword" || newPassword.length > 0) && (
@@ -275,14 +271,12 @@ export default function ResetPasswordForm() {
                             className="w-full bg-transparent border border-outline-variant/60 outline-none text-on-surface placeholder:text-outline-variant px-4 py-3.5 text-sm transition-colors focus:border-secondary/70 focus:bg-primary-container/20"
                             required
                         />
+
                         {touched.confirmPassword && validationErrors.confirmPassword && (
                             <p className="mt-2 text-[12px] text-red-400">
                                 {validationErrors.confirmPassword}
                             </p>
                         )}
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-secondary/50 transition-colors pointer-events-none">
-                            <LockKeyhole size={16} strokeWidth={1.5} />
-                        </div>
                     </div>
                 </div>
 

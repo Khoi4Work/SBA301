@@ -134,7 +134,7 @@ export function Sidebar() {
                     to="/"
                 >
                     <Clapperboard className="w-5 h-5"/>
-                    <span className="font-label-md text-label-md">Xưởng sáng tạo</span>
+                    <span className="font-label-md text-label-md">Góc nhìn triết học</span>
                 </Link>
                 <Link
                     className={getMenuItemClass("/chat", ["/ai"])}
@@ -258,15 +258,6 @@ export function Sidebar() {
                     </div>
                 )
             }
-            <div className="px-4 mb-6 space-y-1">
-                <a
-                    className="flex items-center gap-4 px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors"
-                    href="#"
-                >
-                    <Archive className="w-5 h-5"/>
-                    <span className="font-label-md text-label-md">Lưu trữ</span>
-                </a>
-            </div>
             <Link
                 to="/profile"
                 className="mt-auto px-6 flex items-center gap-4 hover:opacity-80 transition-opacity"
