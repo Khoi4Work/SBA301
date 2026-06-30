@@ -8,8 +8,6 @@ public record PhilosopherRequest(
     @NotBlank(message = "Tên triết gia không được để trống")
     String name,
 
-    String avatarUrl,
-
     String shortQuote,
 
     String category,

@@ -58,13 +58,13 @@ function AppRoutes() {
             <Route path="/review/debate" element={<ProtectedRoute><DialecticalDebate /></ProtectedRoute>} />
             <Route path="/review/play/:id" element={<QuizPlay />} />
 
+            <Route path="/ai" element={<ProtectedRoute><VirtualAssistantPage /></ProtectedRoute>} />
             {/* ==========================================
                 GROUP 3: CÁC TRANG PROTECTED DÙNG MAIN LAYOUT
                 ========================================== */}
             <Route path="/model" element={<ProtectedRoute><MainLayout><PhilosopherAvatar3D /></MainLayout></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><MainLayout><PhiloVerse /></MainLayout></ProtectedRoute>} />
             <Route path="/study" element={<ProtectedRoute><MainLayout><StudyingPage /></MainLayout></ProtectedRoute>} />
-            <Route path="/ai" element={<ProtectedRoute><MainLayout><VirtualAssistantPage /></MainLayout></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><MainLayout><Chat /></MainLayout></ProtectedRoute>} />
             <Route path="/review" element={<ProtectedRoute><MainLayout><Review /></MainLayout></ProtectedRoute>} />
             <Route path="/review/history" element={<ProtectedRoute><MainLayout><QuizHistory /></MainLayout></ProtectedRoute>} />

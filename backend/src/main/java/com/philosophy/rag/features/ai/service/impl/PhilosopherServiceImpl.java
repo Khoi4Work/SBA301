@@ -42,7 +42,7 @@ public class PhilosopherServiceImpl implements PhilosopherService {
     @Override
     @Transactional
     public PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file, MultipartFile idleFile, MultipartFile talkingFile, MultipartFile thinkingFile) {
-        String avatarUrl = request.avatarUrl();
+        String avatarUrl = null;
         if (file != null && !file.isEmpty()) {
             avatarUrl = cloudinaryService.uploadImage(file, "philosophy/avatars").getSecureUrl();
         }
@@ -94,8 +94,6 @@ public class PhilosopherServiceImpl implements PhilosopherService {
         String avatarUrl = philosopher.getAvatarUrl();
         if (file != null && !file.isEmpty()) {
             avatarUrl = cloudinaryService.uploadImage(file, "philosophy/avatars").getSecureUrl();
-        } else if (request.avatarUrl() != null && !request.avatarUrl().isBlank()) {
-            avatarUrl = request.avatarUrl();
         }
 
         if (idleFile != null && !idleFile.isEmpty()) {

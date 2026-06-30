@@ -140,10 +140,10 @@ public class RagServiceImpl implements RagService {
         if (sessionId == null) {
             sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
             log.info("[Gemini RAG] Created new chat session: {}", sessionId);
-        } else {
-            log.info("[Gemini RAG] Saving Interaction for session: {}", sessionId);
-            chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
         }
+
+        log.info("[Gemini RAG] Saving Interaction for session: {}", sessionId);
+        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
 
 
         return RagAskResponse.builder()

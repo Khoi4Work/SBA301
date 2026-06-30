@@ -4,7 +4,6 @@ import {philosopherService} from "@/services/philosopherService.js";
 export default function AIPhilosophersManagement() {
     const emptyForm = {
         name: "",
-        avatarUrl: "",
         shortQuote: "",
         category: "",
         core: "",
@@ -78,7 +77,6 @@ export default function AIPhilosophersManagement() {
 
         setForm({
             name: philosopher.name || "",
-            avatarUrl: philosopher.imageUrl || "",
             shortQuote: philosopher.quote || "",
             category: philosopher.category || "",
             core: philosopher.core || "",
@@ -506,15 +504,6 @@ export default function AIPhilosophersManagement() {
                                                 onChange={(event) => handleChange("systemPrompt", event.target.value)}
                                                 className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary resize-none"
                                                 rows="6"
-                                            />
-                                        </EditRow>
-
-                                        <EditRow label="Avatar URL">
-                                            <input
-                                                value={form.avatarUrl}
-                                                onChange={(event) => handleChange("avatarUrl", event.target.value)}
-                                                className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
-                                                placeholder="Dán URL ảnh hoặc upload file bên dưới"
                                             />
                                         </EditRow>
 
