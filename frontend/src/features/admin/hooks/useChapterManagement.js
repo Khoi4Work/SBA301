@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   fetchDocuments,
   uploadDocument,
@@ -23,6 +23,14 @@ export function useChapterManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
+  // ── Filter states ───────────────────────────────────────────
+  const [selectedCurriculum, setSelectedCurriculum] = useState("Tất cả giáo trình");
+  const [selectedChapter, setSelectedChapter] = useState("Tất cả chương");
+  const [selectedSection, setSelectedSection] = useState("Tất cả mục La Mã");
+  const [selectedNumberSection, setSelectedNumberSection] = useState("Tất cả phần số");
+  const [selectedLetterSection, setSelectedLetterSection] = useState("Tất cả phần chữ");
+  const [selectedFormat, setSelectedFormat] = useState("Tất cả định dạng");
+
   // ── Modal state ─────────────────────────────────────────────
   const [modalMode, setModalMode] = useState(null); // "upload" | "edit" | "delete"
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -30,12 +38,144 @@ export function useChapterManagement() {
   // ── Form state ──────────────────────────────────────────────
   const [formTitle, setFormTitle] = useState("");
   const [formDesc, setFormDesc] = useState("");
-  const [formCategory, setFormCategory] = useState("Tài liệu ôn tập");
+  const [formCategory, setFormCategory] = useState("");
+  const [customUploadCategory, setCustomUploadCategory] = useState("");
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadImage, setUploadImage] = useState(null);
 
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState("");
+
+  // ── Derived / parsing values from file name ───────────────────
+  // 1. Phân tích cấu trúc từ tên file
+  const parsedDocs = useMemo(() => {
+    return documents.map((doc) => {
+      const name = doc.fileName || doc.title || '';
+
+      const chapterMatch = name.match(/Chương\s*(\d+)/i);
+      const parsedChapter = chapterMatch ? `Chương ${parseInt(chapterMatch[1], 10)}` : null;
+
+      const sectionMatch = name.match(/Chương\s*\d+\s*-\s*([IVXLCDM]+)/i);
+      const parsedSection = sectionMatch ? sectionMatch[1].toUpperCase() : null;
+
+      const subSectionMatch = name.match(/Chương\s*\d+\s*-\s*[IVXLCDM]+\s*-\s*(\d+)([a-zđA-ZĐ]*)/i);
+      const parsedNumberSection = subSectionMatch ? subSectionMatch[1] : null;
+      const parsedLetterSection = subSectionMatch ? subSectionMatch[2] : null;
+
+      return {
+        ...doc,
+        parsedChapter,
+        parsedSection,
+        parsedNumberSection,
+        parsedLetterSection,
+      };
+    });
+  }, [documents]);
+
+  // 2. Lấy danh sách Giáo trình
+  const curricula = useMemo(() => {
+    const set = new Set();
+    parsedDocs.forEach((doc) => {
+      if (doc.category && doc.category.trim() !== '' && doc.category !== 'Tài liệu ôn tập') {
+        const cat = doc.category.trim();
+        const isChapterName = /^Chương\s*\d+/i.test(cat) || /^Chuong\s*\d+/i.test(cat);
+        if (!isChapterName) {
+          set.add(cat);
+        }
+      }
+    });
+    return Array.from(set).sort();
+  }, [parsedDocs]);
+
+  // 2.5 Lấy danh sách Giáo trình cho việc tải lên
+  const uploadCurriculaOptions = useMemo(() => {
+    const list = new Set([
+      "GIÁO TRÌNH TRIẾT HỌC MÁC - LÊNIN",
+      "GIÁO TRÌNH KINH TẾ CHÍNH TRỊ MÁC - LÊNIN"
+    ]);
+    curricula.forEach(cat => {
+      if (cat && cat !== "Tài liệu ôn tập") {
+        list.add(cat);
+      }
+    });
+    return Array.from(list);
+  }, [curricula]);
+
+  // 3. Lấy danh sách Chương khả dụng theo Giáo trình
+  const availableChapters = useMemo(() => {
+    const set = new Set();
+    parsedDocs.forEach((doc) => {
+      if (selectedCurriculum === "Tất cả giáo trình" || doc.category === selectedCurriculum) {
+        if (doc.parsedChapter) {
+          set.add(doc.parsedChapter);
+        }
+      }
+    });
+    return Array.from(set).sort((a, b) => {
+      const numA = parseInt(a.replace(/^\D+/g, ''), 10);
+      const numB = parseInt(b.replace(/^\D+/g, ''), 10);
+      return numA - numB;
+    });
+  }, [parsedDocs, selectedCurriculum]);
+
+  // 4. Lấy danh sách Mục La Mã khả dụng theo Chương
+  const availableSections = useMemo(() => {
+    const set = new Set();
+    parsedDocs.forEach((doc) => {
+      const matchCurriculum = selectedCurriculum === "Tất cả giáo trình" || doc.category === selectedCurriculum;
+      const matchChapter = selectedChapter === "Tất cả chương" || doc.parsedChapter === selectedChapter;
+      if (matchCurriculum && matchChapter && doc.parsedSection) {
+        set.add(doc.parsedSection);
+      }
+    });
+    return Array.from(set).sort();
+  }, [parsedDocs, selectedCurriculum, selectedChapter]);
+
+  // 5. Lấy danh sách Phần số khả dụng theo Mục La Mã
+  const availableNumberSections = useMemo(() => {
+    const set = new Set();
+    parsedDocs.forEach((doc) => {
+      const matchCurriculum = selectedCurriculum === "Tất cả giáo trình" || doc.category === selectedCurriculum;
+      const matchChapter = selectedChapter === "Tất cả chương" || doc.parsedChapter === selectedChapter;
+      const matchSection = selectedSection === "Tất cả mục La Mã" || doc.parsedSection === selectedSection;
+      if (matchCurriculum && matchChapter && matchSection && doc.parsedNumberSection) {
+        set.add(doc.parsedNumberSection);
+      }
+    });
+    return Array.from(set).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  }, [parsedDocs, selectedCurriculum, selectedChapter, selectedSection]);
+
+  // 6. Lấy danh sách Phần chữ khả dụng theo Phần số
+  const availableLetterSections = useMemo(() => {
+    const set = new Set();
+    parsedDocs.forEach((doc) => {
+      const matchCurriculum = selectedCurriculum === "Tất cả giáo trình" || doc.category === selectedCurriculum;
+      const matchChapter = selectedChapter === "Tất cả chương" || doc.parsedChapter === selectedChapter;
+      const matchSection = selectedSection === "Tất cả mục La Mã" || doc.parsedSection === selectedSection;
+      const matchNumSection = selectedNumberSection === "Tất cả phần số" || doc.parsedNumberSection === selectedNumberSection;
+      if (matchCurriculum && matchChapter && matchSection && matchNumSection && doc.parsedLetterSection) {
+        set.add(doc.parsedLetterSection);
+      }
+    });
+    return Array.from(set).sort();
+  }, [parsedDocs, selectedCurriculum, selectedChapter, selectedSection, selectedNumberSection]);
+
+  // Reset các bộ lọc con khi bộ lọc cha thay đổi
+  useEffect(() => {
+    setSelectedChapter("Tất cả chương");
+  }, [selectedCurriculum]);
+
+  useEffect(() => {
+    setSelectedSection("Tất cả mục La Mã");
+  }, [selectedChapter]);
+
+  useEffect(() => {
+    setSelectedNumberSection("Tất cả phần số");
+  }, [selectedSection]);
+
+  useEffect(() => {
+    setSelectedLetterSection("Tất cả phần chữ");
+  }, [selectedNumberSection]);
 
   // ── Data fetching ───────────────────────────────────────────
   const loadDocuments = async () => {
@@ -62,7 +202,8 @@ export function useChapterManagement() {
     setSelectedDoc(null);
     setFormTitle("");
     setFormDesc("");
-    setFormCategory("Tài liệu ôn tập");
+    setFormCategory(uploadCurriculaOptions[0] || "GIÁO TRÌNH TRIẾT HỌC MÁC - LÊNIN");
+    setCustomUploadCategory("");
     setUploadFile(null);
     setUploadImage(null);
     setModalError("");
@@ -73,7 +214,14 @@ export function useChapterManagement() {
     setSelectedDoc(doc);
     setFormTitle(doc.title || "");
     setFormDesc(doc.description || "");
-    setFormCategory(doc.category || "Tài liệu ôn tập");
+    const docCat = doc.category || "";
+    if (uploadCurriculaOptions.includes(docCat)) {
+      setFormCategory(docCat);
+      setCustomUploadCategory("");
+    } else {
+      setFormCategory("other");
+      setCustomUploadCategory(docCat);
+    }
     setUploadFile(null);
     setUploadImage(null);
     setModalError("");
@@ -97,7 +245,13 @@ export function useChapterManagement() {
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!uploadFile) {
-      setModalError("Vui lòng chọn tệp tin tài liệu (.pdf hoặc .md)");
+      setModalError("Vui lòng chọn tệp tin tài liệu (.pdf, .md hoặc .docx)");
+      return;
+    }
+
+    const finalCategory = formCategory === "other" ? customUploadCategory.trim() : formCategory;
+    if (!finalCategory) {
+      setModalError("Vui lòng chọn hoặc nhập tên giáo trình.");
       return;
     }
 
@@ -106,7 +260,7 @@ export function useChapterManagement() {
     if (formTitle.trim()) formData.append("title", formTitle);
     if (formDesc.trim()) formData.append("description", formDesc);
     if (uploadImage) formData.append("image", uploadImage);
-    formData.append("category", formCategory);
+    formData.append("category", finalCategory);
 
     try {
       setSaving(true);
@@ -124,11 +278,17 @@ export function useChapterManagement() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    const finalCategory = formCategory === "other" ? customUploadCategory.trim() : formCategory;
+    if (!finalCategory) {
+      setModalError("Vui lòng chọn hoặc nhập tên giáo trình.");
+      return;
+    }
+
     const formData = new FormData();
     if (formTitle.trim()) formData.append("title", formTitle);
     if (formDesc.trim()) formData.append("description", formDesc);
     if (uploadImage) formData.append("image", uploadImage);
-    formData.append("category", formCategory);
+    formData.append("category", finalCategory);
 
     try {
       setSaving(true);
@@ -161,18 +321,51 @@ export function useChapterManagement() {
   };
 
   // ── Derived / computed values ───────────────────────────────
-  const filteredDocs = documents.filter((doc) => {
-    const q = searchQuery.toLowerCase();
-    const titleMatch = doc.title?.toLowerCase().includes(q);
-    const fileMatch = doc.fileName?.toLowerCase().includes(q);
-    const categoryMatch = doc.category?.toLowerCase().includes(q);
-    return titleMatch || fileMatch || categoryMatch;
-  });
+  const filteredDocs = useMemo(() => {
+    return parsedDocs.filter((doc) => {
+      // 1. Search Query Match
+      const q = searchQuery.toLowerCase();
+      const titleMatch = doc.title?.toLowerCase().includes(q);
+      const fileMatch = doc.fileName?.toLowerCase().includes(q);
+      const categoryMatch = doc.category?.toLowerCase().includes(q);
+      const matchesSearch = titleMatch || fileMatch || categoryMatch;
 
-  const totalPages = Math.ceil(filteredDocs.length / itemsPerPage) || 1;
+      // 2. Curriculum Match
+      const matchesCurriculum = selectedCurriculum === "Tất cả giáo trình" || doc.category === selectedCurriculum;
+
+      // 3. Chapter Match
+      const matchesChapter = selectedChapter === "Tất cả chương" || doc.parsedChapter === selectedChapter;
+
+      // 4. Section Match
+      const matchesSection = selectedSection === "Tất cả mục La Mã" || doc.parsedSection === selectedSection;
+
+      // 5. Number Section Match
+      const matchesNumberSection = selectedNumberSection === "Tất cả phần số" || doc.parsedNumberSection === selectedNumberSection;
+
+      // 6. Letter Section Match
+      const matchesLetterSection = selectedLetterSection === "Tất cả phần chữ" || doc.parsedLetterSection === selectedLetterSection;
+
+      // 7. Format Match
+      let matchesFormat = true;
+      if (selectedFormat !== "Tất cả định dạng") {
+        const type = doc.contentType?.toLowerCase() || "";
+        if (selectedFormat === "PDF") {
+          matchesFormat = type.includes("pdf") || doc.fileName?.endsWith(".pdf");
+        } else if (selectedFormat === "Markdown") {
+          matchesFormat = type.includes("markdown") || type.includes("md") || doc.fileName?.endsWith(".md");
+        } else if (selectedFormat === "Word") {
+          matchesFormat = type.includes("word") || type.includes("officedocument") || doc.fileName?.endsWith(".docx") || doc.fileName?.endsWith(".doc");
+        }
+      }
+
+      return matchesSearch && matchesCurriculum && matchesChapter && matchesSection && matchesNumberSection && matchesLetterSection && matchesFormat;
+    });
+  }, [parsedDocs, searchQuery, selectedCurriculum, selectedChapter, selectedSection, selectedNumberSection, selectedLetterSection, selectedFormat]);
+
+  const totalPages = useMemo(() => Math.ceil(filteredDocs.length / itemsPerPage) || 1, [filteredDocs]);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentDocs = filteredDocs.slice(indexOfFirstItem, indexOfLastItem);
+  const currentDocs = useMemo(() => filteredDocs.slice(indexOfFirstItem, indexOfLastItem), [filteredDocs, indexOfFirstItem, indexOfLastItem]);
 
   // ── Public API ──────────────────────────────────────────────
   return {
@@ -193,6 +386,28 @@ export function useChapterManagement() {
     indexOfLastItem,
     currentDocs,
 
+    // filter states
+    selectedCurriculum,
+    setSelectedCurriculum,
+    selectedChapter,
+    setSelectedChapter,
+    selectedSection,
+    setSelectedSection,
+    selectedNumberSection,
+    setSelectedNumberSection,
+    selectedLetterSection,
+    setSelectedLetterSection,
+    selectedFormat,
+    setSelectedFormat,
+
+    // memoized lists for filters
+    curricula,
+    uploadCurriculaOptions,
+    availableChapters,
+    availableSections,
+    availableNumberSections,
+    availableLetterSections,
+
     // modal
     modalMode,
     selectedDoc,
@@ -208,6 +423,8 @@ export function useChapterManagement() {
     setFormDesc,
     formCategory,
     setFormCategory,
+    customUploadCategory,
+    setCustomUploadCategory,
     uploadFile,
     setUploadFile,
     uploadImage,

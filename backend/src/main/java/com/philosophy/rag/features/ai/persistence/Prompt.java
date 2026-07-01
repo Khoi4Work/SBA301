@@ -151,43 +151,4 @@ public class Prompt {
             
             NỘI DUNG TÀI LIỆU:
             {context}""";
-
-    public static final String ANALYZE_ESCAPE_GAME_PROMPT = "Dưới lăng kính Triết học Mác-Lênin, cụ thể là quy luật 'Tồn tại xã hội quyết định ý thức xã hội' và 'Sự biến đổi hệ giá trị trong xã hội tiêu dùng hiện đại', hãy viết một đoạn phân tích đánh giá hành vi và nhận thức của người chơi sau đây.\n" +
-            "\n" +
-            "Thông số người chơi:\n" +
-            "- Tỉ lệ Phông bạt: {phongBatPercentage} %\n" +
-            "- Danh hiệu: {title} \n" +
-            "- Trí tuệ thực chất (Wisdom):  {wisdom} \n" +
-            "- Độ phông bạt (Prestige): {prestige} \n" +
-            "- Ngân sách còn lại (Budget):  {budget} VNĐ\n" +
-            "- Độ vui vẻ (Happiness): {happiness}\n" +
-            "- Sức khỏe (Health): {health}\n" +
-            "- Mối quan hệ xã hội thực tế (Social Connections): {social}\n" +
-            "\n" +
-            "Các lựa chọn cụ thể của người chơi qua các tình huống:\n {choicesText} \n" +
-            "\n" +
-            "YÊU CẦU PHẢN HỒI:\n" +
-            "1. Hãy đóng vai một triết gia biện chứng (như Karl Marx nhưng pha chút giọng văn châm biếm, dí dỏm nhưng sâu cay, cực kỳ thấm thía).\n" +
-            "2. Giải thích tại sao người chơi lại có các chỉ số phông bạt, vui vẻ, sức khỏe và mối quan hệ như vậy. Nếu phông bạt quá cao làm cạn kiệt ví tiền và làm suy giảm các mối quan hệ thực tế (do thói sống ảo và làm màu phông bạt), hãy vạch trần bản chất hàng hóa hóa lòng tin và sự tha hóa. Nếu lý tính quá cao nhưng họ phải sống quá khắc khổ, thiếu thốn niềm vui hay bị cô lập xã hội, hãy nhận xét xem sự 'khắc kỷ học thuật' đó có cần điều chỉnh để con người phát triển hài hòa toàn diện hay không. Nếu họ đạt được sự cân bằng xuất sắc giữa lý tính, ví tiền, niềm vui và sức khỏe, hãy nhiệt liệt khen ngợi khả năng làm chủ bản thân trước sức ép tồn tại xã hội.\n" +
-            "3. Viết bằng tiếng Việt, phân tích sâu sắc, độ dài khoảng 250-350 từ.\n" +
-            "4. KHÔNG bao gồm bất kỳ định dạng tiêu đề markdown lớn (như # hoặc ##), hãy viết các đoạn văn trôi chảy.\n" +
-            "5. Ở dòng cuối cùng, hãy ghi rõ: '[REHABILITATION]: ' tiếp theo là đề xuất một cuốn sách triết học hoặc một chuyên đề trong ứng dụng này để họ tiếp tục học tập, rèn luyện tư duy thực chất.";
-
-    public static final String ANALYZE_DEBATE_GAME_PROMPT = "Dưới lăng kính Triết học Mác-Lênin, hãy viết một lời phê duyệt biện luận cho trận đấu tranh luận đối kháng giữa một Học giả (người chơi) và một KOL Phông bạt (đối thủ).\n" +
-            "\n" +
-            "Kết quả trận đấu:\n" +
-            "- Kết quả: {isVictory}\n" +
-            "- HP còn lại của Học giả: {playerHp}\n" +
-            "- HP còn lại của KOL: {opponentHp}/100\n" +
-            "- Chỉ số thắng thế: {winMarginPercentage}%\n" +
-            "- Danh hiệu: {resultTitle}\n" +
-            "\n" +
-            "Các phản biện người chơi đã sử dụng chống lại những phát ngôn thực dụng của KOL:\n {argumentsText} \n" +
-            "\n" +
-            "YÊU CẦU PHẢN HỒI:\n" +
-            "1. Hãy đóng vai Karl Marx (giọng văn châm biếm, sắc bén, biện chứng, phê phán tư tưởng tư bản phông bạt một cách sâu sắc).\n" +
-            "2. Nếu học giả CHIẾN THẮNG: hãy ca ngợi lập luận vững vàng, khả năng phân biệt rõ giá trị sử dụng và giá trị trao đổi, ý thức tiến bộ đã cải tạo tư tưởng tiêu dùng lệch lạc.\n" +
-            "3. Nếu học giả THẤT BẠI: hãy phê bình nghiêm khắc nhưng mang tính giáo dục, chỉ ra họ bị cuốn theo lập luận thực dụng của đối thủ, nhắc nhở họ rằng 'tiền chỉ là vật ngang giá chung, không thể quyết định toàn bộ bản chất xã hội của con người'.\n" +
-            "4. Viết bằng tiếng Việt, khoảng 250-350 từ, viết trôi chảy không có các tiêu đề markdown lớn.\n" +
-            "5. Ở dòng cuối cùng, hãy ghi rõ: '[REHABILITATION]: ' tiếp theo là đề xuất một tài liệu triết học hoặc cuốn sách để củng cố tri thức.";
 }

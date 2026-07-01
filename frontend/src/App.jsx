@@ -14,8 +14,6 @@ import QuizPlay from "@/features/learning-space/pages/QuizPlay.jsx";
 import QuizHistory from "@/pages/QuizHistory.jsx";
 import ProtectedRoute from "@/contexts/ProtectedRoute.jsx";
 import ProfilePage from "@/features/profile/pages/ProfilePage.jsx";
-import ConsumeristEscape from "@/features/learning-space/components/ConsumeristEscape.jsx";
-import DialecticalDebate from "@/features/learning-space/components/DialecticalDebate.jsx";
 import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage.jsx";
 import AdminLayout from "@/features/admin/components/layout/AdminLayout.jsx";
@@ -54,8 +52,6 @@ function AppRoutes() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             <Route path="/study/lesson" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
-            <Route path="/review/escape" element={<ProtectedRoute><ConsumeristEscape /></ProtectedRoute>} />
-            <Route path="/review/debate" element={<ProtectedRoute><DialecticalDebate /></ProtectedRoute>} />
             <Route path="/review/play/:id" element={<QuizPlay />} />
 
             <Route path="/ai" element={<ProtectedRoute><VirtualAssistantPage /></ProtectedRoute>} />
