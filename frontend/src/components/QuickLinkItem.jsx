@@ -13,7 +13,7 @@ export function QuickLinkItem({ icon, title, description }) {
           <p className="font-label-md text-sm text-on-surface uppercase tracking-wider">
             {title}
           </p>
-          <p className="text-[11px] text-on-surface-variant opacity-60">
+          <p className="text-[11px]xtext-on-surface-variant opacity-60">
             {description}
           </p>
         </div>

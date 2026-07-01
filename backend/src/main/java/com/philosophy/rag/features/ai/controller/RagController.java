@@ -3,6 +3,7 @@ package com.philosophy.rag.features.ai.controller;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.features.ai.dto.RagAskRequest;
 import com.philosophy.rag.features.ai.dto.RagAskResponse;
 import com.philosophy.rag.features.ai.service.ChatHistoryService;
 import com.philosophy.rag.features.ai.service.ChatSessionService;
@@ -12,6 +13,7 @@ import com.philosophy.rag.features.auth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,16 +71,13 @@ public class RagController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Query parameter is blank or invalid"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error occurred during retrieval or generation")
     })
-    @GetMapping("/ask")
-    public ResponseEntity<ApiResponse<RagAskResponse>> ask(
-            @RequestParam("query") @NotBlank(message = "Query cannot be blank") String query,
-            @RequestParam(value = "philosopherId", required = false) UUID philosopherId,
-            @RequestParam(value = "sessionId", required = false) UUID sessionId) {
+    @PostMapping("/ask")
+    public ResponseEntity<ApiResponse<RagAskResponse>> ask(@RequestBody @Valid RagAskRequest request) {
 
-        log.info("Received RAG query: {}, PhilosopherID: {}, SessionID: {}", query, philosopherId, sessionId);
+        log.info("Received RAG query: {}, PhilosopherID: {}, SessionID: {}", request.query(), request.philosopherId(), request.sessionId());
 
         UUID userId = userService.getCurrentUserId();
-        RagAskResponse response = ragService.ask(userId, query, philosopherId, sessionId);
+        RagAskResponse response = ragService.ask(userId, request.query(), request.philosopherId(), request.sessionId());
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }

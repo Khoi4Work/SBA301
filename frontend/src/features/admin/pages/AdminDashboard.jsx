@@ -1,62 +1,8 @@
-import React, { useContext, useEffect, useState } from "react";
-import { AuthContext } from "@/contexts/AuthContext.jsx";
-import { userService } from "@/services/userService.js";
-import { philosopherService } from "@/services/philosopherService.js";
-import { fetchDocuments } from "@/services/documentService.js";
+import React from "react";
+import { useAdminStats } from "@/features/admin/hooks/useAdminStats.js";
 
-export default function Dashboard() {
-
-    const { user } = useContext(AuthContext);
-
-    const displayName = user?.fullName || user?.username || "Quản trị viên";
-    const [userCount, setUserCount] = useState(0);
-    const [philosopherCount, setPhilosopherCount] = useState(0);
-    const [chapterCount, setChapterCount] = useState(0);
-    const [statsLoading, setStatsLoading] = useState(false);
-
-    const extractArray = (data) => {
-        if (Array.isArray(data)) return data;
-        if (Array.isArray(data?.data)) return data.data;
-        if (Array.isArray(data?.result)) return data.result;
-        if (Array.isArray(data?.content)) return data.content;
-        if (Array.isArray(data?.users)) return data.users;
-        if (Array.isArray(data?.philosophers)) return data.philosophers;
-        return [];
-    };
-
-    useEffect(() => {
-        const fetchDashboardStats = async () => {
-            try {
-                setStatsLoading(true);
-
-                const [usersData, philosophersData, documentsData] = await Promise.all([
-                    userService.getAllUsers(),
-                    philosopherService.getAll(),
-                    fetchDocuments(),
-                ]);
-
-                setUserCount(extractArray(usersData).length);
-                setPhilosopherCount(extractArray(philosophersData).length);
-
-                const docs = extractArray(documentsData);
-                const chaptersSet = new Set();
-                docs.forEach((doc) => {
-                    const name = doc.fileName || doc.title || '';
-                    const chapterMatch = name.match(/Chương\s*(\d+)/i);
-                    if (chapterMatch) {
-                        chaptersSet.add(parseInt(chapterMatch[1], 10));
-                    }
-                });
-                setChapterCount(chaptersSet.size);
-            } catch (err) {
-                console.error("Load dashboard stats failed:", err);
-            } finally {
-                setStatsLoading(false);
-            }
-        };
-
-        fetchDashboardStats();
-    }, []);
+export default function AdminDashboard() {
+    const { displayName, userCount, philosopherCount, chapterCount, statsLoading } = useAdminStats();
 
     return (
         <div className="animate-fade-in">

@@ -9,7 +9,14 @@ import com.philosophy.rag.features.auth.service.UserService;
 import com.philosophy.rag.features.ai.service.VoiceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,31 +31,13 @@ import java.util.stream.Collectors;
 @Service
 @ConditionalOnProperty(name = "voice.provider", havingValue = "edge", matchIfMissing = true)
 public class EdgeTtsVoiceServiceImpl implements VoiceService {
-    private final RagService ragService;
-    private final UserService userService;
-
-    public EdgeTtsVoiceServiceImpl(RagService ragService, UserService userService) {
-        this.ragService = ragService;
-        this.userService = userService;
-    }
 
     @Override
-    public ChatResponse chat(TtsRequest request) {
-        UserResponse user = userService.getCurrentUser();
-        String chatResponse = cleanTextForTTS(
-                ragService.ask(user.userId(), request.text(), request.philosopherId(), request.sessionId()));
-        TtsRequest newResponse = new TtsRequest(chatResponse, request.voice(), request.philosopherId(),
-                request.sessionId());
-        String audioBase64 = textToSpeak(newResponse);
-        return new ChatResponse(chatResponse, audioBase64, request.sessionId());
-    }
-
-    @Override
-    public String textToSpeak(TtsRequest request) {
+    public Flux<DataBuffer> textToSpeak(TtsRequest request) {
         String text = request.text();
         String voice = (request.voice() != null) ? request.voice() : "vi-VN-HoaiMyNeural";
 
-        log.info("Bắt đầu xử lý Edge-TTS. Text length: {} ký tự, Voice: {}", text.length(), voice);
+        log.info("Bắt đầu xử lý Edge-TTS (Streaming). Text length: {} ký tự, Voice: {}", text.length(), voice);
 
         String tempDir = System.getProperty("java.io.tmpdir");
         String baseFileName = tempDir + File.separator + UUID.randomUUID().toString();
@@ -56,46 +45,55 @@ public class EdgeTtsVoiceServiceImpl implements VoiceService {
         File textFile = new File(baseFileName + ".txt");
         File outputFile = new File(baseFileName + ".mp3");
 
-        try {
-            Files.writeString(textFile.toPath(), text, StandardCharsets.UTF_8);
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                    "cmd.exe", "/c", "py", "-m", "edge_tts",
-                    "--voice", voice,
-                    "-f", textFile.getAbsolutePath(),
-                    "--write-media", outputFile.getAbsolutePath());
+        // Dùng Mono.fromCallable để gói các thao tác I/O (chặn luồng) lại
+        return Mono.fromCallable(() -> {
+                    Files.writeString(textFile.toPath(), text, StandardCharsets.UTF_8);
 
-            log.info("Đang thực thi edge-tts qua file txt tạm...");
-            processBuilder.redirectErrorStream(true);
-            Process process = processBuilder.start();
+                    ProcessBuilder processBuilder = new ProcessBuilder(
+                            "cmd.exe", "/c", "py", "-m", "edge_tts",
+                            "--voice", voice,
+                            "-f", textFile.getAbsolutePath(),
+                            "--write-media", outputFile.getAbsolutePath());
 
-            String processOutput = new BufferedReader(new InputStreamReader(process.getInputStream()))
-                    .lines().collect(Collectors.joining("\n"));
+                    log.info("Đang thực thi edge-tts qua file txt tạm...");
+                    processBuilder.redirectErrorStream(true);
+                    Process process = processBuilder.start();
 
-            int exitCode = process.waitFor();
+                    String processOutput = new BufferedReader(new InputStreamReader(process.getInputStream()))
+                            .lines().collect(Collectors.joining("\n"));
 
-            if (exitCode != 0) {
-                log.error("Lệnh CMD thất bại. Exit code: {}", exitCode);
-                log.error(">>> HỆ ĐIỀU HÀNH BÁO LỖI: {}", processOutput);
-                throw new RuntimeException("Lệnh edge-tts chạy thất bại. Chi tiết: " + processOutput);
-            }
+                    int exitCode = process.waitFor();
 
-            byte[] fileContent = Files.readAllBytes(outputFile.toPath());
-            String base64Audio = Base64.getEncoder().encodeToString(fileContent);
+                    if (exitCode != 0) {
+                        log.error("Lệnh CMD thất bại. Exit code: {}", exitCode);
+                        log.error(">>> HỆ ĐIỀU HÀNH BÁO LỖI: {}", processOutput);
+                        throw new RuntimeException("Lệnh edge-tts chạy thất bại. Chi tiết: " + processOutput);
+                    }
 
-            log.info("Tạo giọng nói Edge-TTS và mã hóa Base64 thành công!");
-            return base64Audio;
+                    log.info("Khởi tạo file mp3 thành công. Chuẩn bị stream...");
+                    return outputFile;
+                })
+                // Chạy trên thread pool riêng biệt (boundedElastic) để không block WebFlux event-loop
+                .subscribeOn(Schedulers.boundedElastic())
 
-        } catch (Exception e) {
-            log.error("Lỗi hệ thống trong EdgeTtsVoiceServiceImpl: ", e);
-            throw new RuntimeException("Lỗi hệ thống: " + e.getMessage());
-        } finally {
-            if (textFile.exists()) {
-                textFile.delete();
-            }
-            if (outputFile.exists()) {
-                outputFile.delete();
-            }
-        }
+                // Chuyển Mono<File> thành Flux<DataBuffer> để stream
+                .flatMapMany(file -> {
+                    FileSystemResource resource = new FileSystemResource(file);
+                    // Đọc file thành từng chunk 4KB (4096 bytes) đẩy xuống client
+                    return DataBufferUtils.read(resource, new DefaultDataBufferFactory(), 4096);
+                })
+
+                // Xóa dọn dẹp file tạm BẤT KỂ kết quả stream thành công hay bị lỗi
+                .doFinally(signalType -> {
+                    if (textFile.exists()) {
+                        boolean deleted = textFile.delete();
+                        log.debug("Đã xóa file text tạm: {}", deleted);
+                    }
+                    if (outputFile.exists()) {
+                        boolean deleted = outputFile.delete();
+                        log.debug("Đã xóa file mp3 tạm sau khi stream xong: {}", deleted);
+                    }
+                });
     }
 
     public String cleanTextForTTS(RagAskResponse rawText) {

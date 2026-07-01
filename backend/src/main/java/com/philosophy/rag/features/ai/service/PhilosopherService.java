@@ -11,9 +11,12 @@ import org.springframework.web.multipart.MultipartFile;
 public interface PhilosopherService {
     List<PhilosopherResponse> findAllPhilosophers();
 
-    PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file);
+    PhilosopherResponse findPhilosopherById(UUID id);
 
-    PhilosopherResponse updatePhilosopher(UUID id, PhilosopherRequest request, MultipartFile file);
+    PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file, MultipartFile idleFile, MultipartFile talkingFile, MultipartFile thinkingFile);
+
+
+    PhilosopherResponse updatePhilosopher(UUID id, PhilosopherRequest request, MultipartFile file, MultipartFile idleFile, MultipartFile talkingFile, MultipartFile thinkingFile);
 
     void deleteAllPhilosophers();
 

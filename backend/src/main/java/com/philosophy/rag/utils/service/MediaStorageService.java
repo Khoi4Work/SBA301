@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface MediaStorageService {
     UploadResponse uploadImage(MultipartFile file) throws ApiException;
     UploadResponse uploadImage(MultipartFile file, String folder) throws ApiException;
+    UploadResponse uploadModel(MultipartFile file, String folder) throws ApiException;
     void deleteImage(String publicId) throws ApiException;
 }
 

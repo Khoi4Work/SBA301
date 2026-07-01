@@ -3,6 +3,7 @@ import { apiVoice } from "@/services/apiVoice.js";
 import { apiChatHistory } from "@/services/chatHistoryService.js";
 import AudioPlayer from './AudioPlayer.jsx';
 import { useSession } from '@/contexts/SessionContext.jsx';
+import {apiRag} from "@/services/apiRag.js";
 
 const SmartChatAI = forwardRef(({
                          title = "Trợ Lý Ảo Thông Minh",
@@ -94,8 +95,7 @@ const SmartChatAI = forwardRef(({
         if (isSendingRef.current || !finalText || !finalText.trim()) return;
 
         // Ngắt tất cả âm thanh đang phát trước khi gửi tin nhắn mới
-        const audios = document.querySelectorAll('audio');
-        audios.forEach(audio => {
+        document.querySelectorAll('audio').forEach(audio => {
             audio.pause();
             audio.currentTime = 0;
         });
@@ -108,9 +108,8 @@ const SmartChatAI = forwardRef(({
         latestInputRef.current = '';
 
         try {
-            const response = await apiVoice.chat({
-                text: finalText,
-                voice: voiceId,
+            const response = await apiRag.ask({
+                query: finalText,
                 philosopherId: philosopherId,
                 sessionId: currentSessionId
             });
@@ -118,18 +117,27 @@ const SmartChatAI = forwardRef(({
 
             if (data.code === 1000 && data.result) {
                 // Lưu lại sessionId mới từ backend (hoặc session hiện tại)
+                const effectiveSessionId = data.result.sessionId || currentSessionId;
                 if (data.result.sessionId) {
+                    console.log("Saving session Id" + data.result.sessionId);
                     justReceivedResponseRef.current = true;
                     setSessionId(data.result.sessionId);
                 }
                 triggerRefresh();
+                const params = new URLSearchParams({
+                    text: data.result.answer,
+                    voice: voiceId,
+                    philosopherId: philosopherId,
+                    sessionId: effectiveSessionId
+                });
+                const streamUrl = `http://localhost:8080/api/voice/speak?${params.toString()}`;
                 setMessages(prev => [
                     ...prev,
                     {
                         role: 'ai',
                         type: 'both',
-                        content: data.result.text,
-                        audioData: data.result.audioBase64
+                        content: data.result.answer,
+                        audioData: streamUrl
                     }
                 ]);
             } else {
@@ -187,7 +195,7 @@ const SmartChatAI = forwardRef(({
                                 <div className="mb-2.5 leading-relaxed">{msg.content}</div>
 
                                 <AudioPlayer
-                                    base64Data={msg.audioData}
+                                    audioUrl={msg.audioData}
                                     autoPlay={autoPlayAudio}
                                     label="Nghe trả lời:"
                                     onPlay={() => setIsAISpeaking(true)}

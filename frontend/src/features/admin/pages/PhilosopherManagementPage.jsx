@@ -1,149 +1,38 @@
-import React, {useEffect, useState} from "react";
-import {philosopherService} from "@/services/philosopherService.js";
+import React from "react";
+import { usePhilosopherManagement } from "@/features/admin/hooks/usePhilosopherManagement.js";
 
-export default function AIPhilosophersManagement() {
-    const emptyForm = {
-        name: "",
-        avatarUrl: "",
-        shortQuote: "",
-        category: "",
-        core: "",
-    };
+export default function PhilosopherManagementPage() {
+    const {
+        philosophers,
+        loading,
+        modalMode,
+        selectedPhilosopher,
+        form,
+        file,
+        idleFile,
+        talkingFile,
+        thinkingFile,
+        saving,
+        modalMessage,
+        modalError,
+        setFile,
+        setIdleFile,
+        setTalkingFile,
+        setThinkingFile,
+        openCreateModal,
+        openEditModal,
+        closeModal,
+        handleFormChange,
+        handleCreate,
+        handleUpdate,
+        handleDelete,
+    } = usePhilosopherManagement();
 
-    const [philosophers, setPhilosophers] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-
-    const [modalMode, setModalMode] = useState(null); // "create" | "edit"
-    const [selectedPhilosopher, setSelectedPhilosopher] = useState(null);
-    const [form, setForm] = useState(emptyForm);
-    const [file, setFile] = useState(null);
-    const [saving, setSaving] = useState(false);
-    const [modalMessage, setModalMessage] = useState("");
-    const [modalError, setModalError] = useState("");
-
-    const extractPhilosophers = (data) => {
-        if (Array.isArray(data)) return data;
-        if (Array.isArray(data?.data)) return data.data;
-        if (Array.isArray(data?.result)) return data.result;
-        if (Array.isArray(data?.content)) return data.content;
-        if (Array.isArray(data?.philosophers)) return data.philosophers;
-
-        console.warn("Không tìm thấy mảng philosophers:", data);
-        return [];
-    };
-
-    const fetchPhilosophers = async () => {
-        try {
-            setLoading(true);
-            setError("");
-
-            const data = await philosopherService.getAll();
-            setPhilosophers(extractPhilosophers(data));
-        } catch (err) {
-            console.error(err);
-            setError(
-                err.response?.data?.message ||
-                "Không tải được danh sách triết gia."
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchPhilosophers();
-    }, []);
-
-    const openCreateModal = () => {
-        setModalMode("create");
-        setSelectedPhilosopher(null);
-        setForm(emptyForm);
-        setFile(null);
-        setModalMessage("");
-        setModalError("");
-    };
-
-    const openEditModal = (philosopher) => {
-        setModalMode("edit");
-        setSelectedPhilosopher(philosopher);
-
-        setForm({
-            name: philosopher.name || "",
-            avatarUrl: philosopher.imageUrl || "",
-            shortQuote: philosopher.quote || "",
-            category: philosopher.category || "",
-            core: philosopher.core || "",
-        });
-
-        setFile(null);
-        setModalMessage("");
-        setModalError("");
-    };
-
-    const closeModal = () => {
-        setModalMode(null);
-        setSelectedPhilosopher(null);
-        setForm(emptyForm);
-        setFile(null);
-        setModalMessage("");
-        setModalError("");
-    };
-
-    const handleChange = (field, value) => {
-        setForm((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-
-        try {
-            setSaving(true);
-            setModalMessage("");
-            setModalError("");
-
-            if (modalMode === "create") {
-                await philosopherService.create(form, file);
-                setModalMessage("Thêm triết gia thành công.");
-            }
-
-            if (modalMode === "edit" && selectedPhilosopher?.id) {
-                await philosopherService.update(selectedPhilosopher.id, form, file);
-                setModalMessage("Cập nhật triết gia thành công.");
-            }
-
-            await fetchPhilosophers();
-        } catch (err) {
-            console.error(err);
-            setModalError(
-                err.response?.data?.message ||
-                "Lưu triết gia thất bại. Check dữ liệu hoặc quyền tài khoản."
-            );
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleDelete = async (philosopher) => {
-        const ok = window.confirm(
-            `Xóa triết gia "${philosopher.name}" thật hả?`
-        );
-
-        if (!ok) return;
-
-        try {
-            await philosopherService.deleteById(philosopher.id);
-            await fetchPhilosophers();
-            alert("Xóa triết gia thành công.");
-        } catch (err) {
-            console.error(err);
-            alert(
-                err.response?.data?.message ||
-                "Xóa triết gia thất bại. Check quyền ADMIN hoặc API delete by id."
-            );
+    const handleSubmit = (event) => {
+        if (modalMode === "create") {
+            handleCreate(event);
+        } else if (modalMode === "edit") {
+            handleUpdate(event);
         }
     };
 
@@ -246,17 +135,17 @@ export default function AIPhilosophersManagement() {
                                 <span
                                     className="text-on-surface opacity-80 uppercase leading-relaxed break-words whitespace-normal text-right line-clamp-2"
                                     title={philosopher.core || "-"}
-                                                            >
+                                >
                                     {philosopher.core || "-"}
                                 </span>
                             </div>
 
-                            <div className="flex justify-between text-xs font-semibold">
-                                <span className="text-on-surface-variant opacity-60 uppercase">
-                                    Độ tin cậy AI
-                                </span>
-                                <span className="text-secondary text-base">Ready</span>
-                            </div>
+                            {/*<div className="flex justify-between text-xs font-semibold">*/}
+                            {/*    <span className="text-on-surface-variant opacity-60 uppercase">*/}
+                            {/*        Độ tin cậy AI*/}
+                            {/*    </span>*/}
+                            {/*    <span className="text-secondary text-base">Ready</span>*/}
+                            {/*</div>*/}
                         </div>
                     </div>
                 ))}
@@ -446,7 +335,7 @@ export default function AIPhilosophersManagement() {
                                         <EditRow label="Tên triết gia">
                                             <input
                                                 value={form.name}
-                                                onChange={(event) => handleChange("name", event.target.value)}
+                                                onChange={(event) => handleFormChange("name", event.target.value)}
                                                 className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
                                                 required
                                             />
@@ -455,7 +344,7 @@ export default function AIPhilosophersManagement() {
                                         <EditRow label="Trường phái">
                                             <input
                                                 value={form.category}
-                                                onChange={(event) => handleChange("category", event.target.value)}
+                                                onChange={(event) => handleFormChange("category", event.target.value)}
                                                 className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
                                                 required
                                             />
@@ -464,7 +353,7 @@ export default function AIPhilosophersManagement() {
                                         <EditRow label="Core">
                                             <input
                                                 value={form.core}
-                                                onChange={(event) => handleChange("core", event.target.value)}
+                                                onChange={(event) => handleFormChange("core", event.target.value)}
                                                 className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
                                             />
                                         </EditRow>
@@ -472,27 +361,70 @@ export default function AIPhilosophersManagement() {
                                         <EditRow label="Short Quote">
                                             <input
                                                 value={form.shortQuote}
-                                                onChange={(event) => handleChange("shortQuote", event.target.value)}
+                                                onChange={(event) => handleFormChange("shortQuote", event.target.value)}
                                                 className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
                                             />
                                         </EditRow>
-
-                                        <EditRow label="Avatar URL">
-                                            <input
-                                                value={form.avatarUrl}
-                                                onChange={(event) => handleChange("avatarUrl", event.target.value)}
-                                                className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
-                                                placeholder="Dán URL ảnh hoặc upload file bên dưới"
+                                        <EditRow label="Biography">
+                                            <textarea
+                                                value={form.biography}
+                                                onChange={(event) => handleFormChange("biography", event.target.value)}
+                                                className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary resize-none"
+                                                rows="4"
+                                            />
+                                        </EditRow>
+                                        <EditRow label="System Prompt">
+                                            <textarea
+                                                value={form.systemPrompt}
+                                                onChange={(event) => handleFormChange("systemPrompt", event.target.value)}
+                                                className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary resize-none"
+                                                rows="6"
                                             />
                                         </EditRow>
 
                                         <EditRow label="Upload Avatar">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(event) => setFile(event.target.files?.[0] || null)}
-                                                className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
-                                            />
+                                            <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between">
+                                                <span className="truncate">{file ? file.name : "Choose File..."}</span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(event) => setFile(event.target.files?.[0] || null)}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </EditRow>
+                                        <EditRow label="Model 3D: Idle (.glb)">
+                                            <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between">
+                                                <span className="truncate">{idleFile ? idleFile.name : "Choose File..."}</span>
+                                                <input
+                                                    type="file"
+                                                    accept=".glb"
+                                                    onChange={(event) => setIdleFile(event.target.files?.[0] || null)}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </EditRow>
+                                        <EditRow label="Model 3D: Talking (.glb)">
+                                            <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between">
+                                                <span className="truncate">{talkingFile ? talkingFile.name : "Choose File..."}</span>
+                                                <input
+                                                    type="file"
+                                                    accept=".glb"
+                                                    onChange={(event) => setTalkingFile(event.target.files?.[0] || null)}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </EditRow>
+                                        <EditRow label="Model 3D: Thinking (.glb)">
+                                            <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between">
+                                                <span className="truncate">{thinkingFile ? thinkingFile.name : "Choose File..."}</span>
+                                                <input
+                                                    type="file"
+                                                    accept=".glb"
+                                                    onChange={(event) => setThinkingFile(event.target.files?.[0] || null)}
+                                                    className="hidden"
+                                                />
+                                            </label>
                                         </EditRow>
 
                                         </tbody>

@@ -1,10 +1,16 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import {NavLink, Outlet, useNavigate} from 'react-router-dom';
 import Footer from "@/components/Footer.jsx";
 import { useAuth } from "@/features/auth/hooks/useAuth.jsx";
+import {useContext, useState} from "react";
+import {AuthContext} from "@/contexts/AuthContext.jsx";
+import { LogOut } from 'lucide-react';
 
 export default function AdminLayout() {
   const { user } = useAuth();
-
+  const [showMenu, setShowMenu] = useState(false);
+  const { logout } = useContext(AuthContext);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const navigate = useNavigate();
   const avatarSeed = user?.fullName || user?.username || "Admin";
 
   const avatarSrc =
@@ -62,16 +68,43 @@ export default function AdminLayout() {
         </nav>
 
 
-        <footer className="border-t border-outline/10 pt-4 space-y-1">
-          <a href="#" className="flex items-center text-on-surface-variant px-4 py-2 opacity-60 hover:opacity-100 transition-opacity">
-            <span className="material-symbols-outlined mr-3">settings</span>
-            <span className="text-sm font-semibold">Settings</span>
-          </a>
-          <a href="#" className="flex items-center text-on-surface-variant px-4 py-2 opacity-60 hover:opacity-100 transition-opacity">
-            <span className="material-symbols-outlined mr-3">help_outline</span>
-            <span className="text-sm font-semibold">Support</span>
-          </a>
-        </footer>
+          <footer className="relative border-t border-outline/10 pt-4 space-y-1">
+              <button
+                  type="button"
+                  onClick={() => setShowMenu((prev) => !prev)}
+                  className="w-full flex items-center text-on-surface-variant px-4 py-2 opacity-60 hover:opacity-100 transition-opacity"
+              >
+                  <span className="material-symbols-outlined mr-3">settings</span>
+                  <span className="text-sm font-semibold">Settings</span>
+              </button>
+
+              {showMenu && (
+                  <div className="absolute left-4 bottom-full mb-2 w-48 bg-surface-container border border-outline-variant rounded-lg shadow-lg overflow-hidden z-50">
+                      <button
+                          type="button"
+                          disabled={isLoggingOut}
+                          onClick={async () => {
+                              setIsLoggingOut(true);
+
+                              try {
+                                  await logout();
+                              } catch (e) {
+                                  console.warn("Logout failed but forcing UI exit");
+                              } finally {
+                                  navigate("/");
+                              }
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-on-surface hover:bg-surface-container-high transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                          {!isLoggingOut && <LogOut size={18} />}
+
+                          <span className="text-sm font-medium">
+                              {isLoggingOut ? "Đang xử lý..." : "Đăng xuất"}
+                          </span>
+                      </button>
+                  </div>
+              )}
+          </footer>
       </aside>
 
       {/* Top App Bar */}

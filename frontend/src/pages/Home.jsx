@@ -65,7 +65,7 @@ export default function Home() {
                 to="/"
                 className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap"
             >
-                Triết học hóa cuộc sống
+                Góc nhìn triết học
             </Link>
 
             <Link

@@ -28,22 +28,28 @@ public class CloudinaryServiceImpl implements MediaStorageService {
 
     @Override
     public UploadResponse uploadImage(MultipartFile file, String folder) throws ApiException {
+        return uploadFile(file, folder, "image");
+    }
+
+    /**
+     * Uploads 3D models or other raw files to Cloudinary.
+     */
+    public UploadResponse uploadModel(MultipartFile file, String folder) throws ApiException {
+        return uploadFile(file, folder, "raw");
+    }
+
+    private UploadResponse uploadFile(MultipartFile file, String folder, String resourceType) throws ApiException {
         if (file == null || file.isEmpty()) {
             throw new ApiException(ErrorCode.INVALID_INPUT, "File must not be empty or null");
-        }
-
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new ApiException(ErrorCode.UNSUPPORTED_MEDIA_TYPE, "Only image files are allowed");
         }
 
         try {
             Map<?, ?> uploadParams = ObjectUtils.asMap(
                     "folder", folder,
-                    "resource_type", "auto"
+                    "resource_type", resourceType
             );
 
-            log.info("Uploading file {} to Cloudinary folder {}", file.getOriginalFilename(), folder);
+            log.info("Uploading file {} to Cloudinary folder {} as {}", file.getOriginalFilename(), folder, resourceType);
             Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
             log.info("Cloudinary upload successful for file: {}", file.getOriginalFilename());
 
@@ -59,8 +65,8 @@ public class CloudinaryServiceImpl implements MediaStorageService {
                     .build();
 
         } catch (IOException e) {
-            log.error("Failed to upload image to Cloudinary", e);
-            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Failed to upload image: " + e.getMessage());
+            log.error("Failed to upload file to Cloudinary", e);
+            throw new ApiException(ErrorCode.UNEXPECTED_ERROR, "Failed to upload file: " + e.getMessage());
         }
     }
 

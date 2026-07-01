@@ -1,6 +1,5 @@
 package com.philosophy.rag.features.ai.service;
 
-
 import com.philosophy.rag.features.ai.dto.RagAskResponse;
 import com.philosophy.rag.utils.dto.DocumentContent;
 import org.springframework.web.multipart.MultipartFile;

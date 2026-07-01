@@ -45,6 +45,15 @@ public class Philosopher extends BaseEntity {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @Column(name = "idle_model_url", length = 500)
+    private String idleModelUrl;
+
+    @Column(name = "talking_model_url", length = 500)
+    private String talkingModelUrl;
+
+    @Column(name = "thinking_model_url", length = 500)
+    private String thinkingModelUrl;
+
     /**
      * Trích dẫn ngắn (ShortQuote).
      * Hiển thị trên thẻ bài ngoài màn hình chọn triết gia.
