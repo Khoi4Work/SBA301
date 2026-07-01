@@ -15,4 +15,5 @@ public interface LearningProgressRepository extends JpaRepository<LearningProgre
     Optional<LearningProgress> findByUserAndDocument(User user, Document document);
     long countByUserAndIsCompletedTrue(User user);
     List<LearningProgress> findByUser(User user);
+    void deleteByDocument(Document document);
 }

@@ -12,4 +12,6 @@ public interface UserQuizResultRepository extends MongoRepository<UserQuizResult
     List<UserQuizResult> findByUserId(UUID userId);
 
     List<UserQuizResult> findBySubmissionId(UUID submissionId);
+
+    void deleteByQuizSetId(UUID quizSetId);
 }

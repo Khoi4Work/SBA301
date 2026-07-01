@@ -72,7 +72,9 @@ export function Sidebar() {
   const getMenuItemClass = (path, alternativePaths = []) => {
     const isActive = path === "/"
       ? currentPath === "/"
-      : currentPath.startsWith(path) || alternativePaths.some(p => currentPath.startsWith(p));
+      : (path === "/review"
+          ? (currentPath === "/review" || (currentPath.startsWith("/review/") && !currentPath.startsWith("/review/history")))
+          : currentPath.startsWith(path) || alternativePaths.some(p => currentPath.startsWith(p)));
 
     return isActive
       ? "flex items-center gap-4 px-4 py-3 text-primary bg-primary/10 rounded-lg transition-all duration-200"

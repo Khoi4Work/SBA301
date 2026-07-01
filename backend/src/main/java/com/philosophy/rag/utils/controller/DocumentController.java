@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.philosophy.rag.features.auth.repository.UserRepository;
 import com.philosophy.rag.features.learning.repository.LearningProgressRepository;
+import com.philosophy.rag.features.learning.repository.UserQuizResultRepository;
 import com.philosophy.rag.features.learning.entity.LearningProgress;
 import com.philosophy.rag.utils.repository.DocumentRepository;
 import com.philosophy.rag.features.learning.repository.QuizSetRepository;
@@ -42,6 +43,7 @@ public class DocumentController {
         private final S3StorageService s3StorageService;
         private final UserRepository userRepository;
         private final LearningProgressRepository learningProgressRepository;
+        private final UserQuizResultRepository userQuizResultRepository;
         private final DocumentRepository documentRepository;
         private final QuizSetRepository quizSetRepository;
         private final SessionService sessionService;
@@ -164,14 +166,20 @@ public class DocumentController {
                 s3StorageService.deleteDocument(key);
                 
                 documentRepository.findByS3Key(key).ifPresent(doc -> {
+                        learningProgressRepository.deleteByDocument(doc);
                         documentRepository.delete(doc);
-                        log.info("Deleted Document from PostgreSQL database with key: {}", key);
+                        log.info("Deleted Document and its learning progresses from PostgreSQL database with key: {}", key);
                 });
                 
                 List<QuizSet> quizSets = quizSetRepository.findByDocumentS3Key(key);
                 if (!quizSets.isEmpty()) {
+                        for (QuizSet qs : quizSets) {
+                                if (qs.getQuizSetId() != null) {
+                                        userQuizResultRepository.deleteByQuizSetId(qs.getQuizSetId());
+                                }
+                        }
                         quizSetRepository.deleteAll(quizSets);
-                        log.info("Deleted {} QuizSets from MongoDB for key: {}", quizSets.size(), key);
+                        log.info("Deleted {} QuizSets and their results from MongoDB for key: {}", quizSets.size(), key);
                 }
                 
                 return ResponseEntity.ok(ApiResponse.success(null, "Document deleted successfully"));

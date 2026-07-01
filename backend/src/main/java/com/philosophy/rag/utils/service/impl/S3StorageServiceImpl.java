@@ -91,8 +91,14 @@ public class S3StorageServiceImpl implements S3StorageService {
             }
         }
 
-        // Tạo key cho S3 với định dạng: documents/yyyy-MM-dd/uuid-filename
-        String key = "documents/" + LocalDate.now() + "/" + UUID.randomUUID() + "-" + asciiFileName;
+        // Sanitize category/curriculum name for S3 folder structure
+        String folderName = "unclassified";
+        if (category != null && !category.isBlank()) {
+            folderName = sanitizeFileName(category.trim()).replaceAll("\\s+", "_");
+        }
+
+        // Tạo key cho S3 với định dạng: documents/ten-giao-trinh/yyyy-MM-dd/uuid-filename
+        String key = "documents/" + folderName + "/" + LocalDate.now() + "/" + UUID.randomUUID() + "-" + asciiFileName;
         try {
             Map<String, String> metadata = new java.util.HashMap<>();
 

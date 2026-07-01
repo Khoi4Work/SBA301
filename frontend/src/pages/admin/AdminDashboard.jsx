@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "@/contexts/AuthContext.jsx";
 import { userService } from "@/services/userService.js";
 import { philosopherService } from "@/services/philosopherService.js";
+import { fetchDocuments } from "@/services/documentService.js";
 
 export default function Dashboard() {
 
@@ -10,6 +11,7 @@ export default function Dashboard() {
     const displayName = user?.fullName || user?.username || "Quản trị viên";
     const [userCount, setUserCount] = useState(0);
     const [philosopherCount, setPhilosopherCount] = useState(0);
+    const [chapterCount, setChapterCount] = useState(0);
     const [statsLoading, setStatsLoading] = useState(false);
 
     const extractArray = (data) => {
@@ -27,13 +29,25 @@ export default function Dashboard() {
             try {
                 setStatsLoading(true);
 
-                const [usersData, philosophersData] = await Promise.all([
+                const [usersData, philosophersData, documentsData] = await Promise.all([
                     userService.getAllUsers(),
                     philosopherService.getAll(),
+                    fetchDocuments(),
                 ]);
 
                 setUserCount(extractArray(usersData).length);
                 setPhilosopherCount(extractArray(philosophersData).length);
+
+                const docs = extractArray(documentsData);
+                const chaptersSet = new Set();
+                docs.forEach((doc) => {
+                    const name = doc.fileName || doc.title || '';
+                    const chapterMatch = name.match(/Chương\s*(\d+)/i);
+                    if (chapterMatch) {
+                        chaptersSet.add(parseInt(chapterMatch[1], 10));
+                    }
+                });
+                setChapterCount(chaptersSet.size);
             } catch (err) {
                 console.error("Load dashboard stats failed:", err);
             } finally {
@@ -79,10 +93,12 @@ export default function Dashboard() {
                 <div className="folio-card bg-surface-container-low p-6 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                         <span className="material-symbols-outlined text-secondary">menu_book</span>
-                        <span className="text-xs font-semibold text-on-surface-variant/40">ARCHIVED</span>
+                        <span className="text-xs font-semibold text-on-surface-variant/40">ACTIVE</span>
                     </div>
                     <span className="text-on-surface-variant font-semibold uppercase text-xs tracking-wider">Chương học</span>
-                    <span className="text-3xl font-display font-semibold mt-1">24</span>
+                    <span className="text-3xl font-display font-semibold mt-1">
+                        {statsLoading ? "..." : chapterCount}
+                    </span>
                 </div>
 
                 <div className="folio-card bg-surface-container-low p-6 flex flex-col">

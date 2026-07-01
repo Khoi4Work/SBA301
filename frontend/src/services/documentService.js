@@ -65,19 +65,26 @@ export function downloadDocument(downloadUrl, fileName) {
 }
 
 /**
- * Suy luận icon và màu sắc dựa trên content type
+ * Suy luận icon và màu sắc dựa trên content type và tên file
  * @param {string} contentType
+ * @param {string} fileName
  * @returns {{ icon: string, color: string, label: string }}
  */
-export function getFileTypeInfo(contentType) {
-    if (contentType?.includes('pdf')) {
-        return { icon: 'picture_as_pdf', color: 'text-secondary', label: 'PDF' };
+export function getFileTypeInfo(contentType, fileName = '') {
+    const type = (contentType || '').toLowerCase();
+    const name = (fileName || '').toLowerCase();
+    
+    if (type.includes('pdf') || name.endsWith('.pdf')) {
+        return { icon: 'picture_as_pdf', color: 'text-rose-500', label: 'PDF' };
     }
-    if (contentType?.includes('markdown') || contentType?.includes('md')) {
-        return { icon: 'description', color: 'text-primary', label: 'Markdown' };
+    if (type.includes('markdown') || type.includes('md') || name.endsWith('.md')) {
+        return { icon: 'description', color: 'text-amber-500', label: 'Markdown' };
     }
-    if (contentType?.includes('text')) {
-        return { icon: 'article', color: 'text-tertiary', label: 'Text' };
+    if (type.includes('word') || type.includes('officedocument') || name.endsWith('.docx') || name.endsWith('.doc')) {
+        return { icon: 'article', color: 'text-sky-500', label: 'Word' };
+    }
+    if (type.includes('text') || name.endsWith('.txt')) {
+        return { icon: 'article', color: 'text-teal-500', label: 'Text' };
     }
     return { icon: 'folder', color: 'text-on-surface-variant', label: 'File' };
 }
