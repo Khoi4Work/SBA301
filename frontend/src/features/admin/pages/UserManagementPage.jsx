@@ -1,148 +1,22 @@
-import React, {useEffect, useState} from "react";
-import { userService } from "@/services/userService.js";
+import React from "react";
+import { useUserManagement } from "@/features/admin/hooks/useUserManagement.js";
 
-export default function UserManagement() {
-
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [editingUser, setEditingUser] = useState(null);
-    const [editForm, setEditForm] = useState({
-        username: "",
-        email: "",
-        fullName: "",
-        biography: "",
-    });
-    const [saving, setSaving] = useState(false);
-    const [updateMessage, setUpdateMessage] = useState("");
-    const [updateError, setUpdateError] = useState("");
-
-    const extractUsers = (data) => {
-        if (Array.isArray(data)) return data;
-        if (Array.isArray(data?.data)) return data.data;
-        if (Array.isArray(data?.result)) return data.result;
-        if (Array.isArray(data?.content)) return data.content;
-        if (Array.isArray(data?.users)) return data.users;
-
-        console.warn("Không tìm thấy mảng users trong response:", data);
-        return [];
-    };
-
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            setError("");
-
-            const data = await userService.getAllUsers();
-            const userList = extractUsers(data);
-
-            setUsers(userList);
-        } catch (err) {
-            console.error(err);
-            setError(
-                err.response?.data?.message ||
-                "Không tải được danh sách user. Check quyền ADMIN/STAFF."
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-
-    const handleUpdateUser = (user) => {
-        setEditingUser(user);
-        setUpdateMessage("");
-        setUpdateError("");
-
-        setEditForm({
-            username: user.username || "",
-            email: user.email || "",
-            fullName: user.fullName || "",
-            biography: user.biography || "",
-        });
-    };
-
-    const handleEditChange = (field, value) => {
-        setEditForm((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
-
-    const handleCancelUpdate = () => {
-        setEditingUser(null);
-        setEditForm({
-            username: "",
-            email: "",
-            fullName: "",
-            biography: "",
-        });
-        setUpdateMessage("");
-        setUpdateError("");
-    };
-
-    const handleSubmitUpdate = async (event) => {
-        event.preventDefault();
-
-        if (!editingUser?.userId) return;
-
-        try {
-            setSaving(true);
-            setUpdateMessage("");
-            setUpdateError("");
-
-            const updatedUser = await userService.updateUser(editingUser.userId, {
-                username: editForm.username,
-                email: editForm.email,
-                fullName: editForm.fullName,
-                biography: editForm.biography,
-            });
-
-            await fetchUsers();
-
-            setEditingUser((prev) => ({
-                ...prev,
-                ...(updatedUser || {}),
-                username: editForm.username,
-                email: editForm.email,
-                fullName: editForm.fullName,
-                biography: editForm.biography,
-            }));
-
-            setUpdateMessage("Cập nhật user thành công.");
-        } catch (err) {
-            console.error(err);
-            setUpdateError(
-                err.response?.data?.message ||
-                "Cập nhật thất bại. Có thể username/email bị trùng."
-            );
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleDeleteUser = async (user) => {
-        const ok = window.confirm(
-            `Xóa user "${user.username || user.email}" thật hả?`
-        );
-
-        if (!ok) return;
-
-        try {
-            await userService.deleteUser(user.userId);
-            await fetchUsers();
-            alert("Xóa user thành công.");
-        } catch (err) {
-            console.error(err);
-            alert(
-                err.response?.data?.message ||
-                "Xóa user thất bại. Check quyền ADMIN."
-            );
-        }
-    };
+export default function UserManagementPage() {
+    const {
+        users,
+        loading,
+        error,
+        editingUser,
+        editForm,
+        saving,
+        updateMessage,
+        updateError,
+        handleUpdateUser,
+        handleEditChange,
+        handleCancelUpdate,
+        handleSubmitUpdate,
+        handleDeleteUser,
+    } = useUserManagement();
 
   return (
     <div className="animate-fade-in pb-12 w-full">

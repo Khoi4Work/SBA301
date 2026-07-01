@@ -18,11 +18,11 @@ import ConsumeristEscape from "@/features/learning-space/components/ConsumeristE
 import DialecticalDebate from "@/features/learning-space/components/DialecticalDebate.jsx";
 import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage.jsx";
-import AdminLayout from "@/components/AdminLayout.jsx";
-import AdminDashboard from "@/pages/admin/AdminDashboard.jsx";
-import AIPhilosophersManagement from "@/pages/admin/AIPhilosophersManagement.jsx";
-import UserManagement from "@/pages/admin/UserManagement.jsx";
-import AcademyChaptersManagement from "@/pages/admin/AcademyChaptersManagement.jsx";
+import AdminLayout from "@/features/admin/components/layout/AdminLayout.jsx";
+import AdminDashboard from "@/features/admin/pages/AdminDashboard.jsx";
+import PhilosopherManagementPage from "@/features/admin/pages/PhilosopherManagementPage.jsx";
+import UserManagementPage from "@/features/admin/pages/UserManagementPage.jsx";
+import ChapterManagementPage from "@/features/admin/pages/ChapterManagementPage.jsx";
 import LoginPage from "@/features/auth/pages/LoginPage.jsx";
 import RegisterPage from "@/features/auth/pages/RegisterPage.jsx";
 import PhilosopherAvatar3D from "@/features/philosopher-chat/components/PhilosopherAvatar3D.jsx";
@@ -76,9 +76,9 @@ function AppRoutes() {
             <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 {/* Các route con này sẽ được render vào bên trong <Outlet /> của AdminLayout */}
                 <Route index element={<AdminDashboard />} /> {/* path: /admin */}
-                <Route path="philosophers" element={<AIPhilosophersManagement />} /> {/* path: /admin/philosophers */}
-                <Route path="users" element={<UserManagement />} /> {/* path: /admin/users */}
-                <Route path="chapters" element={<AcademyChaptersManagement />} />
+                <Route path="philosophers" element={<PhilosopherManagementPage />} /> {/* path: /admin/philosophers */}
+                <Route path="users" element={<UserManagementPage />} /> {/* path: /admin/users */}
+                <Route path="chapters" element={<ChapterManagementPage />} />
             </Route>
 
 
