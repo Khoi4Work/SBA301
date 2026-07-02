@@ -63,13 +63,13 @@ export function Sidebar({ isOpen = true }) {
                     <GraduationCap className="w-5 h-5"/>
                     <span className="font-label-md text-label-md">Học viện</span>
                 </Link>
-                <Link
-                    className={getMenuItemClass("/")}
-                    to="/"
-                >
-                    <Clapperboard className="w-5 h-5"/>
-                    <span className="font-label-md text-label-md">Góc nhìn triết học</span>
-                </Link>
+                {/*<Link*/}
+                {/*    className={getMenuItemClass("/")}*/}
+                {/*    to="/"*/}
+                {/*>*/}
+                {/*    <Clapperboard className="w-5 h-5"/>*/}
+                {/*    <span className="font-label-md text-label-md">Góc nhìn triết học</span>*/}
+                {/*</Link>*/}
                 <Link
                     className={getMenuItemClass("/chat", ["/ai"])}
                     to="/chat"
