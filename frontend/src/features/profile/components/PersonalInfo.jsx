@@ -185,7 +185,7 @@ export default function PersonalInfo({ user, setUser }) {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="font-body-md text-body-md border-b border-outline-variant py-2 italic leading-relaxed absolute top-6 w-full"
+                                className="font-body-lg text-body-lg border-b border-outline-variant py-2 leading-relaxed absolute top-6 w-full"
                             >
                                 {formData.biography || "Chưa cập nhật tiểu sử"}
                             </motion.p>
@@ -203,7 +203,7 @@ export default function PersonalInfo({ user, setUser }) {
                                         biography: e.target.value
                                     })
                                 }
-                                className="w-full bg-transparent border-b border-secondary outline-none px-0 py-2 font-body-md text-body-md italic absolute top-6 resize-none"
+                                className="w-full bg-transparent border-b border-secondary outline-none px-0 py-2 font-body-lg text-body-lg absolute top-6 resize-none"
                             />
                         )}
                     </AnimatePresence>
