@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import com.philosophy.rag.features.auth.repository.UserRepository;
 import com.philosophy.rag.features.learning.repository.LearningProgressRepository;
-import com.philosophy.rag.features.learning.repository.UserQuizResultRepository;
+import com.philosophy.rag.features.learning.repository.UserQuizSubmissionRepository;
 import com.philosophy.rag.features.learning.entity.LearningProgress;
 import com.philosophy.rag.utils.repository.DocumentRepository;
 import com.philosophy.rag.features.learning.repository.QuizSetRepository;
@@ -43,7 +43,7 @@ public class DocumentController {
         private final S3StorageService s3StorageService;
         private final UserRepository userRepository;
         private final LearningProgressRepository learningProgressRepository;
-        private final UserQuizResultRepository userQuizResultRepository;
+        private final UserQuizSubmissionRepository userQuizSubmissionRepository;
         private final DocumentRepository documentRepository;
         private final QuizSetRepository quizSetRepository;
         private final SessionService sessionService;
@@ -175,11 +175,11 @@ public class DocumentController {
                 if (!quizSets.isEmpty()) {
                         for (QuizSet qs : quizSets) {
                                 if (qs.getQuizSetId() != null) {
-                                        userQuizResultRepository.deleteByQuizSetId(qs.getQuizSetId());
+                                        userQuizSubmissionRepository.deleteByQuizSetId(qs.getQuizSetId());
                                 }
                         }
                         quizSetRepository.deleteAll(quizSets);
-                        log.info("Deleted {} QuizSets and their results from MongoDB for key: {}", quizSets.size(), key);
+                        log.info("Deleted {} QuizSets and their submissions from MongoDB for key: {}", quizSets.size(), key);
                 }
                 
                 return ResponseEntity.ok(ApiResponse.success(null, "Document deleted successfully"));

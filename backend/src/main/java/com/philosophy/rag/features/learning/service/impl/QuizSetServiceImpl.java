@@ -19,9 +19,10 @@ import com.philosophy.rag.features.learning.dto.QuizSubmissionDetailResponse;
 import com.philosophy.rag.features.learning.entity.Quiz;
 import com.philosophy.rag.features.learning.entity.QuizOption;
 import com.philosophy.rag.features.learning.entity.QuizSet;
-import com.philosophy.rag.features.learning.entity.UserQuizResult;
+import com.philosophy.rag.features.learning.entity.UserQuizAnswer;
+import com.philosophy.rag.features.learning.entity.UserQuizSubmission;
 import com.philosophy.rag.features.learning.repository.QuizSetRepository;
-import com.philosophy.rag.features.learning.repository.UserQuizResultRepository;
+import com.philosophy.rag.features.learning.repository.UserQuizSubmissionRepository;
 import com.philosophy.rag.features.learning.service.QuizSetService;
 import com.philosophy.rag.features.learning.service.SessionService;
 import com.philosophy.rag.utils.entity.Document;
@@ -53,7 +54,7 @@ public class QuizSetServiceImpl implements QuizSetService {
 
     private final DocumentRepository documentRepository;
     private final QuizSetRepository quizSetRepository;
-    private final UserQuizResultRepository userQuizResultRepository;
+    private final UserQuizSubmissionRepository userQuizSubmissionRepository;
     private final UserRepository userRepository;
 
     private final SessionService sessionService;
@@ -64,14 +65,14 @@ public class QuizSetServiceImpl implements QuizSetService {
     public QuizSetServiceImpl(
             DocumentRepository documentRepository,
             QuizSetRepository quizSetRepository,
-            UserQuizResultRepository userQuizResultRepository,
+            UserQuizSubmissionRepository userQuizSubmissionRepository,
             UserRepository userRepository,
             SessionService sessionService,
             @Qualifier("quizChatClientBuilder") ChatClient.Builder chatClientBuilder,
             ObjectMapper objectMapper, RagService ragService) {
         this.documentRepository = documentRepository;
         this.quizSetRepository = quizSetRepository;
-        this.userQuizResultRepository = userQuizResultRepository;
+        this.userQuizSubmissionRepository = userQuizSubmissionRepository;
         this.userRepository = userRepository;
         this.sessionService = sessionService;
         this.chatClientBuilder = chatClientBuilder;
@@ -93,24 +94,37 @@ public class QuizSetServiceImpl implements QuizSetService {
     public QuizSetResponse generateQuizSet(QuizSetGenerateRequest request) {
         log.info("Generating quiz set using AI for key: {}", request.getS3Key());
 
-        // 1. Receive file và check/create Document in database
-        SessionContentResponse contentResponse = sessionService.getContent(request.getS3Key());
-        Document doc = documentRepository.findByS3Key(request.getS3Key())
-                .orElseGet(() -> {
-                    log.info("Creating new Document record in database for key: {}", request.getS3Key());
-                    Document newDoc = Document.builder()
-                            .title(contentResponse.getTitle())
-                            .s3Key(request.getS3Key())
-                            .category("Tài liệu ôn tập")
-                            .fullText(contentResponse.getContent())
-                            .totalSections(1)
-                            .build();
-                    return documentRepository.save(newDoc);
-                });
+        // 1. Check if Document already exists in PostgreSQL
+        Optional<Document> existingDocOpt = documentRepository.findByS3Key(request.getS3Key());
+        Document doc;
+        String documentTitle;
+        String documentContent;
+
+        if (existingDocOpt.isPresent()) {
+            doc = existingDocOpt.get();
+            documentTitle = doc.getTitle();
+            documentContent = doc.getFullText();
+            log.info("Using cached Document record from database for key: {}", request.getS3Key());
+        } else {
+            // Lazy download and parse file if not exists
+            log.info("Document not found in database. Downloading and parsing from S3 for key: {}", request.getS3Key());
+            SessionContentResponse contentResponse = sessionService.getContent(request.getS3Key());
+            documentTitle = contentResponse.getTitle();
+            documentContent = contentResponse.getContent();
+
+            Document newDoc = Document.builder()
+                    .title(documentTitle)
+                    .s3Key(request.getS3Key())
+                    .category("Tài liệu ôn tập")
+                    .fullText(documentContent)
+                    .totalSections(1)
+                    .build();
+            doc = documentRepository.save(newDoc);
+        }
 
         // 2. Create QuizSet have marked order
         long existingCount = quizSetRepository.findByDocumentS3Key(request.getS3Key()).size();
-        String title = "Bộ đề số " + (existingCount + 1) + ": " + contentResponse.getTitle();
+        String title = "Bộ đề số " + (existingCount + 1) + ": " + documentTitle;
 
         QuizSet quizSet = QuizSet.builder()
                 .quizSetId(UuidCreator.getTimeOrderedEpoch())
@@ -122,7 +136,7 @@ public class QuizSetServiceImpl implements QuizSetService {
                 .build();
 
         // 3. Prepare prompt send to AI for generating 20 question
-        String context = contentResponse.getContent();
+        String context = documentContent;
         if (context.length() > 15000) {
             context = context.substring(0, 15000);
         }
@@ -261,7 +275,7 @@ public class QuizSetServiceImpl implements QuizSetService {
         int score = 0;
         int xpGained = 0;
         List<QuizSubmitResponse.FeedbackItem> feedbackItems = new ArrayList<>();
-        List<UserQuizResult> resultsToSave = new ArrayList<>();
+        List<UserQuizAnswer> answersToSave = new ArrayList<>();
 
         for (Quiz quiz : quizSet.getQuizzes()) {
             QuizSubmitRequest.AnswerItem answer = userAnswers.get(quiz.getQuizId());
@@ -390,36 +404,29 @@ public class QuizSetServiceImpl implements QuizSetService {
                 xpGained -= 5;
             }
 
-            // Save the result
-            UserQuizResult.UserQuizResultBuilder resultBuilder = UserQuizResult.builder()
-                    .resultId(UuidCreator.getTimeOrderedEpoch())
-                    .userId(user.getUserId())
-                    .quizSetId(quizSet.getQuizSetId())
-                    .submissionId(submissionId)
-                    .quizSetTitle(quizSet.getTitle())
-                    .documentTitle(quizSet.getDocumentTitle())
+            // Save the answer details
+            UserQuizAnswer.UserQuizAnswerBuilder answerBuilder = UserQuizAnswer.builder()
                     .quizId(quiz.getQuizId())
-                    .isCorrectAnswer(isCorrect)
-                    .completedAt(completedAt);
+                    .isCorrectAnswer(isCorrect);
 
             if (answer != null) {
-                resultBuilder.selectedOptionId(answer.getSelectedOptionId());
-                resultBuilder.blankText(answer.getBlankText());
-                resultBuilder.orderedOptionIds(answer.getOrderedOptionIds());
+                answerBuilder.selectedOptionId(answer.getSelectedOptionId());
+                answerBuilder.blankText(answer.getBlankText());
+                answerBuilder.orderedOptionIds(answer.getOrderedOptionIds());
                 
                 if (answer.getMatches() != null) {
-                    List<UserQuizResult.MongoMatchingPair> mongoMatches = answer.getMatches().stream()
-                            .map(pair -> UserQuizResult.MongoMatchingPair.builder()
+                    List<UserQuizAnswer.MatchingPair> mongoMatches = answer.getMatches().stream()
+                            .map(pair -> UserQuizAnswer.MatchingPair.builder()
                                     .left(pair.getLeft())
                                     .right(pair.getRight())
                                     .build())
                             .collect(Collectors.toList());
-                    resultBuilder.matches(mongoMatches);
+                    answerBuilder.matches(mongoMatches);
                 }
             }
 
-            UserQuizResult quizResult = resultBuilder.build();
-            resultsToSave.add(quizResult);
+            UserQuizAnswer quizAnswer = answerBuilder.build();
+            answersToSave.add(quizAnswer);
 
             feedbackItems.add(QuizSubmitResponse.FeedbackItem.builder()
                     .quizId(quiz.getQuizId())
@@ -432,8 +439,21 @@ public class QuizSetServiceImpl implements QuizSetService {
                     .build());
         }
 
-        // Save all results
-        userQuizResultRepository.saveAll(resultsToSave);
+        // Save a single submission record
+        UserQuizSubmission submission = UserQuizSubmission.builder()
+                .submissionId(submissionId)
+                .userId(user.getUserId())
+                .quizSetId(quizSet.getQuizSetId())
+                .quizSetTitle(quizSet.getTitle())
+                .documentTitle(quizSet.getDocumentTitle())
+                .score(score)
+                .totalQuestions(quizSet.getQuizzes().size())
+                .xpGained(xpGained)
+                .answers(answersToSave)
+                .completedAt(completedAt)
+                .build();
+
+        userQuizSubmissionRepository.save(submission);
 
         // Update XP's User (not negative) and increase streak by one
         int newTotalXp = Math.max(0, user.getTotalXp() + xpGained);
@@ -464,36 +484,21 @@ public class QuizSetServiceImpl implements QuizSetService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy người dùng"));
 
-        // 2. Lấy toàn bộ danh sách kết quả làm bài của User
-        List<UserQuizResult> results = userQuizResultRepository.findByUserId(user.getUserId());
+        // 2. Lấy toàn bộ danh sách lượt nộp bài của User
+        List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findByUserId(user.getUserId());
 
-        // 3. Group các kết quả theo submissionId (mỗi lượt nộp bài)
-        Map<UUID, List<UserQuizResult>> groupedBySubmission = results.stream()
-                .filter(r -> r.getSubmissionId() != null)
-                .collect(Collectors.groupingBy(UserQuizResult::getSubmissionId));
-
-        // 4. Map thành danh sách DTO và sắp xếp giảm dần theo thời gian nộp bài
-        return groupedBySubmission.entrySet().stream()
-                .map(entry -> {
-                    UUID submissionId = entry.getKey();
-                    List<UserQuizResult> group = entry.getValue();
-                    UserQuizResult first = group.get(0);
-
-                    long correctCount = group.stream().filter(UserQuizResult::getIsCorrectAnswer).count();
-                    int totalQuestions = group.size();
-                    int xpGained = group.stream().mapToInt(r -> r.getIsCorrectAnswer() ? 10 : -5).sum();
-
-                    return QuizHistoryResponse.builder()
-                            .submissionId(submissionId)
-                            .quizSetId(first.getQuizSetId())
-                            .quizSetTitle(first.getQuizSetTitle())
-                            .documentTitle(first.getDocumentTitle())
-                            .score((int) correctCount)
-                            .totalQuestions(totalQuestions)
-                            .xpGained(xpGained)
-                            .completedAt(first.getCompletedAt() != null ? LocalDateTime.ofInstant(first.getCompletedAt(), ZoneId.systemDefault()) : null)
-                            .build();
-                })
+        // 3. Map thành danh sách DTO và sắp xếp giảm dần theo thời gian nộp bài
+        return submissions.stream()
+                .map(sub -> QuizHistoryResponse.builder()
+                        .submissionId(sub.getSubmissionId())
+                        .quizSetId(sub.getQuizSetId())
+                        .quizSetTitle(sub.getQuizSetTitle())
+                        .documentTitle(sub.getDocumentTitle())
+                        .score(sub.getScore())
+                        .totalQuestions(sub.getTotalQuestions())
+                        .xpGained(sub.getXpGained())
+                        .completedAt(sub.getCompletedAt() != null ? LocalDateTime.ofInstant(sub.getCompletedAt(), ZoneId.systemDefault()) : null)
+                        .build())
                 .sorted(Comparator.comparing(QuizHistoryResponse::getCompletedAt).reversed())
                 .collect(Collectors.toList());
     }
@@ -503,27 +508,25 @@ public class QuizSetServiceImpl implements QuizSetService {
     public QuizSubmissionDetailResponse getQuizSubmissionDetail(UUID submissionId) {
         log.info("Fetching quiz submission detail for submissionId: {}", submissionId);
 
-        // 1. Lấy toàn bộ kết quả làm bài của submissionId đó
-        List<UserQuizResult> results = userQuizResultRepository.findBySubmissionId(submissionId);
-        if (results == null || results.isEmpty()) {
-            throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy chi tiết bài làm của lượt nộp này");
-        }
+        // 1. Lấy thông tin lượt nộp bài từ MongoDB
+        UserQuizSubmission submission = userQuizSubmissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy chi tiết bài làm của lượt nộp này"));
 
-        // 2. Lấy thông tin chung của lượt nộp bài
-        UserQuizResult firstResult = results.get(0);
-        UUID quizSetId = firstResult.getQuizSetId();
+        UUID quizSetId = submission.getQuizSetId();
 
-        // 3. Lấy bộ đề gốc
+        // 2. Lấy bộ đề gốc
         QuizSet quizSet = quizSetRepository.findById(quizSetId)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy thông tin bộ đề gốc"));
 
-        // 4. Map danh sách câu hỏi gốc và câu trả lời tương ứng của người dùng
-        Map<UUID, UserQuizResult> userAnswers = results.stream()
-                .collect(Collectors.toMap(UserQuizResult::getQuizId, Function.identity(), (r1, r2) -> r1));
+        // 3. Map danh sách câu hỏi gốc và câu trả lời tương ứng của người dùng
+        Map<UUID, UserQuizAnswer> userAnswers = submission.getAnswers() != null 
+                ? submission.getAnswers().stream()
+                        .collect(Collectors.toMap(UserQuizAnswer::getQuizId, Function.identity(), (r1, r2) -> r1))
+                : Collections.emptyMap();
 
         List<QuizSubmissionDetailResponse.QuestionDetailItem> questionItems = quizSet.getQuizzes().stream()
                 .map(quiz -> {
-                    UserQuizResult result = userAnswers.get(quiz.getQuizId());
+                    UserQuizAnswer result = userAnswers.get(quiz.getQuizId());
                     
                     // Map options
                     List<QuizSubmissionDetailResponse.OptionItem> optionItems = quiz.getOptions().stream()
@@ -568,20 +571,15 @@ public class QuizSetServiceImpl implements QuizSetService {
                 })
                 .collect(Collectors.toList());
 
-        // 5. Tính toán thống kê
-        long score = results.stream().filter(UserQuizResult::getIsCorrectAnswer).count();
-        int totalQuestions = results.size();
-        int xpGained = results.stream().mapToInt(r -> r.getIsCorrectAnswer() ? 10 : -5).sum();
-
         return QuizSubmissionDetailResponse.builder()
                 .submissionId(submissionId)
                 .quizSetId(quizSetId)
-                .quizSetTitle(firstResult.getQuizSetTitle())
-                .documentTitle(firstResult.getDocumentTitle())
-                .score((int) score)
-                .totalQuestions(totalQuestions)
-                .xpGained(xpGained)
-                .completedAt(firstResult.getCompletedAt() != null ? LocalDateTime.ofInstant(firstResult.getCompletedAt(), ZoneId.systemDefault()) : null)
+                .quizSetTitle(submission.getQuizSetTitle())
+                .documentTitle(submission.getDocumentTitle())
+                .score(submission.getScore())
+                .totalQuestions(submission.getTotalQuestions())
+                .xpGained(submission.getXpGained())
+                .completedAt(submission.getCompletedAt() != null ? LocalDateTime.ofInstant(submission.getCompletedAt(), ZoneId.systemDefault()) : null)
                 .questions(questionItems)
                 .build();
     }

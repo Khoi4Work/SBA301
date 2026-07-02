@@ -77,13 +77,6 @@ public class LearningProgress extends BaseEntity {
     @Builder.Default
     private Integer lastReadPosition = 0;
 
-    /**
-     * Dữ liệu Highlight và Ghi chú (HighlightsAndNotes).
-     * Lưu dưới dạng JSON: [{page, text, color, note}, ...]
-     * Được cập nhật liên tục khi người dùng bôi đậm trong trang đọc.
-     */
-    @Column(name = "highlights_and_notes", columnDefinition = "TEXT")
-    private String highlightsAndNotes;
 
     /**
      * Trạng thái hoàn thành (IsCompleted).

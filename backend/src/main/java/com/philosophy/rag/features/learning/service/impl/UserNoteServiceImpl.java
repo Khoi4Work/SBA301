@@ -7,6 +7,8 @@ import com.philosophy.rag.features.learning.dto.UserNoteResponse;
 import com.philosophy.rag.features.learning.entity.UserNote;
 import com.philosophy.rag.features.learning.repository.UserNoteRepository;
 import com.philosophy.rag.features.learning.service.UserNoteService;
+import com.philosophy.rag.utils.entity.Document;
+import com.philosophy.rag.utils.repository.DocumentRepository;
 import com.github.f4b6a3.uuid.UuidCreator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +25,20 @@ import java.util.stream.Collectors;
 public class UserNoteServiceImpl implements UserNoteService {
 
     private final UserNoteRepository userNoteRepository;
+    private final DocumentRepository documentRepository;
 
     @Override
     public UserNoteResponse createNote(UUID userId, UserNoteRequest request) {
         log.info("Creating note for user: {}, document: {}", userId, request.getDocumentS3Key());
+        
+        UUID docId = documentRepository.findByS3Key(request.getDocumentS3Key())
+                .map(Document::getDocumentId)
+                .orElse(null);
+
         UserNote note = UserNote.builder()
                 .noteId(UuidCreator.getTimeOrderedEpoch())
                 .userId(userId)
+                .documentId(docId)
                 .documentS3Key(request.getDocumentS3Key())
                 .selectedText(request.getSelectedText())
                 .noteText(request.getNoteText())
@@ -56,6 +65,12 @@ public class UserNoteServiceImpl implements UserNoteService {
             throw new ApiException(ErrorCode.FORBIDDEN_ACTION, "Bạn không có quyền chỉnh sửa ghi chú này");
         }
 
+        UUID docId = documentRepository.findByS3Key(request.getDocumentS3Key())
+                .map(Document::getDocumentId)
+                .orElse(null);
+
+        note.setDocumentId(docId);
+        note.setDocumentS3Key(request.getDocumentS3Key());
         note.setNoteText(request.getNoteText());
         note.setSelectedText(request.getSelectedText());
         userNoteRepository.save(note);
@@ -78,6 +93,7 @@ public class UserNoteServiceImpl implements UserNoteService {
     private UserNoteResponse toResponse(UserNote note) {
         return UserNoteResponse.builder()
                 .noteId(note.getNoteId())
+                .documentId(note.getDocumentId())
                 .documentS3Key(note.getDocumentS3Key())
                 .selectedText(note.getSelectedText())
                 .noteText(note.getNoteText())

@@ -10,6 +10,7 @@ import java.util.UUID;
 @Builder
 public class UserNoteResponse {
     private UUID noteId;
+    private UUID documentId;
     private String documentS3Key;
     private String selectedText;
     private String noteText;

@@ -24,6 +24,8 @@ public class UserNote {
 
     private UUID userId;
 
+    private UUID documentId;
+
     private String documentS3Key;
 
     private String selectedText;

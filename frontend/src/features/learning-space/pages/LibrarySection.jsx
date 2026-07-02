@@ -186,6 +186,8 @@ export default function LibrarySection() {
 
     // State quản lý việc mở/đóng dropdown giáo trình
     const [isCurriculumOpen, setIsCurriculumOpen] = useState(false);
+    const [isChapterOpen, setIsChapterOpen] = useState(false);
+    const [isSectionOpen, setIsSectionOpen] = useState(false);
 
     const loadDocuments = async () => {
         setLoading(true);
@@ -402,15 +404,19 @@ export default function LibrarySection() {
             </div>
 
             {/* Filter controls row */}
-            <div className="flex flex-col md:flex-row gap-5 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
                 {/* 1. Dropdown Chọn Giáo trình */}
-                <div className="relative inline-block text-left w-full md:w-80 shrink-0">
+                <div className="relative inline-block text-left w-full">
                     <label className="block text-xs uppercase tracking-[0.2em] text-outline mb-2 font-bold">
                         Giáo trình học tập
                     </label>
                     <button
                         type="button"
-                        onClick={() => setIsCurriculumOpen(!isCurriculumOpen)}
+                        onClick={() => {
+                            setIsCurriculumOpen(!isCurriculumOpen);
+                            setIsChapterOpen(false);
+                            setIsSectionOpen(false);
+                        }}
                         className="w-full bg-surface-container-high px-4 py-3 border border-outline-variant/30 rounded text-sm font-semibold text-on-surface flex items-center justify-between hover:border-secondary/60 transition-all shadow-sm focus:outline-none cursor-pointer"
                     >
                         <div className="flex items-center gap-2.5 truncate">
@@ -449,8 +455,139 @@ export default function LibrarySection() {
                     )}
                 </div>
 
-                {/* 2. Ô Tìm kiếm */}
-                <div className="relative flex-1">
+                {/* 2. Dropdown Chọn Chương */}
+                <div className="relative inline-block text-left w-full">
+                    <label className="block text-xs uppercase tracking-[0.2em] text-outline mb-2 font-bold">
+                        Chương học tập
+                    </label>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (chapters.length > 0) {
+                                setIsChapterOpen(!isChapterOpen);
+                                setIsCurriculumOpen(false);
+                                setIsSectionOpen(false);
+                            }
+                        }}
+                        disabled={chapters.length === 0}
+                        className="w-full bg-surface-container-high px-4 py-3 border border-outline-variant/30 rounded text-sm font-semibold text-on-surface flex items-center justify-between hover:border-secondary/60 transition-all shadow-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        <div className="flex items-center gap-2.5 truncate">
+                            <BookOpen size={16} className="text-secondary shrink-0" />
+                            <span className="truncate">
+                                {chapters.length > 0 
+                                    ? (activeChapter ? getChapterDisplayName(activeChapter) : 'Chọn chương') 
+                                    : 'Không có chương'}
+                            </span>
+                        </div>
+                        <ChevronDown size={14} className="text-outline shrink-0 transition-transform duration-300" style={{ transform: isChapterOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                    </button>
+
+                    {isChapterOpen && chapters.length > 0 && (
+                        <>
+                            <div 
+                                className="fixed inset-0 z-30" 
+                                onClick={() => setIsChapterOpen(false)}
+                            />
+                            <div className="absolute left-0 mt-2 w-full bg-surface-container-high border border-outline-variant/40 rounded-lg shadow-xl z-40 py-1.5 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+                                {chapters.map((chap) => (
+                                    <button
+                                        key={chap}
+                                        onClick={() => {
+                                            setActiveChapter(chap);
+                                            setIsChapterOpen(false);
+                                        }}
+                                        className={`w-full px-4 py-3 text-left text-sm flex items-center gap-2 hover:bg-secondary/10 hover:text-secondary transition-all cursor-pointer ${
+                                            activeChapter === chap 
+                                                ? 'bg-secondary/5 text-secondary font-bold' 
+                                                : 'text-on-surface-variant'
+                                        }`}
+                                    >
+                                        <BookOpen size={14} className={activeChapter === chap ? 'text-secondary' : 'text-outline'} />
+                                        <span className="truncate">{getChapterDisplayName(chap)}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* 3. Dropdown Chọn Mục La Mã */}
+                <div className="relative inline-block text-left w-full">
+                    <label className="block text-xs uppercase tracking-[0.2em] text-outline mb-2 font-bold">
+                        Mục học tập (La Mã)
+                    </label>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (activeChapter && sections.length > 0) {
+                                setIsSectionOpen(!isSectionOpen);
+                                setIsCurriculumOpen(false);
+                                setIsChapterOpen(false);
+                            }
+                        }}
+                        disabled={!activeChapter || sections.length === 0}
+                        className="w-full bg-surface-container-high px-4 py-3 border border-outline-variant/30 rounded text-sm font-semibold text-on-surface flex items-center justify-between hover:border-secondary/60 transition-all shadow-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        <div className="flex items-center gap-2.5 truncate">
+                            <FileText size={16} className="text-secondary shrink-0" />
+                            <span className="truncate">
+                                {!activeChapter 
+                                    ? 'Chọn chương trước' 
+                                    : (sections.length > 0 
+                                        ? (activeSection === 'Tất cả' ? 'Tất cả' : getSectionDisplayName(activeChapter, activeSection)) 
+                                        : 'Không có mục')}
+                            </span>
+                        </div>
+                        <ChevronDown size={14} className="text-outline shrink-0 transition-transform duration-300" style={{ transform: isSectionOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                    </button>
+
+                    {isSectionOpen && activeChapter && sections.length > 0 && (
+                        <>
+                            <div 
+                                className="fixed inset-0 z-30" 
+                                onClick={() => setIsSectionOpen(false)}
+                            />
+                            <div className="absolute left-0 mt-2 w-full bg-surface-container-high border border-outline-variant/40 rounded-lg shadow-xl z-40 py-1.5 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+                                {/* Option Tất cả */}
+                                <button
+                                    onClick={() => {
+                                        setActiveSection('Tất cả');
+                                        setIsSectionOpen(false);
+                                    }}
+                                    className={`w-full px-4 py-3 text-left text-sm flex items-center gap-2 hover:bg-secondary/10 hover:text-secondary transition-all cursor-pointer ${
+                                        activeSection === 'Tất cả' 
+                                            ? 'bg-secondary/5 text-secondary font-bold' 
+                                            : 'text-on-surface-variant'
+                                    }`}
+                                >
+                                    <FileText size={14} className={activeSection === 'Tất cả' ? 'text-secondary' : 'text-outline'} />
+                                    <span className="truncate">Tất cả</span>
+                                </button>
+                                {sections.map((sec) => (
+                                    <button
+                                        key={sec}
+                                        onClick={() => {
+                                            setActiveSection(sec);
+                                            setIsSectionOpen(false);
+                                        }}
+                                        className={`w-full px-4 py-3 text-left text-sm flex items-center gap-2 hover:bg-secondary/10 hover:text-secondary transition-all cursor-pointer ${
+                                            activeSection === sec 
+                                                ? 'bg-secondary/5 text-secondary font-bold' 
+                                                : 'text-on-surface-variant'
+                                        }`}
+                                    >
+                                        <FileText size={14} className={activeSection === sec ? 'text-secondary' : 'text-outline'} />
+                                        <span className="truncate">{getSectionDisplayName(activeChapter, sec)}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* 4. Ô Tìm kiếm */}
+                <div className="relative w-full">
                     <label className="block text-xs uppercase tracking-[0.2em] text-outline mb-2 font-bold">
                         Tìm kiếm tài liệu
                     </label>
@@ -458,7 +595,7 @@ export default function LibrarySection() {
                         <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-outline" />
                         <input
                             type="text"
-                            placeholder="Nhập từ khóa tìm kiếm..."
+                            placeholder="Nhập từ khóa..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 bg-surface-container-high border border-outline-variant/30 rounded text-sm text-on-surface placeholder:text-outline-variant focus:outline-none focus:border-secondary/60 transition-all"
@@ -474,57 +611,6 @@ export default function LibrarySection() {
                     </div>
                 </div>
             </div>
-
-            {/* 3. Chương & Mục La Mã */}
-            {selectedCurriculum && chapters.length > 0 && (
-                <div className="space-y-6 p-6 bg-surface-container-low border border-outline-variant/20 rounded-xl mb-8 shadow-sm">
-                    {/* Danh sách Chương */}
-                    <div className="space-y-2">
-                        <span className="text-xs uppercase tracking-[0.2em] text-outline font-bold block">
-                            Chương học tập
-                        </span>
-                        <div className="flex flex-wrap gap-3">
-                            {chapters.map((chap) => (
-                                <button
-                                    key={chap}
-                                    onClick={() => setActiveChapter(chap)}
-                                    className={`px-5 py-2.5 text-xs font-bold tracking-wider rounded transition-all cursor-pointer ${
-                                        activeChapter === chap
-                                            ? 'bg-secondary text-on-secondary shadow-md border border-secondary scale-[1.02]'
-                                            : 'border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary hover:bg-secondary/5'
-                                    }`}
-                                >
-                                    {getChapterDisplayName(chap)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Danh sách Mục La Mã (Chỉ hiện khi chương có mục La Mã) */}
-                    {activeChapter && sections.length > 0 && (
-                        <div className="space-y-2 pt-4 border-t border-outline-variant/20">
-                            <span className="text-xs uppercase tracking-[0.2em] text-outline font-bold block">
-                                Mục học tập (La Mã) của {getChapterDisplayName(activeChapter)}
-                            </span>
-                            <div className="flex flex-wrap gap-2.5">
-                                {sections.map((sec) => (
-                                    <button
-                                        key={sec}
-                                        onClick={() => setActiveSection(sec)}
-                                        className={`px-5 py-2 text-xs font-bold tracking-wider rounded transition-all cursor-pointer ${
-                                            activeSection === sec
-                                                ? 'bg-secondary/15 text-secondary border border-secondary/40 shadow-sm scale-[1.02]'
-                                                : 'border border-outline-variant/40 text-on-surface-variant hover:border-secondary/40 hover:text-secondary hover:bg-secondary/5'
-                                        }`}
-                                    >
-                                        {getSectionDisplayName(activeChapter, sec)}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
 
             {/* Document Grid grouped by Number Section */}
             <div className="space-y-12 relative">
