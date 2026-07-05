@@ -1,6 +1,6 @@
 package com.philosophy.rag.features.ai.controller;
 
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.features.ui.dto.request.UpdateTitleRequest;
 import com.philosophy.rag.features.ai.dto.ChatSessionResponse;
 import com.philosophy.rag.features.ai.entity.ChatSession;
@@ -33,53 +33,53 @@ public class ChatSessionController {
     @Operation(summary = "List all chat sessions for the current user")
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<ChatSessionResponse>>> listSessions(
+    public ResponseEntity<ApiResult<List<ChatSessionResponse>>> listSessions(
             @RequestParam(value = "philosopherId", required = false) UUID philosopherId) {
         UUID userId = userService.getCurrentUserId();
         log.info("Fetching chat sessions for user: {}, philosopherId: {}", userId, philosopherId);
         List<ChatSessionResponse> sessions = chatSessionService.listUserSessions(userId, philosopherId);
-        return ResponseEntity.ok(ApiResponse.success(sessions));
+        return ResponseEntity.ok(ApiResult.success(sessions));
     }
 
     @Operation(summary = "Start a new chat session")
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<ChatSession>> createSession(
+    public ResponseEntity<ApiResult<ChatSession>> createSession(
             @RequestParam(value = "philosopherId", required = false) UUID philosopherId) {
         UUID userId = userService.getCurrentUserId();
         log.info("Creating new chat session for user: {}, philosopherId: {}", userId, philosopherId);
         ChatSession session = chatSessionService.createSession(userId, philosopherId);
-        return ResponseEntity.ok(ApiResponse.success(session));
+        return ResponseEntity.ok(ApiResult.success(session));
     }
 
     @Operation(summary = "Delete a chat session")
     @DeleteMapping("/{sessionId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<String>> deleteSession(@PathVariable UUID sessionId) {
+    public ResponseEntity<ApiResult<String>> deleteSession(@PathVariable UUID sessionId) {
         log.info("Deleting chat session: {}", sessionId);
         chatSessionService.deleteSession(sessionId);
-        return ResponseEntity.ok(ApiResponse.success("Session deleted successfully"));
+        return ResponseEntity.ok(ApiResult.success("Session deleted successfully"));
     }
 
     @Operation(summary = "Update chat session title")
     @PatchMapping("/{sessionId}/title")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<String>> updateTitle(
+    public ResponseEntity<ApiResult<String>> updateTitle(
             @PathVariable UUID sessionId,
             @RequestBody UpdateTitleRequest request) {
         String newTitle = request.title();
         log.info("Updating title for session: {} to {}", sessionId, newTitle);
         chatSessionService.updateSessionTitle(sessionId, newTitle);
-        return ResponseEntity.ok(ApiResponse.success("Title updated successfully"));
+        return ResponseEntity.ok(ApiResult.success("Title updated successfully"));
     }
 
     @Operation(summary = "Get all messages in a session")
     @GetMapping("/{sessionId}/messages")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<ChatHistory>>> getMessages(@PathVariable UUID sessionId) {
+    public ResponseEntity<ApiResult<List<ChatHistory>>> getMessages(@PathVariable UUID sessionId) {
         log.info("Fetching messages for session: {}", sessionId);
 
         List<ChatHistory> messages = chatHistoryService.getRecentHistoryBySession(sessionId, 100);
-        return ResponseEntity.ok(ApiResponse.success(messages));
+        return ResponseEntity.ok(ApiResult.success(messages));
     }
 }

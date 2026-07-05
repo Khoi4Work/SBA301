@@ -2,7 +2,7 @@ package com.philosophy.rag.features.auth.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.features.auth.dto.UserResponse;
 import com.philosophy.rag.features.auth.dto.UserUpdateRequest;
 import com.philosophy.rag.features.learning.dto.CompleteFileRequest;
@@ -35,41 +35,41 @@ public class UserController {
     @Operation(summary = "Get current authenticated user (Requires authentication)")
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
+    public ResponseEntity<ApiResult<UserResponse>> getCurrentUser() {
         UserResponse response = userService.getCurrentUser();
-        return ResponseEntity.ok(ApiResponse.success(response, "Current user retrieved successfully"));
+        return ResponseEntity.ok(ApiResult.success(response, "Current user retrieved successfully"));
     }
 
     @Operation(summary = "Get user by ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable UUID id) {
+    public ResponseEntity<ApiResult<UserResponse>> getUser(@PathVariable UUID id) {
 
         log.info("Received request to get user with id: {}", id);
 
         UserResponse response = userService.getUser(id);
 
         return ResponseEntity.ok(
-                ApiResponse.success(response, "User retrieved successfully")
+                ApiResult.success(response, "User retrieved successfully")
         );
     }
 
     @Operation(summary = "Get all users (Requires ADMIN or STAFF)")
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
+    public ResponseEntity<ApiResult<List<UserResponse>>> getAllUsers() {
 
         log.info("Received request to get all users");
         List<UserResponse> response = userService.getAllUsers();
 
         return ResponseEntity.ok(
-                ApiResponse.success(response, "Users retrieved successfully")
+                ApiResult.success(response, "Users retrieved successfully")
         );
     }
 
     @Operation(summary = "Update user (Requires authentication - Self or Admin/Staff)")
     @PutMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+    public ResponseEntity<ApiResult<UserResponse>> updateUser(
             @PathVariable UUID id,
             @Valid @RequestBody UserUpdateRequest request) {
 
@@ -85,27 +85,27 @@ public class UserController {
         UserResponse response = userService.updateUser(id, request);
 
         return ResponseEntity.ok(
-                ApiResponse.success(response, "User updated successfully")
+                ApiResult.success(response, "User updated successfully")
         );
     }
 
     @Operation(summary = "Delete user (Requires ADMIN)")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
+    public ResponseEntity<ApiResult<Void>> deleteUser(@PathVariable UUID id) {
 
         log.info("Received request to delete user with id: {}", id);
         userService.deleteUser(id);
 
         return ResponseEntity.ok(
-                ApiResponse.success(null, "User deleted successfully")
+                ApiResult.success(null, "User deleted successfully")
         );
     }
 
     @Operation(summary = "Upload user avatar (Requires authentication - Self or Admin/Staff)")
     @PostMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<UserResponse>> uploadAvatar(
+    public ResponseEntity<ApiResult<UserResponse>> uploadAvatar(
             @PathVariable UUID id,
             @RequestPart("file") MultipartFile file)
             throws ApiException {
@@ -122,20 +122,20 @@ public class UserController {
         UserResponse response = userService.uploadAvatar(id, file);
 
         return ResponseEntity.ok(
-                ApiResponse.success(response, "Avatar uploaded successfully")
+                ApiResult.success(response, "Avatar uploaded successfully")
         );
     }
 
     @Operation(summary = "Test Admin Endpoint (Requires ADMIN)")
     @GetMapping("/test-admin")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<String>> testAdmin() {
-        return ResponseEntity.ok(ApiResponse.success("Hello Admin!", "Success"));
+    public ResponseEntity<ApiResult<String>> testAdmin() {
+        return ResponseEntity.ok(ApiResult.success("Hello Admin!", "Success"));
     }
 
     @Operation(summary = "Get user dashboard stats")
     @GetMapping("/dashboard-stats")
-    public ResponseEntity<ApiResponse<UserDashboardResponse>> getDashboardStats() {
+    public ResponseEntity<ApiResult<UserDashboardResponse>> getDashboardStats() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");
@@ -144,13 +144,13 @@ public class UserController {
         log.info("Received request to get dashboard stats for user: {}", username);
         UserDashboardResponse response = userService.getDashboardStats(username);
         return ResponseEntity.ok(
-                ApiResponse.success(response, "Dashboard stats retrieved successfully")
+                ApiResult.success(response, "Dashboard stats retrieved successfully")
         );
     }
 
     @Operation(summary = "Complete a study file")
     @PostMapping("/complete-file")
-    public ResponseEntity<ApiResponse<Void>> completeFile(@Valid @RequestBody CompleteFileRequest request) {
+    public ResponseEntity<ApiResult<Void>> completeFile(@Valid @RequestBody CompleteFileRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");
@@ -159,7 +159,7 @@ public class UserController {
         log.info("Received request to complete file for user: {}, key: {}", username, request.getKey());
         userService.completeFile(username, request.getKey());
         return ResponseEntity.ok(
-                ApiResponse.success(null, "File marked as completed and streak updated")
+                ApiResult.success(null, "File marked as completed and streak updated")
         );
     }
 }

@@ -1,6 +1,6 @@
 package com.philosophy.rag.features.ui.controller;
 
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.features.ui.dto.request.SloganRequest;
 import com.philosophy.rag.features.ui.dto.response.SloganResponse;
 import com.philosophy.rag.features.ui.entity.Slogan;
@@ -22,15 +22,15 @@ public class SloganController {
     private final SloganService sloganService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Slogan>> getSlogan() {
-        return ResponseEntity.ok(ApiResponse.success(sloganService.getRandomSlogan(), "Successfully retrieved slogan"));
+    public ResponseEntity<ApiResult<Slogan>> getSlogan() {
+        return ResponseEntity.ok(ApiResult.success(sloganService.getRandomSlogan(), "Successfully retrieved slogan"));
     }
 
     @PostMapping("")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
     @Operation(summary = "Add new slogan (Requires ADMIN, STAFF or INSTRUCTOR)")
-    public ResponseEntity<ApiResponse<SloganResponse>> addSlogan(@Valid @RequestBody SloganRequest request) {
+    public ResponseEntity<ApiResult<SloganResponse>> addSlogan(@Valid @RequestBody SloganRequest request) {
         SloganResponse response = sloganService.addSlogan(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Slogan added successfully"));
+        return ResponseEntity.ok(ApiResult.success(response, "Slogan added successfully"));
     }
 }

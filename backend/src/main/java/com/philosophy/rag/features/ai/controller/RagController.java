@@ -2,15 +2,14 @@ package com.philosophy.rag.features.ai.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.features.ai.dto.RagAskRequest;
 import com.philosophy.rag.features.ai.dto.RagAskResponse;
-import com.philosophy.rag.features.ai.service.ChatHistoryService;
-import com.philosophy.rag.features.ai.service.ChatSessionService;
 import com.philosophy.rag.features.ai.service.RagService;
 import com.philosophy.rag.utils.dto.DocumentContent;
 import com.philosophy.rag.features.auth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,19 +35,17 @@ import java.util.UUID;
 public class RagController {
 
     private final RagService ragService;
-    private final ChatHistoryService chatHistoryService;
     private final UserService userService;
-    private final ChatSessionService chatSessionService;
 
     @Operation(summary = "Upload and index a document (Requires ADMIN, STAFF or INSTRUCTOR)", description = "Uploads a file (PDF, TXT, etc.), extracts content, and stores it in the vector database for RAG.")
     @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "File uploaded and indexed successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid file or empty file uploaded"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error during indexing process")
+            @ApiResponse(responseCode = "200", description = "File uploaded and indexed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid file or empty file uploaded"),
+            @ApiResponse(responseCode = "500", description = "Internal server error during indexing process")
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
-    public ResponseEntity<ApiResponse<String>> upload(
+    public ResponseEntity<ApiResult<String>> upload(
             @RequestPart("file") MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file cannot be empty");
@@ -57,7 +54,7 @@ public class RagController {
         log.info("Uploading file to RAG system: {}", file.getOriginalFilename());
         try {
             String result = ragService.uploadDocument(file);
-            return ResponseEntity.ok(ApiResponse.success(result,
+            return ResponseEntity.ok(ApiResult.success(result,
                     "Tải lên và lập chỉ mục tài liệu thành công"));
         } catch (Exception e) {
             log.error("RAG upload failed: {}", e.getMessage());
@@ -67,29 +64,30 @@ public class RagController {
 
     @Operation(summary = "Ask a question based on indexed documents", description = "Retrieves the most relevant context from the vector store and generates an answer using the RAG pipeline.")
     @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Answer generated successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Query parameter is blank or invalid"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error occurred during retrieval or generation")
+            @ApiResponse(responseCode = "200", description = "Answer generated successfully"),
+            @ApiResponse(responseCode = "400", description = "Query parameter is blank or invalid"),
+            @ApiResponse(responseCode = "500", description = "Error occurred during retrieval or generation")
     })
     @PostMapping("/ask")
-    public ResponseEntity<ApiResponse<RagAskResponse>> ask(@RequestBody @Valid RagAskRequest request) {
+    public ResponseEntity<ApiResult<RagAskResponse>> ask(@RequestBody @Valid RagAskRequest request) {
 
         log.info("Received RAG query: {}, PhilosopherID: {}, SessionID: {}", request.query(), request.philosopherId(), request.sessionId());
 
-        UUID userId = userService.getCurrentUserId();
+        //UUID userId = userService.getCurrentUserId();
+        UUID userId = UUID.randomUUID();
         RagAskResponse response = ragService.ask(userId, request.query(), request.philosopherId(), request.sessionId());
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResult.success(response));
     }
 
     @Operation(summary = "Ask a question based on the reading document content and selected text context", description = "Generates a contextual response from the selected philosopher using the full document content and selection query context.")
     @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Answer generated successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Query parameter is blank or invalid"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error occurred during generation")
+            @ApiResponse(responseCode = "200", description = "Answer generated successfully"),
+            @ApiResponse(responseCode = "400", description = "Query parameter is blank or invalid"),
+            @ApiResponse(responseCode = "500", description = "Error occurred during generation")
     })
     @GetMapping("/ask-contextual")
-    public ResponseEntity<ApiResponse<RagAskResponse>> askContextual(
+    public ResponseEntity<ApiResult<RagAskResponse>> askContextual(
             @RequestParam("query") @NotBlank(message = "Query cannot be blank") String query,
             @RequestParam(value = "s3Key", required = false) String s3Key,
             @RequestParam(value = "selectedText", required = false) String selectedText,
@@ -101,34 +99,34 @@ public class RagController {
         UUID userId = userService.getCurrentUserId();
         RagAskResponse response = ragService.askContextual(userId, query, s3Key, selectedText, philosopherId, sessionId);
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResult.success(response));
     }
 
     @Operation(summary = "List all indexed documents", description = "Retrieves a list of all documents currently stored in the vector database.")
     @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Document list retrieved successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Error occurred while fetching documents")
+            @ApiResponse(responseCode = "200", description = "Document list retrieved successfully"),
+            @ApiResponse(responseCode = "500", description = "Error occurred while fetching documents")
     })
     @GetMapping("/documents")
-    public ResponseEntity<ApiResponse<List<DocumentContent>>> listDocuments() {
+    public ResponseEntity<ApiResult<List<DocumentContent>>> listDocuments() {
         log.info("Fetching document list");
         List<DocumentContent> result = ragService.listDocuments();
 
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ResponseEntity.ok(ApiResult.success(result));
     }
 
     @Operation(summary = "Reset the Vector Store (Requires ADMIN)", description = "Completely wipes all indexed documents from the vector store. This operation is irreversible.")
     @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Vector store reset successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Failed to reset the vector store")
+            @ApiResponse(responseCode = "200", description = "Vector store reset successfully"),
+            @ApiResponse(responseCode = "500", description = "Failed to reset the vector store")
     })
     @DeleteMapping("/reset")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<String>> resetDatabase() {
+    public ResponseEntity<ApiResult<String>> resetDatabase() {
         log.warn("Triggered vector store reset");
         ragService.resetVectorStore();
 
         return ResponseEntity
-                .ok(ApiResponse.success("Vector store has been reset successfully!"));
+                .ok(ApiResult.success("Vector store has been reset successfully!"));
     }
 }

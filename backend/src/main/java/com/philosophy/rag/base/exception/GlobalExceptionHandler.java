@@ -1,7 +1,7 @@
 package com.philosophy.rag.base.exception;
 
 
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -26,21 +26,21 @@ import java.util.Map;
 
 /**
  * Global exception handler for the entire application.
- * Returns unified ApiResponse format for all error scenarios.
+ * Returns unified ApiResult format for all error scenarios.
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiResponse<Object>> handleApiException(ApiException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResult<Object>> handleApiException(ApiException ex, HttpServletRequest request) {
         ErrorCode ec = ex.getErrorCode();
         return ResponseEntity.status(ec.getStatus())
                 .body(buildError(ec.getCode(), ex.getMessage(), request.getRequestURI(), null));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<Object>> handleConstraintViolation(
+    public ResponseEntity<ApiResult<Object>> handleConstraintViolation(
             ConstraintViolationException ex, HttpServletRequest request) {
         Map<String, String> errors = new LinkedHashMap<>();
         ex.getConstraintViolations().forEach(v ->
@@ -62,7 +62,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errors.put(fe.getField(), fe.getDefaultMessage());
         }
         ErrorCode ec = ErrorCode.VALIDATION_ERROR;
-        ApiResponse<Object> body = buildError(ec.getCode(), ec.getDefaultMessage(), extractPath(request), errors);
+        ApiResult<Object> body = buildError(ec.getCode(), ec.getDefaultMessage(), extractPath(request), errors);
         return new ResponseEntity<>(body, ec.getStatus());
     }
 
@@ -73,19 +73,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode statusCode,
             WebRequest request) {
         ErrorCode ec = ErrorCode.MALFORMED_JSON;
-        ApiResponse<Object> body = buildError(ec.getCode(), ec.getDefaultMessage(), extractPath(request), null);
+        ApiResult<Object> body = buildError(ec.getCode(), ec.getDefaultMessage(), extractPath(request), null);
         return new ResponseEntity<>(body, ec.getStatus());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResult<Object>> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
         ErrorCode ec = ErrorCode.FORBIDDEN_ACTION;
         return ResponseEntity.status(ec.getStatus())
                 .body(buildError(ec.getCode(), ec.getDefaultMessage(), request.getRequestURI(), null));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiResponse<Object>> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResult<Object>> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
         log.warn("DataIntegrityViolation: {}", ex.getMessage());
         ErrorCode ec = ErrorCode.DUPLICATE_RESOURCE;
         return ResponseEntity.status(ec.getStatus())
@@ -93,7 +93,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleUnexpected(Exception ex, HttpServletRequest request) {
+    public ResponseEntity<ApiResult<Object>> handleUnexpected(Exception ex, HttpServletRequest request) {
         log.error("Unexpected error:", ex);
         ErrorCode ec = ErrorCode.UNEXPECTED_ERROR;
         return ResponseEntity.status(ec.getStatus())
@@ -106,7 +106,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         HttpStatus status = HttpStatus.resolve(statusCode.value());
         if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
         ErrorCode ec = mapErrorCode(status);
-        ApiResponse<Object> resp = buildError(ec.getCode(), ec.getDefaultMessage(), extractPath(request), null);
+        ApiResult<Object> resp = buildError(ec.getCode(), ec.getDefaultMessage(), extractPath(request), null);
         return new ResponseEntity<>(resp, headers, status);
     }
 
@@ -115,9 +115,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return super.handleNoResourceFoundException(ex, headers, status, request);
     }
 
-    // Helper: build error ApiResponse
-    private ApiResponse<Object> buildError(int code, String message, String path, Map<String, String> errors) {
-        return ApiResponse.<Object>builder()
+    // Helper: build error ApiResult
+    private ApiResult<Object> buildError(int code, String message, String path, Map<String, String> errors) {
+        return ApiResult.<Object>builder()
                 .code(code)
                 .message(message)
                 .result(null)

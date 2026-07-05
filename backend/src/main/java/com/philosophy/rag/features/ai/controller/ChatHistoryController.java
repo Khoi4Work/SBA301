@@ -1,6 +1,6 @@
 package com.philosophy.rag.features.ai.controller;
 
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.features.ai.dto.ChatHistoryResponse;
 import com.philosophy.rag.features.ai.service.ChatHistoryService;
 import com.philosophy.rag.features.auth.service.UserService;
@@ -29,30 +29,30 @@ public class ChatHistoryController {
     @Operation(summary = "Get chat history for the authenticated user")
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<ChatHistoryResponse>>> getMyHistory() {
+    public ResponseEntity<ApiResult<List<ChatHistoryResponse>>> getMyHistory() {
         UUID userId = userService.getCurrentUserId();
         List<ChatHistoryResponse> history = chatHistoryService.getUserHistory(userId);
-        return ResponseEntity.ok(ApiResponse.success(history, "Successfully retrieved chat history"));
+        return ResponseEntity.ok(ApiResult.success(history, "Successfully retrieved chat history"));
     }
 
     @Operation(summary = "Get details of a specific chat interaction")
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<ChatHistoryResponse>> getInteractionDetails(@PathVariable UUID id) {
+    public ResponseEntity<ApiResult<ChatHistoryResponse>> getInteractionDetails(@PathVariable UUID id) {
         UUID userId = userService.getCurrentUserId();
         ChatHistoryResponse interaction = chatHistoryService.getUserHistory(userId).stream()
                 .filter(h -> h.historyId().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Interaction not found or access denied"));
 
-        return ResponseEntity.ok(ApiResponse.success(interaction, "Successfully retrieved interaction details"));
+        return ResponseEntity.ok(ApiResult.success(interaction, "Successfully retrieved interaction details"));
     }
 
     @Operation(summary = "Get chat history for a specific session")
     @GetMapping("/session/{sessionId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<ChatHistoryResponse>>> getSessionHistory(@PathVariable UUID sessionId) {
+    public ResponseEntity<ApiResult<List<ChatHistoryResponse>>> getSessionHistory(@PathVariable UUID sessionId) {
         List<ChatHistoryResponse> history = chatHistoryService.getHistoryBySession(sessionId);
-        return ResponseEntity.ok(ApiResponse.success(history, "Successfully retrieved session history"));
+        return ResponseEntity.ok(ApiResult.success(history, "Successfully retrieved session history"));
     }
 }

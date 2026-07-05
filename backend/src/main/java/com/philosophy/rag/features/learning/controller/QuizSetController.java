@@ -1,6 +1,6 @@
 package com.philosophy.rag.features.learning.controller;
 
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.features.learning.dto.QuizHistoryResponse;
 import com.philosophy.rag.features.learning.dto.QuizSetDetailResponse;
 import com.philosophy.rag.features.learning.dto.QuizSetResponse;
@@ -31,55 +31,55 @@ public class QuizSetController {
 
     @Operation(summary = "Get list of quiz sets for a specific S3 file key")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<QuizSetResponse>>> getQuizSets(
+    public ResponseEntity<ApiResult<List<QuizSetResponse>>> getQuizSets(
             @RequestParam("s3Key") String s3Key) {
         log.info("Request to get quiz sets for S3 key: {}", s3Key);
         List<QuizSetResponse> response = quizSetService.getQuizSets(s3Key);
-        return ResponseEntity.ok(ApiResponse.success(response, "Lấy danh sách bộ đề thành công"));
+        return ResponseEntity.ok(ApiResult.success(response, "Lấy danh sách bộ đề thành công"));
     }
 
     @Operation(summary = "Generate a 20-question quiz set using AI from S3 file content")
     @PostMapping("/generate")
-    public ResponseEntity<ApiResponse<QuizSetResponse>> generateQuizSet(
+    public ResponseEntity<ApiResult<QuizSetResponse>> generateQuizSet(
             @Valid @RequestBody QuizSetGenerateRequest request) {
         log.info("Request to generate quiz set for S3 key: {}", request.getS3Key());
         QuizSetResponse response = quizSetService.generateQuizSet(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Bộ đề ôn tập mới đã được tạo thành công"));
+        return ResponseEntity.ok(ApiResult.success(response, "Bộ đề ôn tập mới đã được tạo thành công"));
     }
 
     @Operation(summary = "Get quiz set detail with questions and options (answers stripped for safety)")
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<QuizSetDetailResponse>> getQuizSetDetail(
+    public ResponseEntity<ApiResult<QuizSetDetailResponse>> getQuizSetDetail(
             @PathVariable("id") UUID id) {
         log.info("Request to get quiz set details for id: {}", id);
         QuizSetDetailResponse response = quizSetService.getQuizSetDetail(id);
-        return ResponseEntity.ok(ApiResponse.success(response, "Lấy chi tiết bộ đề thành công"));
+        return ResponseEntity.ok(ApiResult.success(response, "Lấy chi tiết bộ đề thành công"));
     }
 
     @Operation(summary = "Grade a quiz set submission and update user XP points")
     @PostMapping("/{id}/submit")
-    public ResponseEntity<ApiResponse<QuizSubmitResponse>> submitQuizSet(
+    public ResponseEntity<ApiResult<QuizSubmitResponse>> submitQuizSet(
             @PathVariable("id") UUID id,
             @Valid @RequestBody QuizSubmitRequest request) {
         log.info("Request to submit answers for quiz set id: {}", id);
         QuizSubmitResponse response = quizSetService.gradeQuizSet(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Nộp bài thành công và đã ghi nhận kết quả"));
+        return ResponseEntity.ok(ApiResult.success(response, "Nộp bài thành công và đã ghi nhận kết quả"));
     }
 
     @Operation(summary = "Get user's quiz history")
     @GetMapping("/history")
-    public ResponseEntity<ApiResponse<List<QuizHistoryResponse>>> getQuizHistory() {
+    public ResponseEntity<ApiResult<List<QuizHistoryResponse>>> getQuizHistory() {
         log.info("Request to get quiz history for current user");
         List<QuizHistoryResponse> response = quizSetService.getQuizHistory();
-        return ResponseEntity.ok(ApiResponse.success(response, "Lấy lịch sử ôn tập thành công"));
+        return ResponseEntity.ok(ApiResult.success(response, "Lấy lịch sử ôn tập thành công"));
     }
 
     @Operation(summary = "Get detailed quiz attempt review")
     @GetMapping("/history/{submissionId}")
-    public ResponseEntity<ApiResponse<QuizSubmissionDetailResponse>> getQuizSubmissionDetail(
+    public ResponseEntity<ApiResult<QuizSubmissionDetailResponse>> getQuizSubmissionDetail(
             @PathVariable("submissionId") UUID submissionId) {
         log.info("Request to get quiz submission details for submissionId: {}", submissionId);
         QuizSubmissionDetailResponse response = quizSetService.getQuizSubmissionDetail(submissionId);
-        return ResponseEntity.ok(ApiResponse.success(response, "Lấy chi tiết lịch sử làm bài thành công"));
+        return ResponseEntity.ok(ApiResult.success(response, "Lấy chi tiết lịch sử làm bài thành công"));
     }
 }

@@ -33,12 +33,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,8 +52,14 @@ public class RagServiceImpl implements RagService {
     private final KnowledgeRetrievalService knowledgeRetrievalService;
     private static final int NUM_LAST_CONVERSATION_CHAT = 10;
 
-    private static final TextSplitter TEXT_SPLITTER = new TokenTextSplitter(800, 400, 5, 10000, true,
-            List.of('\n', '\r', ' '));
+    private static final TextSplitter TEXT_SPLITTER =  TokenTextSplitter.builder()
+            .withChunkSize(800)
+            .withMinChunkSizeChars(400)
+            .withMinChunkLengthToEmbed(30)
+            .withMaxNumChunks(10000)
+            .withKeepSeparator(true)
+            .withPunctuationMarks(List.of('.', '?', '!', '\n', ';', ':'))
+            .build();
 
     public RagServiceImpl(
             VectorStore vectorStore,
@@ -84,6 +85,7 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public String uploadDocument(MultipartFile file) {
+        //1. Check format
         String filename = file.getOriginalFilename();
         if (filename == null
                 || (!filename.toLowerCase().endsWith(".pdf")
@@ -91,21 +93,32 @@ public class RagServiceImpl implements RagService {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR,
                     "Unsupported file format. Only PDF and MD files are allowed.");
         }
-
+        //2. Save to temp
         Path tempFile = saveMultipartFile(file);
         try {
-            String rawText = filename.toLowerCase().endsWith(".pdf")
-                    ? extractTextFromPdf(tempFile)
-                    : extractTextFromMarkdown(tempFile);
+            String documentId = UUID.randomUUID().toString();
 
-            String cleanedText = cleanText(rawText);
-            Document document = createDocument(cleanedText, file);
-            List<Document> chunks = TEXT_SPLITTER.apply(List.of(document));
+            // 3. Read file into List<Document>
+            List<Document> documents = filename.toLowerCase().endsWith(".pdf")
+                    ? readPdfAsPageDocuments(tempFile, file, documentId)
+                    : readMarkdownAsDocuments(tempFile, file, documentId);
+
+            // 4. Clean text
+            List<Document> cleanedDocuments = cleanDocuments(documents);
+
+            //5. Split to chunks
+            List<Document> chunks = TEXT_SPLITTER.apply(cleanedDocuments);
+
+            //6. Add metadata for each chunk
+            List<Document> enrichedChunks = enrichChunks(chunks, documentId, filename);
 
             log.info("[RAG] Indexing {} chunks for file: {}", chunks.size(), filename);
-            vectorStore.accept(chunks);
+            //7. Add to vector store
+            vectorStore.accept(enrichedChunks);
 
-            return "Document uploaded and indexed successfully: " + filename;
+            return "Document uploaded and indexed successfully: " + filename
+                    + " | documentId: " + documentId
+                    + " | chunks: " + enrichedChunks.size();
         } catch (ApiException e) {
             throw e;
         } catch (Exception e) {
@@ -136,14 +149,14 @@ public class RagServiceImpl implements RagService {
                 .content();
 
         LocalDateTime end = LocalDateTime.now();
+//
+//        if (sessionId == null) {
+//            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
+//            log.info("[Gemini RAG] Created new chat session: {}", sessionId);
+//        }
 
-        if (sessionId == null) {
-            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
-            log.info("[Gemini RAG] Created new chat session: {}", sessionId);
-        }
-
-        log.info("[Gemini RAG] Saving Interaction for session: {}", sessionId);
-        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
+//        log.info("[Gemini RAG] Saving Interaction for session: {}", sessionId);
+//        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
 
 
         return RagAskResponse.builder()
@@ -280,11 +293,16 @@ public class RagServiceImpl implements RagService {
      */
     private Path saveMultipartFile(MultipartFile file) {
         try {
+            //1. Get original file's name
             String originalName = Objects.requireNonNull(file.getOriginalFilename());
             int dotIndex = originalName.lastIndexOf('.');
             String prefix = dotIndex > 0 ? originalName.substring(0, dotIndex) : originalName;
             String suffix = dotIndex > 0 ? originalName.substring(dotIndex) : "";
+
+            //2. Create temp file with unique name
             Path tempFile = Files.createTempFile(prefix + "_", suffix);
+
+            //3. Write content of file into file temp
             Files.copy(file.getInputStream(), tempFile,
                     StandardCopyOption.REPLACE_EXISTING);
             return tempFile;
@@ -297,45 +315,160 @@ public class RagServiceImpl implements RagService {
         return knowledgeRetrievalService.rankDocuments(query, candidates);
     }
 
-    private String extractTextFromPdf(Path path) {
-        try (PDDocument document = PDDocument.load(path.toFile())) {
-            return new PDFTextStripper().getText(document);
+    private List<Document> readPdfAsPageDocuments(Path path, MultipartFile file, String documentId) {
+        try (PDDocument pdfDocument = PDDocument.load(path.toFile())) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            List<Document> documents = new ArrayList<>();
+
+            int totalPages = pdfDocument.getNumberOfPages();
+
+            for (int page = 1; page <= totalPages; page++) {
+                stripper.setStartPage(page);
+                stripper.setEndPage(page);
+
+                String pageText = stripper.getText(pdfDocument);
+
+                if (pageText == null || pageText.trim().isEmpty()) {
+                    continue;
+                }
+
+                Map<String, Object> metadata = createBaseMetadata(file, documentId);
+                metadata.put("page", page);
+                metadata.put("total_pages", totalPages);
+                metadata.put("reader_type", "pdf_page");
+
+                documents.add(new Document(pageText, metadata));
+            }
+
+            return documents;
+
         } catch (Exception e) {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR,
                     "Error extracting text from PDF: " + e.getMessage());
         }
     }
 
-    private String extractTextFromMarkdown(Path path) {
+    private List<Document> readMarkdownAsDocuments(Path path, MultipartFile file, String documentId) {
         try {
-            return Files.readString(path, StandardCharsets.UTF_8);
+            String content = Files.readString(path, StandardCharsets.UTF_8);
+
+            List<Document> documents = new ArrayList<>();
+
+            String[] sections = content.split("(?m)(?=^#{1,6}\\s+)");
+
+            int sectionIndex = 1;
+
+            for (String section : sections) {
+                if (section == null || section.trim().isEmpty()) {
+                    continue;
+                }
+
+                String heading = extractMarkdownHeading(section);
+
+                Map<String, Object> metadata = createBaseMetadata(file, documentId);
+
+                metadata.put("section_index", sectionIndex);
+                metadata.put("heading", heading);
+                metadata.put("reader_type", "markdown_section");
+
+                documents.add(new Document(section.trim(), metadata));
+
+                sectionIndex++;
+            }
+
+            return documents;
+
         } catch (Exception e) {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR,
                     "Error extracting text from Markdown: " + e.getMessage());
         }
     }
 
+    private String extractMarkdownHeading(String section) {
+        return section.lines()
+                .filter(line -> line.matches("^#{1,6}\\s+.*"))
+                .findFirst()
+                .map(line -> line.replaceFirst("^#{1,6}\\s+", "").trim())
+                .orElse("Untitled section");
+    }
+
+
+
     private String cleanText(String text) {
         if (text == null)
             return "";
-        // Remove control characters except newline
-        String cleaned = text.replaceAll("[\\p{Cc}&&[^\\n]]", " ");
-        // Join hyphenated line breaks
-        cleaned = cleaned.replaceAll("-\\s*\\n", " ");
-        // Collapse single newlines (not paragraph breaks)
-        cleaned = cleaned.replaceAll("(?<!\\n)\\n(?!\\n)", " ");
-        // Collapse multiple spaces
-        return cleaned.replaceAll("\\s{2,}", " ").trim();
+
+        String cleaned = text;
+
+        // Remove control characters except newline, carriage return, tab
+        cleaned = cleaned.replaceAll("[\\p{Cc}&&[^\\n\\r\\t]]", " ");
+
+        // Join hyphenated line breaks: triết-\nhọc => triết học
+        cleaned = cleaned.replaceAll("-\\s*\\R\\s*", "");
+
+        // Remove lines that only contain page numbers
+        cleaned = cleaned.replaceAll("(?m)^\\s*\\d+\\s*$", "");
+
+        // Normalize spaces/tabs
+        cleaned = cleaned.replaceAll("[ \\t]+", " ");
+
+        // Collapse too many blank lines
+        cleaned = cleaned.replaceAll("\\R{3,}", "\n\n");
+
+        // Merge soft line breaks, but keep paragraph breaks
+        cleaned = cleaned.replaceAll("(?<![.!?:;])\\R(?!\\R)", " ");
+
+        // Final trim
+        return cleaned.trim();
     }
 
-    private Document createDocument(String content, MultipartFile file) {
+    private Map<String, Object> createBaseMetadata(MultipartFile file, String documentId) {
         Map<String, Object> metadata = new HashMap<>();
+
+        metadata.put("document_id", documentId);
         metadata.put("source", file.getOriginalFilename());
         metadata.put("upload_date", LocalDate.now().toString());
-        metadata.put("contentType", Objects.requireNonNull(file.getContentType()));
-        metadata.put("contentLength", String.valueOf(file.getSize()));
-        return new Document(content, metadata);
+        metadata.put("content_type", Objects.requireNonNullElse(file.getContentType(), "unknown"));
+        metadata.put("content_length", String.valueOf(file.getSize()));
+        metadata.put("language", "vi");
+        metadata.put("document_type", "philosophy_material");
+
+        return metadata;
     }
+
+    private List<Document> cleanDocuments(List<Document> documents) {
+        return documents.stream()
+                .map(document -> {
+                    String cleanedText = cleanText(document.getText());
+
+                    Map<String, Object> metadata = new HashMap<>(document.getMetadata());
+
+                    return new Document(cleanedText, metadata);
+                })
+                .filter(document -> document.getText() != null && document.getText().trim().length() >= 30)
+                .toList();
+    }
+
+    private List<Document> enrichChunks(List<Document> chunks, String documentId, String filename) {
+        List<Document> enrichedChunks = new ArrayList<>();
+
+        for (int i = 0; i < chunks.size(); i++) {
+            Document chunk = chunks.get(i);
+
+            Map<String, Object> metadata = new HashMap<>(chunk.getMetadata());
+
+            metadata.put("chunk_id", documentId + "_chunk_" + i);
+            metadata.put("chunk_index", i);
+            metadata.put("source", filename);
+            metadata.put("indexed_at", LocalDateTime.now().toString());
+
+            assert chunk.getText() != null;
+            enrichedChunks.add(new Document(chunk.getText(), metadata));
+        }
+
+        return enrichedChunks;
+    }
+
 
     private String buildPrompt(String query, UUID philosopherId, UUID sessionId) {
 

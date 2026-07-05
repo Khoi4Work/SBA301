@@ -26,9 +26,7 @@ public class PhilosopherTools {
 
         log.info("[Tool Call] Fetching biography for: {}", philosopherName);
 
-        return philosopherRepository.findAll().stream()
-                .filter(p -> p.getName().toLowerCase().contains(philosopherName.toLowerCase()))
-                .findFirst()
+        return philosopherRepository.findFirstByNameContainingIgnoreCase(philosopherName)
                 .map(Philosopher::getBiography)
                 .orElse("Currently, no biographical information is available for this philosopher in our records.");
     }
@@ -40,7 +38,17 @@ public class PhilosopherTools {
         log.info("[Tool Call] Searching knowledge base for query: {}", query);
 
         List<Document> candidates = knowledgeRetrievalService.retrieveCandidates(query);
+
+        if (candidates == null || candidates.isEmpty()) {
+            return "No relevant knowledge was found in the indexed documents.";
+        }
+
         List<Document> prioritizedDocs = knowledgeRetrievalService.rankDocuments(query, candidates);
+
+        if (prioritizedDocs == null || prioritizedDocs.isEmpty()) {
+            return "No sufficiently relevant knowledge was found after ranking.";
+        }
+
         return knowledgeRetrievalService.buildContext(prioritizedDocs);
     }
 }

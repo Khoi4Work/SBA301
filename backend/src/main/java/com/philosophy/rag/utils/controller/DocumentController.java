@@ -1,7 +1,7 @@
 package com.philosophy.rag.utils.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.utils.dto.DocumentDistributionResponse;
 import com.philosophy.rag.utils.dto.DocumentUploadResponse;
 import com.philosophy.rag.utils.service.S3StorageService;
@@ -51,7 +51,7 @@ public class DocumentController {
         @Operation(summary = "Upload document to S3 (Requires ADMIN, STAFF or INSTRUCTOR)")
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
-        public ResponseEntity<ApiResponse<DocumentUploadResponse>> uploadDocument(
+        public ResponseEntity<ApiResult<DocumentUploadResponse>> uploadDocument(
                         @RequestPart("file") MultipartFile file,
                         @RequestParam(value = "title", required = false) String title,
                         @RequestParam(value = "description", required = false) String description,
@@ -79,12 +79,12 @@ public class DocumentController {
                 }
 
                 return ResponseEntity.ok(
-                                ApiResponse.success(response, "Upload successful"));
+                                ApiResult.success(response, "Upload successful"));
         }
 
         @Operation(summary = "List documents stored in S3")
         @GetMapping
-        public ResponseEntity<ApiResponse<List<DocumentDistributionResponse>>> listDocuments() {
+        public ResponseEntity<ApiResult<List<DocumentDistributionResponse>>> listDocuments() {
                 log.info("Listing documents from S3");
 
                 List<DocumentDistributionResponse> documents = s3StorageService.listDocuments();
@@ -125,14 +125,14 @@ public class DocumentController {
                         documents.forEach(doc -> doc.setIsCompleted(false));
                 }
 
-                return ResponseEntity.ok(ApiResponse.success(documents, "Document list retrieved successfully"));
+                return ResponseEntity.ok(ApiResult.success(documents, "Document list retrieved successfully"));
         }
 
         @Operation(summary = "Update a document's metadata (Requires ADMIN, STAFF or INSTRUCTOR)")
         @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
         @Transactional
-        public ResponseEntity<ApiResponse<Void>> updateDocument(
+        public ResponseEntity<ApiResult<Void>> updateDocument(
                         @RequestParam("key") String key,
                         @RequestParam(value = "title", required = false) String title,
                         @RequestParam(value = "description", required = false) String description,
@@ -153,14 +153,14 @@ public class DocumentController {
                         log.info("Updated Document in PostgreSQL database for key: {}", key);
                 });
                 
-                return ResponseEntity.ok(ApiResponse.success(null, "Document updated successfully"));
+                return ResponseEntity.ok(ApiResult.success(null, "Document updated successfully"));
         }
 
         @Operation(summary = "Delete a document from S3 and database (Requires ADMIN, STAFF or INSTRUCTOR)")
         @DeleteMapping
         @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
         @Transactional
-        public ResponseEntity<ApiResponse<Void>> deleteDocument(@RequestParam("key") String key) throws ApiException {
+        public ResponseEntity<ApiResult<Void>> deleteDocument(@RequestParam("key") String key) throws ApiException {
                 log.info("Request to delete document with key: {}", key);
                 
                 s3StorageService.deleteDocument(key);
@@ -182,7 +182,7 @@ public class DocumentController {
                         log.info("Deleted {} QuizSets and their submissions from MongoDB for key: {}", quizSets.size(), key);
                 }
                 
-                return ResponseEntity.ok(ApiResponse.success(null, "Document deleted successfully"));
+                return ResponseEntity.ok(ApiResult.success(null, "Document deleted successfully"));
         }
 
 }

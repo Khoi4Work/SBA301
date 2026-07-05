@@ -18,7 +18,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiResponse<T> {
+public class ApiResult<T> {
 
     @Builder.Default
     private int code = 1000;
@@ -29,31 +29,31 @@ public class ApiResponse<T> {
     private Instant timestamp = Instant.now();
     private String path;
 
-    public static <T> ApiResponse<T> success(T result) {
-        return ApiResponse.<T>builder()
+    public static <T> ApiResult<T> success(T result) {
+        return ApiResult.<T>builder()
                 .code(1000)
                 .message("Success")
                 .result(result)
                 .build();
     }
 
-    public static <T> ApiResponse<T> success(T result, String message) {
-        return ApiResponse.<T>builder()
+    public static <T> ApiResult<T> success(T result, String message) {
+        return ApiResult.<T>builder()
                 .code(1000)
                 .message(message)
                 .result(result)
                 .build();
     }
 
-    public static <T> ApiResponse<T> error(String message) {
-        return ApiResponse.<T>builder()
+    public static <T> ApiResult<T> error(String message) {
+        return ApiResult.<T>builder()
                 .code(400)
                 .message(message)
                 .build();
     }
 
-    public static <T> ApiResponse<T> error(int code, String message, Map<String, String> errors) {
-        return ApiResponse.<T>builder()
+    public static <T> ApiResult<T> error(int code, String message, Map<String, String> errors) {
+        return ApiResult.<T>builder()
                 .code(code)
                 .message(message)
                 .errors(errors)

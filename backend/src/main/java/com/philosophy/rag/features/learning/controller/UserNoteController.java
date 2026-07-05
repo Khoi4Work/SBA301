@@ -1,6 +1,6 @@
 package com.philosophy.rag.features.learning.controller;
 
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.features.auth.service.UserService;
 import com.philosophy.rag.features.learning.dto.UserNoteRequest;
 import com.philosophy.rag.features.learning.dto.UserNoteResponse;
@@ -30,38 +30,38 @@ public class UserNoteController {
 
     @Operation(summary = "Get all notes for a specific document")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserNoteResponse>>> getNotes(
+    public ResponseEntity<ApiResult<List<UserNoteResponse>>> getNotes(
             @RequestParam("s3Key") String s3Key) {
         UUID userId = userService.getCurrentUserId();
         List<UserNoteResponse> notes = userNoteService.getNotesByDocument(userId, s3Key);
-        return ResponseEntity.ok(ApiResponse.success(notes));
+        return ResponseEntity.ok(ApiResult.success(notes));
     }
 
     @Operation(summary = "Create a new note/highlight")
     @PostMapping
-    public ResponseEntity<ApiResponse<UserNoteResponse>> createNote(
+    public ResponseEntity<ApiResult<UserNoteResponse>> createNote(
             @Valid @RequestBody UserNoteRequest request) {
         UUID userId = userService.getCurrentUserId();
         UserNoteResponse response = userNoteService.createNote(userId, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Đã lưu ghi chú thành công"));
+        return ResponseEntity.ok(ApiResult.success(response, "Đã lưu ghi chú thành công"));
     }
 
     @Operation(summary = "Update an existing note")
     @PutMapping("/{noteId}")
-    public ResponseEntity<ApiResponse<UserNoteResponse>> updateNote(
+    public ResponseEntity<ApiResult<UserNoteResponse>> updateNote(
             @PathVariable("noteId") UUID noteId,
             @Valid @RequestBody UserNoteRequest request) {
         UUID userId = userService.getCurrentUserId();
         UserNoteResponse response = userNoteService.updateNote(userId, noteId, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật ghi chú thành công"));
+        return ResponseEntity.ok(ApiResult.success(response, "Cập nhật ghi chú thành công"));
     }
 
     @Operation(summary = "Delete a note")
     @DeleteMapping("/{noteId}")
-    public ResponseEntity<ApiResponse<String>> deleteNote(
+    public ResponseEntity<ApiResult<String>> deleteNote(
             @PathVariable("noteId") UUID noteId) {
         UUID userId = userService.getCurrentUserId();
         userNoteService.deleteNote(userId, noteId);
-        return ResponseEntity.ok(ApiResponse.success("Đã xóa ghi chú thành công"));
+        return ResponseEntity.ok(ApiResult.success("Đã xóa ghi chú thành công"));
     }
 }

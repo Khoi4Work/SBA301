@@ -2,7 +2,7 @@ package com.philosophy.rag.base.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.philosophy.rag.base.exception.ErrorCode;
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +30,12 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        // Sử dụng đúng ErrorCode và Builder của ApiResponse
-        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+        // Sử dụng đúng ErrorCode và Builder của ApiResult
+        ApiResult<String> apiResult = ApiResult.<String>builder()
                 .code(ErrorCode.UNAUTHENTICATED.getCode())
                 .message("Unauthorized: Access is denied due to invalid credentials or expired token")
                 .build();
 
-        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().write(objectMapper.writeValueAsString(apiResult));
     }
 }

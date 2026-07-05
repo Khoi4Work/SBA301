@@ -1,6 +1,6 @@
 package com.philosophy.rag.features.learning.controller;
 
-import com.philosophy.rag.base.response.ApiResponse;
+import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.features.learning.dto.QuizGenerateResponse;
 import com.philosophy.rag.features.learning.dto.SessionContentResponse;
 import com.philosophy.rag.features.learning.dto.SessionContentRequest;
@@ -28,12 +28,12 @@ public class SessionController {
     @Operation(summary = "Get lesson content from S3 file (Requires authentication)")
     @PostMapping("/content")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<SessionContentResponse>> getContent(
+    public ResponseEntity<ApiResult<SessionContentResponse>> getContent(
             @Valid @RequestBody SessionContentRequest request) {
 
         log.info("Session content request for key: {}", request.key());
         SessionContentResponse content = sessionService.getContent(request.key());
-        return ResponseEntity.ok(ApiResponse.success(content, "Nội dung bài học được tải thành công"));
+        return ResponseEntity.ok(ApiResult.success(content, "Nội dung bài học được tải thành công"));
     }
 
     /**
@@ -43,11 +43,11 @@ public class SessionController {
     @Operation(summary = "Generate 10-question quiz from S3 file content using AI (Requires authentication)")
     @PostMapping("/quiz")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<QuizGenerateResponse>> generateQuiz(
+    public ResponseEntity<ApiResult<QuizGenerateResponse>> generateQuiz(
             @Valid @RequestBody SessionContentRequest request) {
 
         log.info("Quiz generation request for key: {}", request.key());
         QuizGenerateResponse quiz = sessionService.generateQuiz(request.key());
-        return ResponseEntity.ok(ApiResponse.success(quiz, "Bài quiz được tạo thành công"));
+        return ResponseEntity.ok(ApiResult.success(quiz, "Bài quiz được tạo thành công"));
     }
 }
