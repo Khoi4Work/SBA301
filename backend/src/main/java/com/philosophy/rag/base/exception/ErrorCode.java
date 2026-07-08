@@ -26,6 +26,7 @@ public enum ErrorCode {
     VERIFY_TOKEN_EXPIRED(4005, "Verify token has expired", HttpStatus.BAD_REQUEST),
     VERIFY_TOKEN_INVALID(4006, "Invalid verify token", HttpStatus.BAD_REQUEST),
     INVALID_REQUEST(4008, "Invalid request", HttpStatus.BAD_REQUEST),
+    INVALID_PAGE(4009, "The requested page does not exist", HttpStatus.BAD_REQUEST),
 
     // Security errors
     UNAUTHENTICATED(4010, "Authentication failed. Please log in again.", HttpStatus.UNAUTHORIZED),

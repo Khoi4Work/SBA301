@@ -149,15 +149,14 @@ public class RagServiceImpl implements RagService {
                 .content();
 
         LocalDateTime end = LocalDateTime.now();
-//
-//        if (sessionId == null) {
-//            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
-//            log.info("[Gemini RAG] Created new chat session: {}", sessionId);
-//        }
 
-//        log.info("[Gemini RAG] Saving Interaction for session: {}", sessionId);
-//        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
+        if (sessionId == null) {
+            sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
+            log.info("[Gemini RAG] Created new chat session: {}", sessionId);
+        }
 
+        log.info("[Gemini RAG] Saving Interaction for session: {}", sessionId);
+        chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
 
         return RagAskResponse.builder()
                 .answer(result)

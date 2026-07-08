@@ -73,8 +73,7 @@ public class RagController {
 
         log.info("Received RAG query: {}, PhilosopherID: {}, SessionID: {}", request.query(), request.philosopherId(), request.sessionId());
 
-        //UUID userId = userService.getCurrentUserId();
-        UUID userId = UUID.randomUUID();
+        UUID userId = userService.getCurrentUserId();
         RagAskResponse response = ragService.ask(userId, request.query(), request.philosopherId(), request.sessionId());
 
         return ResponseEntity.ok(ApiResult.success(response));

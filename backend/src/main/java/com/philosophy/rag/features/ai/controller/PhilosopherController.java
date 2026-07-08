@@ -1,6 +1,7 @@
 package com.philosophy.rag.features.ai.controller;
 
 import com.philosophy.rag.base.response.ApiResult;
+import com.philosophy.rag.features.ai.dto.PageResponse;
 import com.philosophy.rag.features.ai.dto.PhilosopherRequest;
 import com.philosophy.rag.features.ai.dto.PhilosopherResponse;
 import com.philosophy.rag.features.ai.service.PhilosopherService;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,11 +30,14 @@ public class PhilosopherController {
 
     private final PhilosopherService philosopherService;
 
-    @Operation(summary = "Get all philosophers (Requires authentication)")
+    @Operation(summary = "Get all philosophers with pagination (Requires authentication)")
     @GetMapping("/")
-    public ResponseEntity<ApiResult<List<PhilosopherResponse>>> getAllPhilosophers() {
-        List<PhilosopherResponse> philosophers = philosopherService.findAllPhilosophers();
-        return ResponseEntity.ok(ApiResult.success(philosophers, "Successfully retrieved philosopher list"));
+    public ResponseEntity<ApiResult<PageResponse<PhilosopherResponse>>> getAllPhilosophers(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "2") int size) {
+        log.info("Request to get philosophers list: page={}, size={}", page, size);
+        PageResponse<PhilosopherResponse> response = philosopherService.findAllPhilosophers(PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResult.success(response, "Successfully retrieved philosopher list"));
     }
 
     @Operation(summary = "Get philosopher by ID (Requires authentication)")

@@ -108,6 +108,12 @@ const VirtualAssistantPage = () => {
         });
     };
 
+    const canInteract = !!(
+        philosopherDetails?.idleModelUrl &&
+        philosopherDetails?.talkingModelUrl &&
+        philosopherDetails?.thinkingModelUrl
+    );
+
     const handleMicClick = () => {
         stopAllAudio();
         if (isListening) {
@@ -195,43 +201,47 @@ const VirtualAssistantPage = () => {
                                 />;
                             })()}
 
-                            <div style={{
-                                position: 'absolute',
-                                bottom: '40px',
-                                left: '50%',
-                                transform: 'translateX(-50%)',
-                                zIndex: 10
-                            }}>
-                                <MicButton
-                                    isListening={isListening}
-                                    onClick={handleMicClick}
-                                    disabled={isAiThinking}
-                                    size="60px"
-                                    activeColor="#ef4444"
-                                    idleColor="#e9c176"
-                                />
-                            </div>
+                            {canInteract && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '40px',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    zIndex: 10
+                                }}>
+                                    <MicButton
+                                        isListening={isListening}
+                                        onClick={handleMicClick}
+                                        disabled={isAiThinking}
+                                        size="60px"
+                                        activeColor="#ef4444"
+                                        idleColor="#e9c176"
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Chat Sidebar using the new component */}
-                        <ChatPanel
-                            isOpen={isChatOpen}
-                            onToggle={() => setIsChatOpen(!isChatOpen)}
-                            isMenuOpen={isMenuOpen}
-                        >
-                            <SmartChatAI
-                                title={philosopherDetails?.name || "Trợ Lý Ảo Thông Minh"}
-                            ref={chatRef}
-                                visible={isChatOpen}
-                                isListening={isListening}
-                                toggleListening={toggleListening}
-                                stopListening={stopListening}
-                                micError={micError}
-                                setAiTalking={setIsAiTalking}
-                                setAiThinking={setIsAiThinking}
-                                philosopherId={philosopherDetails?.id}
-                            />
-                        </ChatPanel>
+                        {canInteract && (
+                            <ChatPanel
+                                isOpen={isChatOpen}
+                                onToggle={() => setIsChatOpen(!isChatOpen)}
+                                isMenuOpen={isMenuOpen}
+                            >
+                                <SmartChatAI
+                                    title={philosopherDetails?.name || "Trợ Lý Ảo Thông Minh"}
+                                    ref={chatRef}
+                                    visible={isChatOpen}
+                                    isListening={isListening}
+                                    toggleListening={toggleListening}
+                                    stopListening={stopListening}
+                                    micError={micError}
+                                    setAiTalking={setIsAiTalking}
+                                    setAiThinking={setIsAiThinking}
+                                    philosopherId={philosopherDetails?.id}
+                                />
+                            </ChatPanel>
+                        )}
                     </div>
                 </div>
             </main>

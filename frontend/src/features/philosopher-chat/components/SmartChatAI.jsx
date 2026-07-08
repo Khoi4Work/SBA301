@@ -124,12 +124,12 @@ const SmartChatAI = forwardRef(({
                     setSessionId(data.result.sessionId);
                 }
                 triggerRefresh();
-                const params = new URLSearchParams({
-                    text: data.result.answer,
-                    voice: voiceId,
-                    philosopherId: philosopherId,
-                    sessionId: effectiveSessionId
-                });
+                const params = new URLSearchParams();
+                params.append("text", data.result.answer);
+                if (voiceId) params.append("voice", voiceId);
+                if (philosopherId) params.append("philosopherId", philosopherId);
+                if (effectiveSessionId) params.append("sessionId", effectiveSessionId);
+
                 const streamUrl = `http://localhost:8080/api/voice/speak?${params.toString()}`;
                 setMessages(prev => [
                     ...prev,

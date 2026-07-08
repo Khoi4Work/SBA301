@@ -14,8 +14,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
+import com.philosophy.rag.features.ai.dto.PageResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -25,11 +28,24 @@ public class PhilosopherServiceImpl implements PhilosopherService {
     private final MediaStorageService cloudinaryService;
 
     @Override
-    public List<PhilosopherResponse> findAllPhilosophers() {
-        return philosopherRepository.findAll()
+    public PageResponse<PhilosopherResponse> findAllPhilosophers(Pageable pageable) {
+        Page<Philosopher> page = philosopherRepository.findAll(pageable);
+
+        if (pageable.getPageNumber() >= page.getTotalPages() && page.getTotalPages() > 0) {
+            throw new ApiException(ErrorCode.INVALID_PAGE);
+        }
+
+        List<PhilosopherResponse> content = page.getContent()
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+
+        return new PageResponse<>(
+                content,
+                page.getNumber(),
+                page.getTotalPages(),
+                page.getTotalElements()
+        );
     }
 
     @Override

@@ -50,7 +50,8 @@ function Model({ idleUrl, talkingUrl, thinkingUrl, isTalking, isThinking }) {
 
 export default function PhilosopherAvatar3D({ idleUrl, talkingUrl, thinkingUrl, isTalking, isThinking }) {
     if (!idleUrl && !talkingUrl && !thinkingUrl) {
-        return <div style={{ color: 'white', textAlign: 'center', marginTop: '20px' }}>Loading 3D Model...</div>;
+        return <div style={{ color: 'white', textAlign: 'center', marginTop: '20px' }}>Hiện tại nhân vật đang trong
+        quá trình cập nhật, hiền giả vui lòng sử dụng nhân vật khác...</div>;
     }
 
     return (
