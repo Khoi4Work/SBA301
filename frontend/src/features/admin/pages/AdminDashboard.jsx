@@ -1,5 +1,6 @@
 import React from "react";
 import { useAdminStats } from "@/features/admin/hooks/useAdminStats.js";
+import LearnerGrowthChart from "@/features/admin/components/LearnerGrowthChart.jsx";
 
 export default function AdminDashboard() {
     const { displayName, userCount, philosopherCount, chapterCount, statsLoading } = useAdminStats();
@@ -43,34 +44,12 @@ export default function AdminDashboard() {
                         {statsLoading ? "..." : chapterCount}
                     </span>
                 </div>
-
             </section>
 
             {/* Visual Charts Section */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mb-12">
-                <div className="lg:col-span-2 folio-card bg-surface-container-low p-8 min-h-[400px] flex flex-col">
-                    <div className="flex justify-between items-center mb-10">
-                        <h3 className="font-display text-2xl font-semibold">Tăng trưởng Học giả</h3>
-                        <div className="flex gap-4 text-xs font-semibold text-on-surface-variant/60">
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-secondary"></span> Dự kiến</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 bg-secondary/30"></span> Thực tế</span>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 flex items-end justify-between gap-4 px-4 pb-2">
-                        {[60, 75, 65, 90, 82, 100].map((height, i) => (
-                            <div key={i} className="flex flex-col items-center gap-2 w-full">
-                                <div className="w-full bg-secondary/10 relative h-[180px]">
-                                    <div
-                                        className={`absolute bottom-0 left-0 right-0 ${i === 5 ? 'bg-secondary' : 'bg-secondary/40'}`}
-                                        style={{ height: `${height}%` }}
-                                    ></div>
-                                </div>
-                                <span className="text-[10px] uppercase tracking-tighter text-on-surface-variant">Tháng {i + 1}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                {/* Learner Growth Chart — real data from backend */}
+                <LearnerGrowthChart />
 
                 <div className="folio-card bg-surface-container-low p-8 flex flex-col">
                     <h3 className="font-display text-2xl font-semibold mb-8">Phân loại Triết gia</h3>
@@ -108,7 +87,5 @@ export default function AdminDashboard() {
             </section>
 
         </div>
-
-
     );
 }

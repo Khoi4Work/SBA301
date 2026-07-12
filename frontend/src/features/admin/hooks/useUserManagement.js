@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import { userService } from "@/services/userService.js";
-import { extractResponse } from "@/features/admin/utils/extractResponse.js";
 
 const INITIAL_EDIT_FORM = {
     username: "",
@@ -8,6 +7,8 @@ const INITIAL_EDIT_FORM = {
     fullName: "",
     biography: "",
 };
+
+const PAGE_SIZE = 5;
 
 export function useUserManagement() {
     const [users, setUsers] = useState([]);
@@ -19,15 +20,32 @@ export function useUserManagement() {
     const [updateMessage, setUpdateMessage] = useState("");
     const [updateError, setUpdateError] = useState("");
 
-    const fetchUsers = useCallback(async () => {
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(0); // 0-based (Backend)
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
+
+    const fetchUsers = useCallback(async (page = 0) => {
         try {
             setLoading(true);
             setError("");
 
-            const data = await userService.getAllUsers();
-            const userList = extractResponse(data);
+            const data = await userService.getAllUsers(page, PAGE_SIZE);
 
-            setUsers(userList);
+            // Spring Page response: { content, totalPages, totalElements, number, ... }
+            if (data && Array.isArray(data.content)) {
+                setUsers(data.content);
+                setTotalPages(data.totalPages ?? 1);
+                setTotalElements(data.totalElements ?? data.content.length);
+                setCurrentPage(data.number ?? page);
+            } else {
+                // Fallback: if server returns plain array (non-paginated)
+                const list = Array.isArray(data) ? data : [];
+                setUsers(list);
+                setTotalPages(1);
+                setTotalElements(list.length);
+                setCurrentPage(0);
+            }
         } catch (err) {
             console.error(err);
             setError(
@@ -40,8 +58,13 @@ export function useUserManagement() {
     }, []);
 
     useEffect(() => {
-        fetchUsers();
+        fetchUsers(0);
     }, [fetchUsers]);
+
+    const goToPage = useCallback((page) => {
+        if (page < 0 || page >= totalPages) return;
+        fetchUsers(page);
+    }, [fetchUsers, totalPages]);
 
     const handleUpdateUser = (user) => {
         setEditingUser(user);
@@ -87,7 +110,7 @@ export function useUserManagement() {
                 biography: editForm.biography,
             });
 
-            await fetchUsers();
+            await fetchUsers(currentPage);
 
             setEditingUser((prev) => ({
                 ...prev,
@@ -119,7 +142,9 @@ export function useUserManagement() {
 
         try {
             await userService.deleteUser(user.userId);
-            await fetchUsers();
+            // If last item on page and not first page, go back one page
+            const newPage = users.length === 1 && currentPage > 0 ? currentPage - 1 : currentPage;
+            await fetchUsers(newPage);
             alert("Xóa user thành công.");
         } catch (err) {
             console.error(err);
@@ -140,6 +165,10 @@ export function useUserManagement() {
         saving,
         updateMessage,
         updateError,
+        // Pagination
+        currentPage,
+        totalPages,
+        totalElements,
 
         // Handlers
         handleUpdateUser,
@@ -147,5 +176,6 @@ export function useUserManagement() {
         handleCancelUpdate,
         handleSubmitUpdate,
         handleDeleteUser,
+        goToPage,
     };
 }

@@ -5,9 +5,14 @@ const unwrap = (response) => {
 };
 
 export const userService = {
-    getAllUsers: async () => {
-        const res = await apiClient.get("/users");
-        return unwrap(res);
+    getAllUsers: async (page = 0, size = 10) => {
+        const res = await apiClient.get(`/users?page=${page}&size=${size}`);
+        return res.data?.result ?? res.data?.data ?? res.data;
+    },
+
+    getGrowthStats: async () => {
+        const res = await apiClient.get("/users/growth-stats");
+        return res.data?.result ?? res.data?.data ?? res.data;
     },
 
     updateUser: async (id, payload) => {

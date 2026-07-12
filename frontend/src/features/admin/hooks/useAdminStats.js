@@ -23,12 +23,18 @@ export function useAdminStats() {
                 setStatsLoading(true);
 
                 const [usersData, philosophersData, documentsData] = await Promise.all([
-                    userService.getAllUsers(),
+                    userService.getAllUsers(0, 1), // page 0, size 1 — chỉ cần totalElements
                     philosopherService.getAll(),
                     fetchDocuments(),
                 ]);
 
-                setUserCount(extractResponse(usersData).length);
+                // Spring Page response trả về { content, totalElements, ... }
+                if (usersData && typeof usersData.totalElements === 'number') {
+                    setUserCount(usersData.totalElements);
+                } else {
+                    // fallback nếu API chưa phân trang
+                    setUserCount(extractResponse(usersData).length);
+                }
                 setPhilosopherCount(extractResponse(philosophersData).length);
 
                 const docs = extractResponse(documentsData);
