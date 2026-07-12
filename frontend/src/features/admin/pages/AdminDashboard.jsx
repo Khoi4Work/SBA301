@@ -17,7 +17,6 @@ export default function AdminDashboard() {
                 <div className="folio-card bg-surface-container-low p-6 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                         <span className="material-symbols-outlined text-secondary">groups</span>
-                        <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5">+12%</span>
                     </div>
                     <span className="text-on-surface-variant font-semibold uppercase text-xs tracking-wider">Học giả (Scholars)</span>
                     <span className="text-3xl font-display font-semibold mt-1">
@@ -28,7 +27,6 @@ export default function AdminDashboard() {
                 <div className="folio-card bg-surface-container-low p-6 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                         <span className="material-symbols-outlined text-secondary">psychology</span>
-                        <span className="text-xs font-semibold text-secondary/60">STABLE</span>
                     </div>
                     <span className="text-on-surface-variant font-semibold uppercase text-xs tracking-wider">Triết gia AI</span>
                     <span className="text-3xl font-display font-semibold mt-1">
@@ -39,7 +37,6 @@ export default function AdminDashboard() {
                 <div className="folio-card bg-surface-container-low p-6 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                         <span className="material-symbols-outlined text-secondary">menu_book</span>
-                        <span className="text-xs font-semibold text-on-surface-variant/40">ACTIVE</span>
                     </div>
                     <span className="text-on-surface-variant font-semibold uppercase text-xs tracking-wider">Chương học</span>
                     <span className="text-3xl font-display font-semibold mt-1">
@@ -47,14 +44,6 @@ export default function AdminDashboard() {
                     </span>
                 </div>
 
-                <div className="folio-card bg-surface-container-low p-6 flex flex-col">
-                    <div className="flex justify-between items-start mb-4">
-                        <span className="material-symbols-outlined text-secondary">dns</span>
-                        <span className="text-xs font-semibold text-emerald-400">ONLINE</span>
-                    </div>
-                    <span className="text-on-surface-variant font-semibold uppercase text-xs tracking-wider">Hệ thống</span>
-                    <span className="text-3xl font-display font-semibold mt-1">99.9%</span>
-                </div>
             </section>
 
             {/* Visual Charts Section */}
@@ -118,84 +107,6 @@ export default function AdminDashboard() {
                 </div>
             </section>
 
-            {/* Recent Actions & Quick Nav */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-gutter">
-                <div className="folio-card bg-surface-container-low p-8">
-                    <h3 className="font-display text-2xl mb-8 flex items-center gap-3">
-                        <span className="material-symbols-outlined text-secondary">history</span>
-                        Hoạt động gần đây
-                    </h3>
-                    <div className="space-y-6">
-                        <div className="flex gap-4 relative">
-                            <div className="absolute left-[7px] top-[24px] bottom-[-24px] w-[1px] bg-outline/30"></div>
-                            <div className="w-4 h-4 rounded-full bg-secondary border-4 border-surface mt-1 z-10"></div>
-                            <div className="flex-1">
-                                <p className="text-sm text-on-surface font-medium">Phê duyệt 15 học giả mới từ Chapter Bắc Âu</p>
-                                <span className="text-xs text-on-surface-variant/60">14:20 PM - Archive Guard</span>
-                            </div>
-                        </div>
-                        <div className="flex gap-4 relative">
-                            <div className="absolute left-[7px] top-[24px] bottom-[-24px] w-[1px] bg-outline/30"></div>
-                            <div className="w-4 h-4 rounded-full bg-secondary border-4 border-surface mt-1 z-10"></div>
-                            <div className="flex-1">
-                                <p className="text-sm text-on-surface font-medium">Cập nhật kho lưu trữ triết học Marcus Aurelius</p>
-                                <span className="text-xs text-on-surface-variant/60">10:05 AM - System Sync</span>
-                            </div>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="w-4 h-4 rounded-full bg-secondary border-4 border-surface mt-1 z-10"></div>
-                            <div className="flex-1">
-                                <p className="text-sm text-on-surface font-medium">Hệ thống tự động sao lưu dữ liệu Archives</p>
-                                <span className="text-xs text-on-surface-variant/60">03:00 AM - Automaton</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button className="w-full mt-8 border border-outline-variant py-2 text-xs font-semibold uppercase tracking-widest text-on-surface-variant hover:bg-surface-container-high transition-colors">Xem toàn bộ nhật ký</button>
-                </div>
-
-                <div className="space-y-gutter">
-                    <div className="grid grid-cols-2 gap-gutter">
-                        <a href="/admin/users" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 border border-secondary/30 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-surface transition-all">
-                                    <span className="material-symbols-outlined">manage_accounts</span>
-                                </div>
-                                <span className="text-sm font-bold text-on-surface">User Management</span>
-                            </div>
-                        </a>
-                        <a href="/admin/philosophers" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 border border-secondary/30 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-surface transition-all">
-                                    <span className="material-symbols-outlined">settings_suggest</span>
-                                </div>
-                                <span className="text-sm font-bold text-on-surface">AI Config</span>
-                            </div>
-                        </a>
-                        <a href="/admin/chapters" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 border border-secondary/30 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-surface transition-all">
-                                    <span className="material-symbols-outlined">edit_note</span>
-                                </div>
-                                <span className="text-sm font-bold text-on-surface">Academy Editor</span>
-                            </div>
-                        </a>
-                    </div>
-
-                    <div className="folio-card h-[130px] flex items-center px-8 relative bg-gradient-to-r from-secondary-container/20 to-transparent">
-                        <div className="flex-1">
-                            <h4 className="font-display text-xl text-secondary">Tình trạng Archives</h4>
-                            <p className="text-xs text-on-surface-variant font-medium mt-1">Sử dụng: 4.2 TB / 10 TB lưu trữ vĩnh viễn.</p>
-                        </div>
-                        <div className="w-24 h-24 relative flex items-center justify-center">
-                            <svg className="w-full h-full transform -rotate-90">
-                                <circle className="text-outline-variant/30" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" strokeWidth="4"></circle>
-                                <circle className="text-secondary" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" strokeDasharray="251.2" strokeDashoffset="150" strokeWidth="6"></circle>
-                            </svg>
-                            <span className="absolute text-xs font-bold">42%</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
 

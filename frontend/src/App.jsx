@@ -40,7 +40,7 @@ function AppRoutes() {
                 GROUP 1: CÁC TRANG CÓ HEADER CƠ BẢN
                 ========================================== */}
             <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-            <Route path="/profile" element={<MainLayout><ProfilePage /></MainLayout>} />
+            <Route path="/profile" element={<ProtectedRoute ><MainLayout><ProfilePage /></MainLayout></ProtectedRoute>} />
 
             {/* ==========================================
                 GROUP 2: CÁC TRANG KHÔNG CÓ HEADER
@@ -51,25 +51,24 @@ function AppRoutes() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            <Route path="/study/lesson" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
-            <Route path="/review/play/:id" element={<QuizPlay />} />
+            <Route path="/study/lesson" element={<ProtectedRoute requireRole="LEARNER"><LessonPage /></ProtectedRoute>} />
+            <Route path="/review/play/:id" element={<ProtectedRoute requireRole="LEARNER"><QuizPlay /></ProtectedRoute>} />
 
-            <Route path="/ai" element={<ProtectedRoute><VirtualAssistantPage /></ProtectedRoute>} />
+            <Route path="/ai" element={<ProtectedRoute requireRole="LEARNER"><VirtualAssistantPage /></ProtectedRoute>} />
             {/* ==========================================
                 GROUP 3: CÁC TRANG PROTECTED DÙNG MAIN LAYOUT
                 ========================================== */}
-            <Route path="/model" element={<ProtectedRoute><MainLayout><PhilosopherAvatar3D /></MainLayout></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><MainLayout><PhiloVerse /></MainLayout></ProtectedRoute>} />
-            <Route path="/study" element={<ProtectedRoute><MainLayout><StudyingPage /></MainLayout></ProtectedRoute>} />
-            <Route path="/chat" element={<ProtectedRoute><MainLayout><Chat /></MainLayout></ProtectedRoute>} />
-            <Route path="/review" element={<ProtectedRoute><MainLayout><Review /></MainLayout></ProtectedRoute>} />
-            <Route path="/review/history" element={<ProtectedRoute><MainLayout><QuizHistory /></MainLayout></ProtectedRoute>} />
+            <Route path="/model" element={<ProtectedRoute requireRole="LEARNER"><MainLayout><PhilosopherAvatar3D /></MainLayout></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute requireRole="LEARNER"><MainLayout><PhiloVerse /></MainLayout></ProtectedRoute>} />
+            <Route path="/study" element={<ProtectedRoute requireRole="LEARNER"><MainLayout><StudyingPage /></MainLayout></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute requireRole="LEARNER"><MainLayout><Chat /></MainLayout></ProtectedRoute>} />
+            <Route path="/review" element={<ProtectedRoute requireRole="LEARNER"><MainLayout><Review /></MainLayout></ProtectedRoute>} />
+            <Route path="/review/history" element={<ProtectedRoute requireRole="LEARNER"><MainLayout><QuizHistory /></MainLayout></ProtectedRoute>} />
 
             {/* ==========================================
                 GROUP 4: ADMIN ROUTES (NESTED ROUTING)
                 ========================================== */}
-            {/* Thêm requireRole="ADMIN" vào ProtectedRoute nếu bạn có hỗ trợ */}
-            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+            <Route path="/admin" element={<ProtectedRoute requireRole="ADMIN"><AdminLayout /></ProtectedRoute>}>
                 {/* Các route con này sẽ được render vào bên trong <Outlet /> của AdminLayout */}
                 <Route index element={<AdminDashboard />} /> {/* path: /admin */}
                 <Route path="philosophers" element={<PhilosopherManagementPage />} /> {/* path: /admin/philosophers */}

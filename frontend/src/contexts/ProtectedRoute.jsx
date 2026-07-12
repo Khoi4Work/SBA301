@@ -17,10 +17,14 @@ const ProtectedRoute = ({ children, requireRole }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Lớp bảo vệ 3: Có yêu cầu Role cụ thể nhưng User không đáp ứng -> Đẩy về trang chủ (hoặc trang 403)
+    // Lớp bảo vệ 3: Có yêu cầu Role cụ thể nhưng User không đáp ứng -> Đẩy về trang tương ứng
     if (requireRole && user.role !== requireRole) {
         alert("Bạn không có quyền truy cập trang này!");
-        return <Navigate to="/" replace />;
+        if (user.role === 'ADMIN') {
+            return <Navigate to="/admin" replace />;
+        } else {
+            return <Navigate to="/dashboard" replace />;
+        }
     }
 
     // Nếu qua hết các ải trên -> Cho phép hiển thị Component con

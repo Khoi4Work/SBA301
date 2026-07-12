@@ -345,67 +345,7 @@ export default function UserManagementPage() {
             </div>
         )}
 
-      {/* Detail Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-12">
-        <div className="lg:col-span-8 space-y-6">
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-secondary opacity-80 text-3xl">description</span>
-            <h4 className="font-display text-2xl font-semibold text-on-surface">Nhật ký Hệ thống Gần đây</h4>
-          </div>
-          <div className="space-y-4 text-sm text-on-surface-variant mt-6">
-            <div className="flex gap-6 items-start folio-border pl-6 py-2 bg-surface-container-low border border-transparent hover:border-secondary/20 hover:bg-surface-container transition-all">
-              <span className="text-xs text-secondary/60 font-semibold w-20 shrink-0 uppercase tracking-widest translate-y-[2px]">10:45 AM</span>
-              <p className="flex-1 leading-relaxed">Sage <strong className="text-secondary font-semibold">Alexandre de Rhodes</strong> đã cập nhật tài liệu lưu trữ chương VI: &quot;Kiến trúc Hellenistic&quot;.</p>
-            </div>
-            <div className="flex gap-6 items-start folio-border pl-6 py-2 bg-surface-container-low border border-transparent hover:border-error/20 hover:bg-error/5 transition-all">
-              <span className="text-xs text-secondary/60 font-semibold w-20 shrink-0 uppercase tracking-widest translate-y-[2px]">09:12 AM</span>
-              <p className="flex-1 leading-relaxed">Hệ thống tự động vô hiệu hóa tài khoản <strong className="text-error font-semibold">Elena Võ</strong> do vi phạm quy tắc thảo luận bậc II.</p>
-            </div>
-            <div className="flex gap-6 items-start folio-border pl-6 py-2 bg-surface-container-low border border-transparent hover:border-secondary/20 hover:bg-surface-container transition-all">
-             <span className="text-xs text-secondary/60 font-semibold w-20 shrink-0 uppercase tracking-widest translate-y-[2px]">Yesterday</span>
-              <p className="flex-1 leading-relaxed">Phê duyệt 12 đơn đăng ký gia nhập học viện từ khu vực Chapter Bắc Âu.</p>
-            </div>
-          </div>
-        </div>
 
-        <div className="lg:col-span-4 bg-surface-container-low border border-secondary/10 p-8 space-y-6 folio-card flex flex-col">
-          <h4 className="font-semibold text-secondary uppercase tracking-widest text-xs mb-2">Phân bổ Vai trò</h4>
-
-          <div className="flex-1 space-y-6">
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold text-on-surface-variant">
-                <span>Sage</span>
-                <span className="text-secondary">5%</span>
-              </div>
-              <div className="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                <div className="h-full bg-secondary w-[5%]"></div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold text-on-surface-variant">
-                <span>Scholar</span>
-                <span className="text-primary">82%</span>
-              </div>
-              <div className="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                <div className="h-full bg-primary w-[82%]"></div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold text-on-surface-variant">
-                <span>Initiate</span>
-                <span className="text-surface-bright">13%</span>
-              </div>
-              <div className="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                <div className="h-full bg-surface-bright w-[13%]"></div>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-[10px] text-on-surface-variant italic font-medium pt-6 border-t border-secondary/10 opacity-70">
-            Dữ liệu được cập nhật thời gian thực từ mạng lưới Lyceum toàn cầu.
-          </p>
-        </div>
-      </section>
 
       {/* Footer Minimal */}
     </div>

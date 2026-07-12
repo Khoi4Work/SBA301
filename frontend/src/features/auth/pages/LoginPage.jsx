@@ -25,7 +25,19 @@ export default function LoginPage() {
             const intendedPath = location.state?.from?.pathname;
 
             if (intendedPath) {
-                navigate(intendedPath, { replace: true });
+                if (userRole === 'ADMIN') {
+                    if (intendedPath.startsWith('/admin') || intendedPath === '/profile') {
+                        navigate(intendedPath, { replace: true });
+                    } else {
+                        navigate('/admin', { replace: true });
+                    }
+                } else {
+                    if (!intendedPath.startsWith('/admin')) {
+                        navigate(intendedPath, { replace: true });
+                    } else {
+                        navigate('/dashboard', { replace: true });
+                    }
+                }
             } else {
                 if (userRole === 'ADMIN') {
                     navigate('/admin', { replace: true });

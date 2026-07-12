@@ -24,8 +24,8 @@ export default function AdminLayout() {
       {/* Sidebar Navigation */}
       <aside className="h-screen w-64 fixed left-0 top-0 border-r-[0.5px] border-outline/30 bg-surface-container-lowest flex flex-col py-gutter z-50">
         <div className="px-6 mb-10">
-          <h1 className="font-display text-2xl text-secondary tracking-widest uppercase">Philoverse</h1>
-          <p className="font-sans text-[10px] text-on-surface-variant uppercase tracking-[0.2em] font-semibold mt-1">Central Administration</p>
+          <h1 className="text-center font-display text-2xl text-secondary tracking-widest uppercase">Philoverse</h1>
+          <p className="text-center font-sans text-[10px] text-on-surface-variant uppercase tracking-[0.2em] font-semibold mt-1">Quản trị hệ thống</p>
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -123,45 +123,7 @@ export default function AdminLayout() {
           </footer>
       </aside>
 
-      {/* Top App Bar */}
       <div className="ml-64 min-h-screen flex flex-col">
-        {/* Top App Bar */}
-        <header className="flex justify-between items-center w-full px-gutter h-16 border-b-[0.5px] border-outline/30 bg-surface/80 backdrop-blur-xl sticky top-0 z-40">
-          <div className="flex items-center justify-end space-x-6 w-full">
-            <div className="relative flex items-center group">
-              <input
-                type="text"
-                placeholder="Tìm kiếm tài liệu..."
-                className="bg-transparent border-b border-outline/30 text-on-surface px-4 py-1 focus:outline-none focus:border-secondary transition-colors w-64 text-sm placeholder:text-on-surface-variant/40"
-              />
-              <span className="material-symbols-outlined absolute right-2 text-on-surface-variant text-lg">
-                search
-              </span>
-            </div>
-
-              <div
-                  className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 hover:bg-surface-container-high transition-colors"
-                  onClick={() => navigate("/profile")}
-              >
-                  <div className="w-9 h-9 rounded-full border border-secondary/40 overflow-hidden bg-secondary-container">
-                      <img
-                          src={avatarSrc}
-                          alt={avatarSeed}
-                          className="w-full h-full object-cover"
-                      />
-                  </div>
-
-                  <div className="hidden lg:flex flex-col text-left">
-                        <span className="text-sm font-semibold text-on-surface">
-                          {user?.fullName || user?.username}
-                        </span>
-                      <span className="text-xs text-on-surface-variant">
-                          {user?.role}
-                        </span>
-                  </div>
-              </div>
-          </div>
-        </header>
 
         {/* Main Content */}
         <main className="flex-1 p-margin-desktop relative">

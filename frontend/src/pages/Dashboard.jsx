@@ -153,48 +153,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Links & Quote */}
-        <div className="lg:col-span-4 space-y-8">
-          <div>
-            <h2 className="font-display-lg text-2xl text-on-surface mb-8">
-              Truy cập nhanh
-            </h2>
-            <div className="grid grid-cols-1 gap-4">
-              <QuickLinkItem
-                icon={<Library className="w-6 h-6" />}
-                title="Học viện"
-                description="Tài liệu triết học"
-                path={"/study"}
-              />
-              <QuickLinkItem
-                icon={<PenTool className="w-6 h-6" />}
-                title="Ôn tập"
-                description="Ôn tập lý thuyết thông qua quiz"
-                path={"/review"}
-              />
-              <QuickLinkItem
-                icon={<MessageSquare className="w-6 h-6" />}
-                title="Khu vực Đàm đạo"
-                description="Tranh luận trực tiếp"
-                path={"/chat"}
-              />
-            </div>
-          </div>
 
-          {/* Premium Minimalist Quote Card */}
-          <div className="p-8 rounded-xl bg-primary-container border border-primary/10 relative overflow-hidden group hover:-translate-y-0.5 transition-all duration-300">
-            <Quote className="absolute -right-4 -bottom-4 w-32 h-32 text-outline-variant opacity-20 group-hover:rotate-12 transition-transform duration-500" />
-            <p className="font-display-lg text-xl text-on-primary-container leading-relaxed italic mb-6">
-              "Một cuộc đời không được xem xét thì không đáng sống."
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-[1px] bg-primary"></div>
-              <p className="font-label-md text-[10px] text-on-primary-container uppercase tracking-[0.2em]">
-                Plato, Lời xin lỗi của Socrates
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

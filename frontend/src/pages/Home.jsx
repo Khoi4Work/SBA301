@@ -1,11 +1,12 @@
 import React, {useContext} from "react";
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../assets/styles/philoverse.css';
 import {AuthContext} from "@/contexts/AuthContext.jsx";
 import {getSlogan} from "@/services/sloganService.js";
 
 export default function Home() {
+    const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNavCompact, setIsNavCompact] = useState(false);
     const {user, logout} = useContext(AuthContext);
@@ -13,6 +14,12 @@ export default function Home() {
     const [currentSloganAuthor, setCurrentSloganAuthor] = useState();
     const [isLoading, setIsLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    useEffect(() => {
+        if (user && user.role === 'ADMIN') {
+            navigate('/admin', { replace: true });
+        }
+    }, [user, navigate]);
 
     useEffect(() => {
 
