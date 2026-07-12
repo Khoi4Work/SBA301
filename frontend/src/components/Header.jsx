@@ -54,9 +54,6 @@ export default function Header() {
             </div>
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-4">
-                    <button className="text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-all cursor-pointer">
-                        <Bell size={24} />
-                    </button>
                     <div className="relative">
                         <button
                             onClick={() => setShowMenu(!showMenu)}

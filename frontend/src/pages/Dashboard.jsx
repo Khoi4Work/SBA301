@@ -4,17 +4,17 @@ import apiClient from "@/services/apiClient.js";
 import { getChatSessions } from "@/services/sessionService.js";
 import { useSession } from '@/contexts/SessionContext.jsx';
 import {
-  Book,
-  Brain,
-  Clock,
-  Flame,
-  Landmark,
-  Library,
-  MessageSquare,
-  PenTool,
-  Quote,
-  Trophy,
-  Zap,
+    Book,
+    Brain,
+    Clock,
+    Flame,
+    Landmark,
+    Library, Loader2,
+    MessageSquare,
+    PenTool,
+    Quote,
+    Trophy,
+    Zap,
 } from "lucide-react";
 import { DialogueItem } from "../components/DialogueItem.jsx";
 import { QuickLinkItem } from "../components/QuickLinkItem.jsx";
@@ -114,8 +114,9 @@ export function Dashboard() {
           </div>
           <div className="bg-surface-container-low rounded-xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden">
             {sessions.length === 0 ? (
-              <div className="p-8 text-center text-on-surface-variant opacity-50 italic">
-                Chưa có cuộc đàm đạo nào được ghi lại...
+              <div className="flex items-center justify-center p-8 text-center text-on-surface-variant opacity-50 italic ">
+                  <Loader2 className="animate-spin text-primary" />
+                  <p className="text-on-surface-variant italic ml-2">Đang tải cuộc đàm đạo...</p>
               </div>
             ) : (
               sessions.slice(0, 3).map((session, index) => {
@@ -161,18 +162,21 @@ export function Dashboard() {
             <div className="grid grid-cols-1 gap-4">
               <QuickLinkItem
                 icon={<Library className="w-6 h-6" />}
-                title="Thư viện"
-                description="10.000 tập sách cổ"
+                title="Học viện"
+                description="Tài liệu triết học"
+                path={"/study"}
               />
               <QuickLinkItem
                 icon={<PenTool className="w-6 h-6" />}
-                title="Xưởng sáng tạo"
-                description="Phác thảo luận thuyết"
+                title="Ôn tập"
+                description="Ôn tập lý thuyết thông qua quiz"
+                path={"/review"}
               />
               <QuickLinkItem
                 icon={<MessageSquare className="w-6 h-6" />}
                 title="Khu vực Đàm đạo"
                 description="Tranh luận trực tiếp"
+                path={"/chat"}
               />
             </div>
           </div>

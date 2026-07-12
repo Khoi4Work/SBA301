@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { FileEdit } from 'lucide-react';
+import {FileEdit, Loader2} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import apiClient from "@/services/apiClient.js";
 
 export default function PersonalInfo({ user, setUser }) {
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -32,6 +33,8 @@ export default function PersonalInfo({ user, setUser }) {
     }, [user]);
 
     const handleSave = async () => {
+        setIsSaving(true);
+
         try {
             const userId = user?.userId || user?.id;
 
@@ -71,6 +74,8 @@ export default function PersonalInfo({ user, setUser }) {
             setIsEditing(false);
         } catch (error) {
             console.error(error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -226,9 +231,16 @@ export default function PersonalInfo({ user, setUser }) {
 
                             <button
                                 onClick={handleSave}
-                                className="px-6 py-2 bg-secondary text-on-secondary text-label-md uppercase hover:opacity-90 transition-opacity cursor-pointer flex gap-2 items-center"
+                                disabled={isSaving}
+                                className="px-6 py-2 bg-secondary text-on-secondary text-label-md uppercase hover:opacity-90 transition-opacity cursor-pointer flex gap-2 items-center disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                Lưu Thay Đổi
+                                {isSaving && (
+                                    <Loader2 size={16} className="animate-spin" />
+                                )}
+
+                                <span>
+                                    {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                                </span>
                             </button>
                         </motion.div>
                     )}

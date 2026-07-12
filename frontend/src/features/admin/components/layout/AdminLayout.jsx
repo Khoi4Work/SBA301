@@ -82,6 +82,22 @@ export default function AdminLayout() {
                   <div className="absolute left-4 bottom-full mb-2 w-48 bg-surface-container border border-outline-variant rounded-lg shadow-lg overflow-hidden z-50">
                       <button
                           type="button"
+                          onClick={() => {
+                              setShowMenu(false);
+                              navigate("/profile");
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-on-surface hover:bg-surface-container-high transition-colors">
+                          <span className="material-symbols-outlined text-[20px]">
+                            account_circle
+                          </span>
+
+                          <span className="text-sm font-medium">
+                            Thông tin cá nhân
+                          </span>
+                      </button>
+
+                      <button
+                          type="button"
                           disabled={isLoggingOut}
                           onClick={async () => {
                               setIsLoggingOut(true);
@@ -123,18 +139,27 @@ export default function AdminLayout() {
               </span>
             </div>
 
-            <button className="text-on-surface-variant hover:text-secondary transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-secondary rounded-full"></span>
-            </button>
+              <div
+                  className="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 hover:bg-surface-container-high transition-colors"
+                  onClick={() => navigate("/profile")}
+              >
+                  <div className="w-9 h-9 rounded-full border border-secondary/40 overflow-hidden bg-secondary-container">
+                      <img
+                          src={avatarSrc}
+                          alt={avatarSeed}
+                          className="w-full h-full object-cover"
+                      />
+                  </div>
 
-            <div className="w-8 h-8 rounded border border-secondary/40 overflow-hidden bg-secondary-container">
-              <img
-                src={avatarSrc}
-                alt={avatarSeed}
-                className="w-full h-full object-cover"
-              />
-            </div>
+                  <div className="hidden lg:flex flex-col text-left">
+                        <span className="text-sm font-semibold text-on-surface">
+                          {user?.fullName || user?.username}
+                        </span>
+                      <span className="text-xs text-on-surface-variant">
+                          {user?.role}
+                        </span>
+                  </div>
+              </div>
           </div>
         </header>
 

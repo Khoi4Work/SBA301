@@ -155,7 +155,7 @@ export default function AdminDashboard() {
 
                 <div className="space-y-gutter">
                     <div className="grid grid-cols-2 gap-gutter">
-                        <a href="#" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
+                        <a href="/admin/users" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 border border-secondary/30 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-surface transition-all">
                                     <span className="material-symbols-outlined">manage_accounts</span>
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
                                 <span className="text-sm font-bold text-on-surface">User Management</span>
                             </div>
                         </a>
-                        <a href="#" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
+                        <a href="/admin/philosophers" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 border border-secondary/30 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-surface transition-all">
                                     <span className="material-symbols-outlined">settings_suggest</span>
@@ -171,20 +171,12 @@ export default function AdminDashboard() {
                                 <span className="text-sm font-bold text-on-surface">AI Config</span>
                             </div>
                         </a>
-                        <a href="#" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
+                        <a href="/admin/chapters" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 border border-secondary/30 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-surface transition-all">
                                     <span className="material-symbols-outlined">edit_note</span>
                                 </div>
                                 <span className="text-sm font-bold text-on-surface">Academy Editor</span>
-                            </div>
-                        </a>
-                        <a href="#" className="folio-card bg-surface-container-low p-6 group hover:bg-secondary/5 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 border border-secondary/30 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-surface transition-all">
-                                    <span className="material-symbols-outlined">analytics</span>
-                                </div>
-                                <span className="text-sm font-bold text-on-surface">Insights</span>
                             </div>
                         </a>
                     </div>
