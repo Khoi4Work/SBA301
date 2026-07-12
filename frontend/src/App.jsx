@@ -24,6 +24,7 @@ import ChapterManagementPage from "@/features/admin/pages/ChapterManagementPage.
 import LoginPage from "@/features/auth/pages/LoginPage.jsx";
 import RegisterPage from "@/features/auth/pages/RegisterPage.jsx";
 import PhilosopherAvatar3D from "@/features/philosopher-chat/components/PhilosopherAvatar3D.jsx";
+import AdminProfilePage from "@/features/admin/pages/AdminProfilePage.jsx";
 
 
 const MainLayout = ({ children }) => (
@@ -74,6 +75,7 @@ function AppRoutes() {
                 <Route path="philosophers" element={<PhilosopherManagementPage />} /> {/* path: /admin/philosophers */}
                 <Route path="users" element={<UserManagementPage />} /> {/* path: /admin/users */}
                 <Route path="chapters" element={<ChapterManagementPage />} />
+                <Route path="profile" element={<AdminProfilePage />} />
             </Route>
 
 

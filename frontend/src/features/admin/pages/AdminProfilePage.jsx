@@ -1,13 +1,12 @@
-import ProfileContent from '@/features/profile/components/ProfileContent.jsx';
-import { Sidebar } from "@/components/Sidebar.jsx";
-import Footer from "@/components/Footer.jsx";
-import { TopNav } from "@/components/TopNav.jsx";
-import BackgroundTexture from "@/features/profile/components/BackgroundTexture.jsx";
 import { useContext, useEffect, useState } from "react";
+import { AuthContext } from "@/contexts/AuthContext.jsx";
 import apiClient from "@/services/apiClient.js";
-import {AuthContext} from "@/contexts/AuthContext.jsx";
 
-export default function ProfilePage() {
+import Footer from "@/components/Footer.jsx";
+import ProfileContent from "@/features/profile/components/ProfileContent.jsx";
+
+export default function AdminProfilePage() {
+
     const { user: authUser, updateUser } = useContext(AuthContext);
     const [profileUser, setProfileUser] = useState(authUser);
 
@@ -67,21 +66,12 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="min-h-screen bg-surface-dim text-on-surface font-body-md overflow-x-hidden selection:bg-secondary selection:text-on-secondary">
-            <BackgroundTexture />
+        <div className="flex-1 flex flex-col">
 
-            <Sidebar />
-            <TopNav />
-
-            <main className="ml-64 pt-16 min-h-screen flex flex-col">
-
-                <ProfileContent
-                    user={profileUser}
-                    setUser={syncUser}
-                />
-
-                <Footer />
-            </main>
+            <ProfileContent
+                user={profileUser}
+                setUser={syncUser}
+            />
         </div>
     );
 }
