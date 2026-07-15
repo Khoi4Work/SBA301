@@ -48,41 +48,8 @@ export default function AdminDashboard() {
 
             {/* Visual Charts Section */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mb-12">
-                {/* Learner Growth Chart — real data from backend */}
-                <LearnerGrowthChart />
-
-                <div className="folio-card bg-surface-container-low p-8 flex flex-col">
-                    <h3 className="font-display text-2xl font-semibold mb-8">Phân loại Triết gia</h3>
-                    <div className="flex-1 flex flex-col justify-center gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-2 bg-secondary"></div>
-                            <span className="text-sm font-semibold flex-1">Stoic (Khắc kỷ)</span>
-                            <span className="text-sm font-bold text-secondary">40%</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-2 bg-secondary/70"></div>
-                            <span className="text-sm font-semibold flex-1">Socratic (Socrates)</span>
-                            <span className="text-sm font-bold text-secondary">25%</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="w-8 h-2 bg-secondary/50"></div>
-                            <span className="text-sm font-semibold flex-1">Epicurean (Khoái lạc)</span>
-                            <span className="text-sm font-bold text-secondary">20%</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="w-6 h-2 bg-secondary/30"></div>
-                            <span className="text-sm font-semibold flex-1">Cynic (Hoài nghi)</span>
-                            <span className="text-sm font-bold text-secondary">10%</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="w-4 h-2 bg-secondary/10"></div>
-                            <span className="text-sm font-semibold flex-1">Others</span>
-                            <span className="text-sm font-bold text-secondary">5%</span>
-                        </div>
-                    </div>
-                    <div className="mt-8 pt-6 border-t border-outline/30 text-center">
-                        <button className="text-secondary text-xs uppercase tracking-widest font-bold hover:underline">Xem chi tiết lưu trữ</button>
-                    </div>
+                <div className="lg:col-span-3">
+                    <LearnerGrowthChart />
                 </div>
             </section>
 

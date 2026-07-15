@@ -1,8 +1,10 @@
 package com.philosophy.rag.features.auth.controller;
 
+
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResult;
+import com.philosophy.rag.features.auth.dto.UserGrowthStatsResponse;
 import com.philosophy.rag.features.auth.dto.UserResponse;
 import com.philosophy.rag.features.auth.dto.UserUpdateRequest;
 import com.philosophy.rag.features.learning.dto.CompleteFileRequest;
@@ -12,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -53,16 +56,28 @@ public class UserController {
         );
     }
 
-    @Operation(summary = "Get all users (Requires ADMIN or STAFF)")
+    @Operation(summary = "Get all users with pagination (Requires ADMIN or STAFF)")
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    public ResponseEntity<ApiResult<List<UserResponse>>> getAllUsers() {
+    public ResponseEntity<ApiResult<Page<UserResponse>>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        log.info("Received request to get all users");
-        List<UserResponse> response = userService.getAllUsers();
+        log.info("Received request to get all users - page: {}, size: {}", page, size);
+        Page<UserResponse> response = userService.getAllUsers(page, size);
 
         return ResponseEntity.ok(
                 ApiResult.success(response, "Users retrieved successfully")
+        );
+    }
+
+    @Operation(summary = "Get learner growth statistics (Requires ADMIN or STAFF)")
+    @GetMapping("/growth-stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResult<UserGrowthStatsResponse>> getGrowthStats() {
+        log.info("Received request to get user growth stats");
+        return ResponseEntity.ok(
+                ApiResult.success(userService.getGrowthStats(), "Growth stats retrieved successfully")
         );
     }
 

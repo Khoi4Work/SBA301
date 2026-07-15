@@ -1,12 +1,12 @@
 package com.philosophy.rag.features.auth.service;
 
+import com.philosophy.rag.features.auth.dto.UserGrowthStatsResponse;
 import com.philosophy.rag.features.auth.dto.UserResponse;
 import com.philosophy.rag.features.auth.dto.UserUpdateRequest;
 import com.philosophy.rag.features.learning.dto.UserDashboardResponse;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface UserService {
@@ -17,7 +17,7 @@ public interface UserService {
 
     UUID getCurrentUserId();
 
-    List<UserResponse> getAllUsers();
+    Page<UserResponse> getAllUsers(int page, int size);
 
     UserResponse updateUser(UUID userId, UserUpdateRequest request);
 
@@ -28,4 +28,6 @@ public interface UserService {
     UserDashboardResponse getDashboardStats(String username);
 
     void completeFile(String username, String s3Key);
+
+    UserGrowthStatsResponse getGrowthStats();
 }
