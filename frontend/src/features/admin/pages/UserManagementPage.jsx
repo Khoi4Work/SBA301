@@ -160,6 +160,7 @@ export default function UserManagementPage() {
 
 
                                 <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
+                                    <div className="flex justify-end items-center gap-3">
                                     {/*<button*/}
                                     {/*    type="button"*/}
                                     {/*    className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"*/}
@@ -171,27 +172,32 @@ export default function UserManagementPage() {
                                     {/*</span>*/}
                                     {/*</button>*/}
 
-                                    <button
-                                        type="button"
-                                        className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"
-                                        title="Chỉnh sửa"
-                                        onClick={() => handleUpdateUser(user)}
-                                    >
-          <span className="material-symbols-outlined text-[20px]">
-            edit_note
-          </span>
-                                    </button>
+                                        <button
+                                            type="button"
+                                            className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"
+                                            title="Chỉnh sửa"
+                                            onClick={() => handleUpdateUser(user)}
+                                        >
+                                          <span className="material-symbols-outlined text-[20px]">
+                                            edit_note
+                                          </span>
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        className="p-1 hover:text-error hover:bg-error/10 rounded transition-all"
-                                        title="Xóa người dùng"
-                                        onClick={() => handleDeleteUser(user)}
-                                    >
-          <span className="material-symbols-outlined text-[20px]">
-            person_off
-          </span>
-                                    </button>
+                                        <div className="w-7 flex justify-center">
+                                            {user.role !== "ADMIN" && (
+                                                <button
+                                                    type="button"
+                                                    className="p-1 hover:text-error hover:bg-error/10 rounded transition-all"
+                                                    title="Xóa người dùng"
+                                                    onClick={() => handleDeleteUser(user)}
+                                                >
+                                                    <span className="material-symbols-outlined text-[20px]">
+                                                        person_off
+                                                    </span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

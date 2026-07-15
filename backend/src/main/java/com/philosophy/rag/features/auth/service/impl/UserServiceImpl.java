@@ -282,6 +282,7 @@ public class UserServiceImpl implements UserService {
                 .totalXp(user.getTotalXp())
                 .streak(user.getStreak())
                 .createdAt(user.getCreatedAt())
+                .role(user.getRole())
                 .build();
     }
 
