@@ -4,7 +4,7 @@ package com.philosophy.rag;
  * Aggregates all RAGAS-style evaluation results for a single CSV row.
  *
  * <p>This record is populated during {@code evaluateCsv()} and serialised to
- * {@code evaluation_result.csv} via Apache Commons CSV.
+ * {@code evaluation_result_gemini 3.5 flash.csv} via Apache Commons CSV.
  *
  * <h3>Metrics</h3>
  * <ul>

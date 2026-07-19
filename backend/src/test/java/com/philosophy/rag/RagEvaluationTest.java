@@ -47,7 +47,7 @@ import java.util.Objects;
  * Reads questions from {@code src/test/resources/rag_evaluation_input.csv},
  * runs the full RAG pipeline for each row, evaluates <strong>five</strong>
  * RAGAS metrics,
- * and writes the results to {@code evaluation_result.csv} in the working
+ * and writes the results to {@code evaluation_result_gemini 3.5 flash.csv} in the working
  * directory.
  *
  * <h3>Metrics evaluated</h3>
@@ -85,7 +85,7 @@ public class RagEvaluationTest {
         // -----------------------------------------------------------------------
 
         private static final String INPUT_CSV_CLASSPATH = "/rag_evaluation_input.csv";
-        private static final String OUTPUT_CSV_PATH = "evaluation_result.csv";
+        private static final String OUTPUT_CSV_PATH = "evaluation_result";
 
         private static final String OLLAMA_BASE_URL = "http://localhost:11434";
         private static final String OLLAMA_JUDGE_MODEL = "gemma4:31b-cloud";
@@ -135,6 +135,7 @@ public class RagEvaluationTest {
         void setUp() {
                 // 1. RAG CHÍNH: Vẫn dùng mô hình thật (Gemini) để sinh câu trả lời
                 this.chatClient = ChatClient.builder(chatModel).build();
+                log.info("=========MAIN RAG========== : {}", chatModel.toString());
 
                 this.ragAdvisor = RetrievalAugmentationAdvisor.builder()
                                 .documentRetriever(VectorStoreDocumentRetriever.builder()
