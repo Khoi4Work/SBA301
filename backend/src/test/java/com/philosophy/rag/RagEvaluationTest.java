@@ -89,7 +89,7 @@ public class RagEvaluationTest {
         // -----------------------------------------------------------------------
 
         private static final String INPUT_CSV_CLASSPATH = "/rag_evaluation_input.csv";
-        private static final String OUTPUT_CSV_PATH = "evaluation_result";
+        private static final String OUTPUT_CSV_PATH = "evaluation_result.csv";
 
         private static final String OLLAMA_BASE_URL = "http://localhost:11434";
         private static final String OLLAMA_JUDGE_MODEL = "gemma4:31b-cloud";
@@ -137,9 +137,9 @@ public class RagEvaluationTest {
 
         @BeforeEach
         void setUp() {
-                // 1. RAG CHÍNH: Vẫn dùng mô hình thật (Gemini) để sinh câu trả lời
+                // 1. RAG CHÍNH: Vẫn dùng mô hình thật để sinh câu trả lời
                 this.chatClient = ChatClient.builder(chatModel).build();
-                log.info("=========MAIN RAG========== : {}", chatModel.toString());
+                logModelDetails("MAIN RAG", chatModel);
 
                 this.ragAdvisor = RetrievalAugmentationAdvisor.builder()
                                 .documentRetriever(VectorStoreDocumentRetriever.builder()
@@ -161,6 +161,7 @@ public class RagEvaluationTest {
 
                 // 3. ĐÁNH GIÁ: Đưa Giám khảo Ollama vào tất cả Evaluator
                 this.judgeClient = ChatClient.builder(ollamaEvaluatorModel).build();
+                logModelDetails("JUDGE", ollamaEvaluatorModel);
 
                 // Spring AI built-in evaluators (backed by Ollama judge)
                 this.relevancyEvaluator = new RelevancyEvaluator(ChatClient.builder(ollamaEvaluatorModel));
@@ -609,5 +610,23 @@ public class RagEvaluationTest {
                         sb.append(docs.get(i).getText());
                 }
                 return sb.toString();
+        }
+
+        private void logModelDetails(String label, ChatModel model) {
+                String modelName = "unknown";
+                try {
+                        if (model.getDefaultOptions() != null) {
+                                modelName = model.getDefaultOptions().getModel();
+                        }
+                } catch (Exception e) {
+                        // ignore
+                }
+                log.info("\n" +
+                        "===================================================================\n" +
+                        " {} INFO:\n" +
+                        "   -> Provider Class : {}\n" +
+                        "   -> Running Model   : {}\n" +
+                        "===================================================================",
+                        label, model.getClass().getName(), modelName);
         }
 }

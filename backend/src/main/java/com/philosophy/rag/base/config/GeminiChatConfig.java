@@ -34,7 +34,7 @@ public class GeminiChatConfig {
     @Primary
     public ChatModel primaryChatModel(
             @Qualifier("googleGenAiChatModel") ChatModel googleModel) {
-        log.info("[AI-PROVIDER] Active provider: Google Gemini |model={}",googleModel.getDefaultOptions().getModel());
+        log.info("[AI-PROVIDER] Active provider: Google Gemini |model={}", googleModel.getDefaultOptions().getModel());
         return googleModel;
     }
 }
