@@ -17,13 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -65,7 +63,7 @@ public class RagServiceImpl implements RagService {
             VectorStore vectorStore,
             VectorStoreRepository vectorStoreRepository,
             PhilosopherRepository philosopherRepository,
-            @Qualifier("googleGenAiChatModel") ChatModel chatModel,
+            ChatClient chatClient,
             ChatHistoryService chatHistoryService, ChatSessionService chatSessionService,
             DocumentRepository documentRepository,
             PhilosopherTools philosopherTools,
@@ -73,7 +71,7 @@ public class RagServiceImpl implements RagService {
         this.vectorStore = vectorStore;
         this.vectorStoreRepository = vectorStoreRepository;
         this.philosopherRepository = philosopherRepository;
-        this.chatClient = ChatClient.builder(chatModel).build();
+        this.chatClient = chatClient;
         this.chatHistoryService = chatHistoryService;
         this.chatSessionService = chatSessionService;
         this.documentRepository = documentRepository;
@@ -134,7 +132,7 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public RagAskResponse ask(UUID userId, String query, UUID philosopherId, UUID sessionId) {
-        log.info("[Gemini RAG] Processing query: {}, UserID: {}, PhilosopherID: {}, SessionID: {}", query, userId,
+        log.info("[RAG] Processing query: {}, UserID: {}, PhilosopherID: {}, SessionID: {}", query, userId,
                 philosopherId, sessionId);
 
         LocalDateTime start = LocalDateTime.now();
@@ -152,10 +150,10 @@ public class RagServiceImpl implements RagService {
 
         if (sessionId == null) {
             sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
-            log.info("[Gemini RAG] Created new chat session: {}", sessionId);
+            log.info("[RAG] Created new chat session: {}", sessionId);
         }
 
-        log.info("[Gemini RAG] Saving Interaction for session: {}", sessionId);
+        log.info("[RAG] Saving Interaction for session: {}", sessionId);
         chatHistoryService.saveInteraction(userId, philosopherId, query, result, start, end, sessionId);
 
         return RagAskResponse.builder()
@@ -167,7 +165,7 @@ public class RagServiceImpl implements RagService {
     @Override
     public RagAskResponse askContextual(UUID userId, String query, String s3Key, String selectedText,
                                         UUID philosopherId, UUID sessionId) {
-        log.info("[Gemini Contextual AI] Processing query: {}, UserID: {}, S3Key: {}, PhilosopherID: {}, SessionID: {}",
+        log.info("[Contextual AI] Processing query: {}, UserID: {}, S3Key: {}, PhilosopherID: {}, SessionID: {}",
                 query, userId, s3Key, philosopherId, sessionId);
 
         if (sessionId == null) {
@@ -176,7 +174,7 @@ public class RagServiceImpl implements RagService {
                         "Philosopher ID is required to start a new chat session.");
             }
             sessionId = chatSessionService.createSession(userId, philosopherId).getSessionId();
-            log.info("[Gemini Contextual AI] Created new chat session: {}", sessionId);
+            log.info("[Contextual AI] Created new chat session: {}", sessionId);
         }
 
         LocalDateTime start = LocalDateTime.now();
