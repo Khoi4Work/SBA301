@@ -24,7 +24,7 @@ public class RagApplication {
         SpringApplication.run(RagApplication.class, args);
     }
 
-    private static void loadEnv() {
+    public static void loadEnv() {
         Path envPath = Paths.get(".env");
         if (!Files.exists(envPath)) {
             envPath = Paths.get("backend", ".env");

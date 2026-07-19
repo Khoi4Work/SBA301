@@ -78,6 +78,10 @@ import java.util.Objects;
 @ActiveProfiles("dev")
 public class RagEvaluationTest {
 
+        static {
+                RagApplication.loadEnv();
+        }
+
         private static final Logger log = LoggerFactory.getLogger(RagEvaluationTest.class);
 
         // -----------------------------------------------------------------------
