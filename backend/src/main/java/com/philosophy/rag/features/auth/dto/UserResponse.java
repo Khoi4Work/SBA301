@@ -1,5 +1,6 @@
 package com.philosophy.rag.features.auth.dto;
 
+import com.philosophy.rag.features.auth.entity.enums.Role;
 import lombok.Builder;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -14,5 +15,6 @@ public record UserResponse(
     String avatarUrl,
     Integer totalXp,
     Integer streak,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    Role role
 ) {}

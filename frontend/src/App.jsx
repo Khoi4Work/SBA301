@@ -40,7 +40,7 @@ function AppRoutes() {
             {/* ==========================================
                 GROUP 1: CÁC TRANG CÓ HEADER CƠ BẢN
                 ========================================== */}
-            <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+            <Route path="/" element={<Home />} />
             <Route path="/profile" element={<ProtectedRoute ><MainLayout><ProfilePage /></MainLayout></ProtectedRoute>} />
 
             {/* ==========================================
