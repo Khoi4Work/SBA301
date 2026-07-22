@@ -22,6 +22,7 @@ The project is a RAG (Retrieval-Augmented Generation) application for philosophy
 
 ### Backend (Java 21 / Spring Boot 3.3.0)
 - **Layered Architecture**: `Controller` $\rightarrow$ `Service` $\rightarrow$ `Repository` $\rightarrow$ `Entity`.
+- **Structure**: Organise by feature (e.g., `auth/` folder containing `AuthController`, `AuthService`, `AuthServiceImpl`, etc.).
 - **AI Integration**: Uses `Spring AI` with `Ollama` for LLMs/embeddings and `pgvector` for vector storage.
 - **Document Processing**: `Apache POI` (DOCX) and `PDFBox` (PDF) for parsing, with `AWS S3` for storage.
 - **Cross-Cutting Concerns**: Extensive use of AOP (`com.philosophy.rag.base.aop`) for logging, security, validation, and performance monitoring.
@@ -51,7 +52,17 @@ The project is a RAG (Retrieval-Augmented Generation) application for philosophy
 ### Technical Standards
 - **Strict Execution**: Follow the "Silent Action $\rightarrow$ Verified Result $\rightarrow$ Detailed Report" workflow.
 - **Dependency Inversion**: Inject interfaces rather than concrete implementations.
+- **Naming & Implementation**: Use feature-based naming. A single service interface may have multiple implementations (e.g., `RagService` $\rightarrow$ `OllamaRagServiceImpl`, `GeminiRagServiceImpl`).
+- **DTOs**: Use Java `record` for all Data Transfer Objects.
+- **Persistence**: Avoid `@Query` wherever possible; prefer Spring Data JPA's derived query methods.
+- **Service Granularity**: Group related functions within a single service to avoid over-fragmentation (e.g., `PasswordReset` logic should be a function within `AuthService` rather than a separate service class).
+- **Localization**: 
+  - **Vietnamese**: Used ONLY for `ApiResponse` messages and `ApiException` messages (User-facing).
+  - **English**: Used for everything else, including logs, comments, variable names, and class names.
 - **Logging**: Use `@Slf4j` for logging; avoid `System.out.println`.
 - **Validation**: Use `@Validated` and standard constraints (`@NotBlank`, `@NotNull`) in controllers.
 - **Error Flow**: `Service/Controller` $\rightarrow$ `throw new ApiException(ErrorCode.XXX)` $\rightarrow$ `GlobalExceptionHandler` $\rightarrow$ `ApiResponse`.
-- **Git Commits**: Do NOT include "Co-Authored-By" tags in commit messages.
+- **Git Commits**: 
+  - Use a prefix in brackets for the commit type (e.g., `[FEAT]`, `[FIX]`, `[REFACTOR]`, `[CONFIG]`, `[DELETE]`).
+  - Provide a clear description: a summary line followed by a more detailed explanation of what was changed and why.
+  - Do NOT include "Co-Authored-By" tags in commit messages.

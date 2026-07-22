@@ -1,19 +1,25 @@
 import React, {useContext} from "react";
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../assets/styles/philoverse.css';
 import {AuthContext} from "@/contexts/AuthContext.jsx";
-import {getSlogan} from "@/services/SloganService.js";
+import {getSlogan} from "@/services/sloganService.js";
 
 export default function Home() {
+    const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNavCompact, setIsNavCompact] = useState(false);
     const {user, logout} = useContext(AuthContext);
-    const [currentSloganContent, setCurrentSloganContent] = useState("Một cuộc đời không được xem xét thì không đáng sống.");
-    const [currentSloganAuthor, setCurrentSloganAuthor] = useState("SOCRATES");
+    const [currentSloganContent, setCurrentSloganContent] = useState();
+    const [currentSloganAuthor, setCurrentSloganAuthor] = useState();
+    const [isLoading, setIsLoading] = useState(true);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-
-
+    useEffect(() => {
+        if (user && user.role === 'ADMIN') {
+            navigate('/admin', { replace: true });
+        }
+    }, [user, navigate]);
 
     useEffect(() => {
 
@@ -25,6 +31,8 @@ export default function Home() {
                 setCurrentSloganAuthor(slogan.data.result.author);
             } catch (error) {
                 console.error("Lỗi khi tải slogan:", error);
+            } finally {
+                setIsLoading(false);
             }
         }
 
@@ -44,13 +52,24 @@ export default function Home() {
 
     const toggleModal = () => setIsModalOpen(!isModalOpen);
 
+    const handleLogout = async () => {
+        try {
+            setIsLoggingOut(true);
+            await logout();
+        } catch (error) {
+            console.warn("Logout failed:", error);
+        } finally {
+            window.location.href = "/";
+        }
+    };
+
   return (
     <>
       <div className="grainy-overlay fixed inset-0 z-[100]"></div>
       {/* Navigation Shell */}
       <nav className={`fixed top-0 w-full z-50 flex justify-between items-center px-margin-desktop bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 transition-all duration-300 ${isNavCompact ? 'h-16' : 'h-20'}`}>
         <div className="flex items-center gap-12">
-          <span className="font-display-lg text-display-lg text-[#e9c176] tracking-tighter">PhiloVerse</span>
+          <span className="font-display-lg text-display-lg text-[#d4a843] tracking-tighter">PhiloVerse</span>
           <div className="hidden md:flex gap-8">
             <Link
                 to="/study"
@@ -59,12 +78,12 @@ export default function Home() {
               Học viện
             </Link>
 
-            <Link
-                to="/"
-                className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap"
-            >
-              Xưởng sáng tạo
-            </Link>
+            {/*<Link*/}
+            {/*    to="/"*/}
+            {/*    className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap"*/}
+            {/*>*/}
+            {/*    Góc nhìn triết học*/}
+            {/*</Link>*/}
 
             <Link
                 to="/chat"
@@ -72,6 +91,13 @@ export default function Home() {
             >
               Luận đàm
             </Link>
+
+              <Link
+                  to="/review"
+                  className="font-body-md text-body-md uppercase tracking-wider text-on-surface-variant hover:text-secondary transition-colors cursor-pointer active:scale-95 whitespace-nowrap"
+              >
+                  Ôn tập
+              </Link>
           </div>
         </div>
           <div className="flex items-center gap-6">
@@ -83,20 +109,18 @@ export default function Home() {
               {/*        placeholder="Tìm kiếm trong kho lưu trữ..." type="text"/>*/}
               {/*</div>*/}
               <div className="flex gap-4 items-center">
-                  <span className="material-symbols-outlined text-on-surface-variant hover:text-secondary cursor-pointer transition-colors">notifications</span>
-                  <span
-                      className="material-symbols-outlined text-on-surface-variant hover:text-secondary cursor-pointer transition-colors">
-                            settings
-                        </span>
                   {user ? (
                       <>
-                          <button className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant hover:text-secondary transition-colors"
-                                  onClick={async () => {
-                                      await logout();
-                                      window.location.href = '/';
-                                  }}
+                          <button
+                              className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant hover:text-[#c9973a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                              onClick={handleLogout}
+                              disabled={isLoggingOut}
                           >
-                              Đăng xuất
+                              {isLoggingOut && (
+                                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                              )}
+
+                              {isLoggingOut ? "Đăng xuất..." : "Đăng xuất"}
                           </button>
 
                           <div className="w-10 h-10 rounded-full border border-secondary/50 p-0.5 overflow-hidden">
@@ -109,7 +133,7 @@ export default function Home() {
                               Đăng nhập
                           </Link>
 
-                          <Link to="/login" className="bg-[#e9c176] text-on-primary px-6 py-2 rounded-none font-label-md text-label-md uppercase tracking-widest hover:bg-primary-fixed-dim transition-all active:scale-95">
+                          <Link to="/chat" className="bg-[#d4a843] text-on-primary px-6 py-2 rounded-none font-label-md text-label-md uppercase tracking-widest hover:bg-primary-fixed-dim transition-all active:scale-95">
                               Khởi đầu đối thoại
                           </Link>
                       </>
@@ -121,23 +145,28 @@ export default function Home() {
             <main className="pt-20">
                 {/* Hero Section */}
                 <section
-                    className="relative min-h-[921px] flex flex-col items-center justify-center text-center px-margin-mobile md:px-margin-desktop overflow-hidden">
+                    className="relative min-h-[921px] flex flex-col items-center justify-center text-center px-margin-mobile md:px-margin-desktop overflow-hidden"
+                >
                     <div className="absolute inset-0 z-0 overflow-hidden opacity-20">
                         <img className="w-full h-full object-cover grayscale opacity-50"
                              alt="A grand, dimly lit classical Greek library at midnight"
                              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqT6MWrWs2vueORNcqRDX3MtHBamI49YsfV0ujVIZqnEz1GmMBUhhCOhsWC27vT6qYaRpaYxOhWKJTZXJVRTd52nim0Jlz2nZBdDaCwnANGqZR3PpdTBlclu9WV_nkmNbotDvPaZZkhAHgtb9CRkxlZQRmIgmd3mzoOwABdyhG2YakPy3flt2-Xj_tfXC-6zaTY2GBPnme9OMrcneY2X92Mb0Njsu4O_oh1YUOauXYqi1KC44eGjmTk_sFDPhp8a2qoCqCRPtMmjc"/>
                     </div>
-                    <div className="relative z-10 max-w-4xl">
+                    <div className="relative z-10 max-w-4xl -translate-y-20 md:-translate-y-24">
                         <div className="mb-8 flex justify-center">
-                            <div className="w-16 h-1 bg-secondary"></div>
+                            <div className="w-16 h-1 bg-[#d4a843]"></div>
                         </div>
-                        <h1 className="font-display-lg text-[64px] md:text-[84px] leading-tight mb-8 tracking-tighter text-on-surface">
-                            {currentSloganContent}
-                        </h1>
-                        <p className="font-headline-md text-headline-md italic text-secondary mb-12">— {currentSloganAuthor}</p>
+                        <div className={`transition-opacity duration-1000 ease-in-out ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+                            <h1 className="font-display-lg text-[64px] md:text-[84px] leading-tight mb-8 tracking-tighter text-on-surface">
+                                {currentSloganContent}
+                            </h1>
+                            <p className="font-headline-md text-headline-md italic text-[#d4a843] mb-12">
+                                — {currentSloganAuthor}
+                            </p>
+                        </div>
                         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                             <button
-                                className="px-12 py-5 bg-surface-container-highest border border-secondary text-secondary font-label-md text-label-md uppercase tracking-[0.2em] hover:bg-secondary hover:text-surface-container-highest transition-all duration-500 active:scale-95 flex items-center group">
+                                className="px-12 py-5 bg-surface-container-highest border border-[#d4a843] text-[#d4a843] font-label-md text-label-md uppercase tracking-[0.2em] hover:bg-[#d4a843] hover:text-surface-container-highest transition-all duration-500 active:scale-95 flex items-center group">
                                 Bắt đầu hành trình
                                 <span
                                     className="material-symbols-outlined ml-2 group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -158,7 +187,7 @@ export default function Home() {
                 <section
                     className="py-24 px-margin-mobile md:px-margin-desktop marble-bg border-y border-outline-variant/20">
                     <div className="max-w-container-max mx-auto">
-                        <div className="mb-20 text-center relative socratic-dot">
+                        <div className="mb-20 text-center relative">
                             <h2 className="font-headline-lg text-headline-lg text-primary uppercase tracking-[0.3em] mb-4">Tam
                                 trụ của sự Truy vấn</h2>
                             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Những cấu
@@ -170,59 +199,73 @@ export default function Home() {
                                 to="/chat"
                                 className="group relative bg-surface-container-low border border-outline-variant/30 p-12 hover:border-secondary/40 transition-all duration-500 overflow-hidden cursor-pointer block">
                                 <div
-                                    className="absolute -right-8 -top-8 text-[120px] opacity-5 font-display-lg text-primary select-none group-hover:rotate-12 transition-transform duration-700">A
+                                    className="absolute -right-8 -top-8 text-[120px] opacity-5 font-display-lg text-primary select-none group-hover:rotate-12 transition-transform duration-700">
+                                    A
                                 </div>
-                                <div className="mb-8">
-                                    <span className="material-symbols-outlined text-[48px] text-secondary">forum</span>
+                                <div className="flex items-center gap-4 mb-4">
+                                    <span className="material-symbols-outlined text-[40px] text-[#c9973a] shrink-0 leading-none">
+                                        forum
+                                    </span>
+                                    <h3 className="font-headline-md text-headline-md text-on-surface">
+                                        Luận đàm
+                                    </h3>
                                 </div>
-                                <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Luận đàm</h3>
-                                <p className="font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Tương
+                                <p className="text-justify font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Tương
                                     tác với trí tuệ triết học được đào tạo qua đối thoại Socratic để mài sắc tư duy và
                                     thách thức các định kiến nội tâm.</p>
                                 <div
                                     className="h-0.5 w-12 bg-secondary/30 group-hover:w-full transition-all duration-500"></div>
-                                <p className="mt-6 font-caption text-caption uppercase tracking-widest text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Bước
+                                <p className="mt-6 font-caption text-caption uppercase tracking-widest text-[#c9973a] opacity-0 group-hover:opacity-100 transition-opacity">Bước
                                     vào Nghị phòng</p>
                             </Link>
 
                             <Link
-                                to="/Study"
-                                className="group relative bg-surface-container-low border border-outline-variant/30 p-12 hover:border-secondary/40 transition-all duration-500 overflow-hidden cursor-pointer translate-y-8 block">
+                                to="/study"
+                                className="group relative bg-surface-container-low border border-outline-variant/30 p-12 hover:border-secondary/40 transition-all duration-500 overflow-hidden cursor-pointer block">
                                 <div
-                                    className="absolute -right-8 -top-8 text-[120px] opacity-5 font-display-lg text-primary select-none group-hover:rotate-12 transition-transform duration-700">Ω
+                                    className="absolute -right-8 -top-8 text-[120px] opacity-5 font-display-lg text-primary select-none group-hover:rotate-12 transition-transform duration-700">
+                                    Ω
                                 </div>
-                                <div className="mb-8">
-                                    <span className="material-symbols-outlined text-[48px] text-secondary">school</span>
+                                <div className="flex items-center gap-4 mb-4">
+                                    <span className="material-symbols-outlined text-[48px] text-[#c9973a]">school</span>
+                                    <h3 className="font-headline-md text-headline-md text-on-surface">
+                                        Học viện
+                                    </h3>
                                 </div>
-                                <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Học viện</h3>
-                                <p className="font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Hệ
+                                <p className="text-justify font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Hệ
                                     thống giáo trình bao quát 3.000 năm tư tưởng, từ Tiền-Socratic đến Hậu-Cấu trúc luận
                                     hiện đại, được biên soạn chuyên sâu.</p>
                                 <div
                                     className="h-0.5 w-12 bg-secondary/30 group-hover:w-full transition-all duration-500"></div>
-                                <p className="mt-6 font-caption text-caption uppercase tracking-widest text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Xem
+                                <p className="mt-6 font-caption text-caption uppercase tracking-widest text-[#c9973a] opacity-0 group-hover:opacity-100 transition-opacity">Xem
                                     Chương trình</p>
                             </Link>
 
                             <Link
-                                to="/"
+                                to="/review"
                                 className="group relative bg-surface-container-low border border-outline-variant/30 p-12 hover:border-secondary/40 transition-all duration-500 overflow-hidden cursor-pointer block">
                                 <div
-                                    className="absolute -right-8 -top-8 text-[120px] opacity-5 font-display-lg text-primary select-none group-hover:rotate-12 transition-transform duration-700">Σ
+                                    className="absolute -right-8 -top-8 text-[120px] opacity-5 font-display-lg text-primary select-none group-hover:rotate-12 transition-transform duration-700">
+                                    Σ
                                 </div>
-                                <div className="mb-8">
-                                    <span
-                                        className="material-symbols-outlined text-[48px] text-secondary">movie_edit</span>
+
+                                <div className="flex items-center gap-4 mb-4">
+                                    <span className="material-symbols-outlined text-[40px] text-[#c9973a] shrink-0 leading-none">
+                                        quiz
+                                    </span>
+                                    <h3 className="font-headline-md text-headline-md text-on-surface">
+                                        Ôn tập
+                                    </h3>
                                 </div>
-                                <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Xưởng sáng
-                                    tạo</h3>
-                                <p className="font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">Biến
-                                    tư tưởng thành hành động. Sử dụng công cụ tạo sinh của chúng tôi để hiện thực hóa
-                                    các khái niệm triết học thành các tác phẩm thị giác điện ảnh.</p>
+                                <p className="text-justify font-body-md text-body-md text-on-surface-variant mb-8 leading-relaxed">
+                                    Hệ thống câu hỏi và bài luyện tập giúp học giả củng cố kiến thức, kiểm tra mức độ hiểu bài
+                                    và rèn luyện tư duy phản biện sau mỗi chủ đề triết học.
+                                </p>
                                 <div
                                     className="h-0.5 w-12 bg-secondary/30 group-hover:w-full transition-all duration-500"></div>
-                                <p className="mt-6 font-caption text-caption uppercase tracking-widest text-secondary opacity-0 group-hover:opacity-100 transition-opacity">Khởi
-                                    tạo Động cơ</p>
+                                <p className="mt-6 font-caption text-caption uppercase tracking-widest text-[#c9973a] opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Bắt đầu ôn tập
+                                </p>
                             </Link>
                         </div>
                     </div>

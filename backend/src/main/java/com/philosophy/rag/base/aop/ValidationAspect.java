@@ -47,7 +47,7 @@ public class ValidationAspect {
     public void validateInputAnnotated() {}
 
     /** Tất cả method public trong controller */
-    @Pointcut("within(com.philosophy.rag.controller..*) && execution(public * *(..))")
+    @Pointcut("within(com.philosophy.rag.features.*.controller..*) && execution(public * *(..))")
     public void publicControllerMethods() {}
 
     // ──────────────────────────────────────────────────────────────────────────

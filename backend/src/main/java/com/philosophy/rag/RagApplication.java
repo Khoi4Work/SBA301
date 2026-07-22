@@ -1,35 +1,62 @@
 package com.philosophy.rag;
 
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
 @SpringBootApplication
 @EnableJpaAuditing(auditorAwareRef = "auditAwareImpl")
-@EnableJpaRepositories(basePackages = "com.philosophy.rag.repository")
+@EnableJpaRepositories
 public class RagApplication {
     public static void main(String[] args) {
+        loadEnv();
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         Locale.setDefault(new Locale("vi", "VN"));
         SpringApplication.run(RagApplication.class, args);
     }
 
-    @Bean
-    public CommandLineRunner dropCheckConstraint(JdbcTemplate jdbcTemplate) {
-        return args -> {
+    public static void loadEnv() {
+        Path envPath = Paths.get(".env");
+        if (!Files.exists(envPath)) {
+            envPath = Paths.get("backend", ".env");
+        }
+        if (!Files.exists(envPath)) {
+            envPath = Paths.get("..", ".env");
+        }
+        if (Files.exists(envPath)) {
             try {
-                jdbcTemplate.execute("ALTER TABLE quizzes DROP CONSTRAINT IF EXISTS quizzes_quiz_type_check;");
-                System.out.println("=== Dropped constraint quizzes_quiz_type_check successfully ===");
-            } catch (Exception e) {
-                System.err.println("=== Failed to drop constraint quizzes_quiz_type_check: " + e.getMessage() + " ===");
+                List<String> lines = Files.readAllLines(envPath);
+                for (String line : lines) {
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) {
+                        continue;
+                    }
+                    int eqIdx = line.indexOf('=');
+                    if (eqIdx > 0) {
+                        String key = line.substring(0, eqIdx).trim();
+                        String value = line.substring(eqIdx + 1).trim();
+                        if (value.startsWith("\"") && value.endsWith("\"")) {
+                            value = value.substring(1, value.length() - 1);
+                        } else if (value.startsWith("'") && value.endsWith("'")) {
+                            value = value.substring(1, value.length() - 1);
+                        }
+                        if (System.getProperty(key) == null && System.getenv(key) == null) {
+                            System.setProperty(key, value);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                System.err.println("Warning: Failed to load .env file: " + e.getMessage());
             }
-        };
+        }
     }
 }

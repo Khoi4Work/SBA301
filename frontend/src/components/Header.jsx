@@ -1,4 +1,4 @@
-import { Bell, Settings, LogOut  } from 'lucide-react';
+import { Bell, Settings, LogOut, User, Loader  } from 'lucide-react';
 import {Link, useNavigate} from "react-router-dom";
 import {useContext, useState} from "react";
 import {AuthContext} from "@/contexts/AuthContext.jsx";
@@ -6,7 +6,23 @@ import {AuthContext} from "@/contexts/AuthContext.jsx";
 export default function Header() {
     const [showMenu, setShowMenu] = useState(false);
     const { logout } = useContext(AuthContext);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+
+        try {
+            setIsLoggingOut(true);
+            await logout();
+        } catch (e) {
+            console.warn("Logout failed but forcing UI exit");
+        } finally {
+            setShowMenu(false);
+            navigate("/");
+        }
+    };
+
     return (
         <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 h-20 px-6 md:px-16 flex justify-between items-center">
             <div className="flex items-center gap-12">
@@ -38,9 +54,6 @@ export default function Header() {
             </div>
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-4">
-                    <button className="text-on-surface-variant hover:bg-surface-container-high p-2 rounded-full transition-all cursor-pointer">
-                        <Bell size={24} />
-                    </button>
                     <div className="relative">
                         <button
                             onClick={() => setShowMenu(!showMenu)}
@@ -50,21 +63,28 @@ export default function Header() {
                         </button>
 
                         {showMenu && (
-                            <div className="absolute right-0 mt-2 w-48 bg-surface-container border border-outline-variant rounded-lg shadow-lg overflow-hidden">
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            await logout();
-                                        } catch (e) {
-                                            console.warn("Logout failed but forcing UI exit");
-                                        } finally {
-                                            navigate("/");
-                                        }
-                                    }}
+                            <div className="absolute right-0 mt-2 w-52 bg-surface-container border border-outline-variant rounded-lg shadow-lg overflow-hidden">
+                                <Link
+                                    to="/profile"
+                                    onClick={() => setShowMenu(false)}
                                     className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-container-high transition-colors"
                                 >
-                                    <LogOut size={18} />
-                                    Đăng xuất
+                                    <User size={18} />
+                                    Thông tin cá nhân
+                                </Link>
+
+                                <button
+                                    onClick={handleLogout}
+                                    disabled={isLoggingOut}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-container-high transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {isLoggingOut ? (
+                                        <Loader size={18} className="animate-spin" />
+                                    ) : (
+                                        <LogOut size={18} />
+                                    )}
+
+                                    {isLoggingOut ? "Đăng xuất..." : "Đăng xuất"}
                                 </button>
                             </div>
                         )}
