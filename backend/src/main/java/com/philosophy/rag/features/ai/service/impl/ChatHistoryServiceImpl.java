@@ -4,11 +4,9 @@ import com.philosophy.rag.features.ai.dto.ChatHistoryResponse;
 import com.philosophy.rag.features.ai.entity.ChatHistory;
 import com.philosophy.rag.features.ai.entity.ChatSession;
 import com.philosophy.rag.features.ai.entity.Philosopher;
-import com.philosophy.rag.features.auth.entity.User;
 import com.philosophy.rag.features.ai.repository.ChatHistoryRepository;
 import com.philosophy.rag.features.ai.repository.ChatSessionRepository;
 import com.philosophy.rag.features.ai.repository.PhilosopherRepository;
-import com.philosophy.rag.features.auth.repository.UserRepository;
 import com.philosophy.rag.features.ai.service.ChatHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +30,8 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
 
     @Override
     @Transactional
-    public ChatHistory saveInteraction(UUID userId, UUID philosopherId, String query, String response, LocalDateTime start, LocalDateTime end, UUID sessionId) {
+    public ChatHistory saveInteraction(UUID userId, UUID philosopherId, String query, String response,
+            LocalDateTime start, LocalDateTime end, UUID sessionId) {
         log.info("Saving chat interaction for philosopher: {}, session: {}", philosopherId, sessionId);
 
         ChatSession session = null;

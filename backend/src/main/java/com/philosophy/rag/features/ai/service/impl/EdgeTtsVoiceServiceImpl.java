@@ -1,14 +1,10 @@
 package com.philosophy.rag.features.ai.service.impl;
 
 import com.philosophy.rag.features.ai.dto.TtsRequest;
-import com.philosophy.rag.features.ai.dto.ChatResponse;
 import com.philosophy.rag.features.ai.dto.RagAskResponse;
-import com.philosophy.rag.features.ai.service.RagService;
-import com.philosophy.rag.features.auth.dto.UserResponse;
-import com.philosophy.rag.features.auth.service.UserService;
 import com.philosophy.rag.features.ai.service.VoiceService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -23,13 +19,11 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Base64;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Service
-@ConditionalOnProperty(name = "voice.provider", havingValue = "edge", matchIfMissing = true)
+@Service("edgeTtsVoiceService")
 public class EdgeTtsVoiceServiceImpl implements VoiceService {
 
     @Override
@@ -47,33 +41,34 @@ public class EdgeTtsVoiceServiceImpl implements VoiceService {
 
         // Dùng Mono.fromCallable để gói các thao tác I/O (chặn luồng) lại
         return Mono.fromCallable(() -> {
-                    Files.writeString(textFile.toPath(), text, StandardCharsets.UTF_8);
+            Files.writeString(textFile.toPath(), text, StandardCharsets.UTF_8);
 
-                    ProcessBuilder processBuilder = new ProcessBuilder(
-                            "cmd.exe", "/c", "py", "-m", "edge_tts",
-                            "--voice", voice,
-                            "-f", textFile.getAbsolutePath(),
-                            "--write-media", outputFile.getAbsolutePath());
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                    "cmd.exe", "/c", "py", "-m", "edge_tts",
+                    "--voice", voice,
+                    "-f", textFile.getAbsolutePath(),
+                    "--write-media", outputFile.getAbsolutePath());
 
-                    log.info("Đang thực thi edge-tts qua file txt tạm...");
-                    processBuilder.redirectErrorStream(true);
-                    Process process = processBuilder.start();
+            log.info("Đang thực thi edge-tts qua file txt tạm...");
+            processBuilder.redirectErrorStream(true);
+            Process process = processBuilder.start();
 
-                    String processOutput = new BufferedReader(new InputStreamReader(process.getInputStream()))
-                            .lines().collect(Collectors.joining("\n"));
+            String processOutput = new BufferedReader(new InputStreamReader(process.getInputStream()))
+                    .lines().collect(Collectors.joining("\n"));
 
-                    int exitCode = process.waitFor();
+            int exitCode = process.waitFor();
 
-                    if (exitCode != 0) {
-                        log.error("Lệnh CMD thất bại. Exit code: {}", exitCode);
-                        log.error(">>> HỆ ĐIỀU HÀNH BÁO LỖI: {}", processOutput);
-                        throw new RuntimeException("Lệnh edge-tts chạy thất bại. Chi tiết: " + processOutput);
-                    }
+            if (exitCode != 0) {
+                log.error("Lệnh CMD thất bại. Exit code: {}", exitCode);
+                log.error(">>> HỆ ĐIỀU HÀNH BÁO LỖI: {}", processOutput);
+                throw new RuntimeException("Lệnh edge-tts chạy thất bại. Chi tiết: " + processOutput);
+            }
 
-                    log.info("Khởi tạo file mp3 thành công. Chuẩn bị stream...");
-                    return outputFile;
-                })
-                // Chạy trên thread pool riêng biệt (boundedElastic) để không block WebFlux event-loop
+            log.info("Khởi tạo file mp3 thành công. Chuẩn bị stream...");
+            return outputFile;
+        })
+                // Chạy trên thread pool riêng biệt (boundedElastic) để không block WebFlux
+                // event-loop
                 .subscribeOn(Schedulers.boundedElastic())
 
                 // Chuyển Mono<File> thành Flux<DataBuffer> để stream

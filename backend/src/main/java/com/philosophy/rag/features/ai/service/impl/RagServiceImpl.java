@@ -34,6 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+
 @Service
 @Slf4j
 public class RagServiceImpl implements RagService {
@@ -49,7 +50,7 @@ public class RagServiceImpl implements RagService {
     private final KnowledgeRetrievalService knowledgeRetrievalService;
     private static final int NUM_LAST_CONVERSATION_CHAT = 10;
 
-    private static final TextSplitter TEXT_SPLITTER =  TokenTextSplitter.builder()
+    private static final TextSplitter TEXT_SPLITTER = TokenTextSplitter.builder()
             .withChunkSize(800)
             .withMinChunkSizeChars(400)
             .withMinChunkLengthToEmbed(30)
@@ -82,15 +83,15 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public String uploadDocument(MultipartFile file) {
-        //1. Check format
+        // 1. Check format
         String filename = file.getOriginalFilename();
         if (filename == null
                 || (!filename.toLowerCase().endsWith(".pdf")
-                && !filename.toLowerCase().endsWith(".md"))) {
+                        && !filename.toLowerCase().endsWith(".md"))) {
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR,
                     "Unsupported file format. Only PDF and MD files are allowed.");
         }
-        //2. Save to temp
+        // 2. Save to temp
         Path tempFile = saveMultipartFile(file);
         try {
             String documentId = UUID.randomUUID().toString();
@@ -103,14 +104,14 @@ public class RagServiceImpl implements RagService {
             // 4. Clean text
             List<Document> cleanedDocuments = cleanDocuments(documents);
 
-            //5. Split to chunks
+            // 5. Split to chunks
             List<Document> chunks = TEXT_SPLITTER.apply(cleanedDocuments);
 
-            //6. Add metadata for each chunk
+            // 6. Add metadata for each chunk
             List<Document> enrichedChunks = enrichChunks(chunks, documentId, filename);
 
             log.info("[RAG] Indexing {} chunks for file: {}", chunks.size(), filename);
-            //7. Add to vector store
+            // 7. Add to vector store
             vectorStore.accept(enrichedChunks);
 
             return "Document uploaded and indexed successfully: " + filename
@@ -163,7 +164,7 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public RagAskResponse askContextual(UUID userId, String query, String s3Key, String selectedText,
-                                        UUID philosopherId, UUID sessionId) {
+            UUID philosopherId, UUID sessionId) {
         log.info("[Contextual AI] Processing query: {}, UserID: {}, S3Key: {}, PhilosopherID: {}, SessionID: {}",
                 query, userId, s3Key, philosopherId, sessionId);
 
@@ -265,10 +266,10 @@ public class RagServiceImpl implements RagService {
     @Override
     public PageResponse<DocumentContent> listDocumentsPaged(Pageable pageable) {
         int offset = (int) pageable.getOffset();
-        int size   = pageable.getPageSize();
+        int size = pageable.getPageSize();
 
-        List<DocumentContent> content     = vectorStoreRepository.getDocumentContentPaged(offset, size);
-        long                  totalElements = vectorStoreRepository.countDistinctDocuments();
+        List<DocumentContent> content = vectorStoreRepository.getDocumentContentPaged(offset, size);
+        long totalElements = vectorStoreRepository.countDistinctDocuments();
 
         Page<DocumentContent> page = new PageImpl<>(content, pageable, totalElements);
         return PageResponse.from(page);
@@ -293,15 +294,17 @@ public class RagServiceImpl implements RagService {
     }
 
     @Override
-    public PageResponse<com.philosophy.rag.features.ai.dto.DocumentChunk> getDocumentChunksPaged(String source, Pageable pageable) {
+    public PageResponse<com.philosophy.rag.features.ai.dto.DocumentChunk> getDocumentChunksPaged(String source,
+            Pageable pageable) {
         int offset = (int) pageable.getOffset();
         int size = pageable.getPageSize();
 
-        List<com.philosophy.rag.features.ai.dto.DocumentChunk> chunks = vectorStoreRepository.getChunksBySourcePaged(source, offset, size);
+        List<com.philosophy.rag.features.ai.dto.DocumentChunk> chunks = vectorStoreRepository
+                .getChunksBySourcePaged(source, offset, size);
         long totalElements = vectorStoreRepository.countChunksBySource(source);
 
-        org.springframework.data.domain.Page<com.philosophy.rag.features.ai.dto.DocumentChunk> page = 
-            new org.springframework.data.domain.PageImpl<>(chunks, pageable, totalElements);
+        org.springframework.data.domain.Page<com.philosophy.rag.features.ai.dto.DocumentChunk> page = new org.springframework.data.domain.PageImpl<>(
+                chunks, pageable, totalElements);
 
         return PageResponse.from(page);
     }
@@ -322,16 +325,16 @@ public class RagServiceImpl implements RagService {
      */
     private Path saveMultipartFile(MultipartFile file) {
         try {
-            //1. Get original file's name
+            // 1. Get original file's name
             String originalName = Objects.requireNonNull(file.getOriginalFilename());
             int dotIndex = originalName.lastIndexOf('.');
             String prefix = dotIndex > 0 ? originalName.substring(0, dotIndex) : originalName;
             String suffix = dotIndex > 0 ? originalName.substring(dotIndex) : "";
 
-            //2. Create temp file with unique name
+            // 2. Create temp file with unique name
             Path tempFile = Files.createTempFile(prefix + "_", suffix);
 
-            //3. Write content of file into file temp
+            // 3. Write content of file into file temp
             Files.copy(file.getInputStream(), tempFile,
                     StandardCopyOption.REPLACE_EXISTING);
             return tempFile;
@@ -421,8 +424,6 @@ public class RagServiceImpl implements RagService {
                 .orElse("Untitled section");
     }
 
-
-
     private String cleanText(String text) {
         if (text == null)
             return "";
@@ -498,18 +499,18 @@ public class RagServiceImpl implements RagService {
         return enrichedChunks;
     }
 
-
     private String buildPrompt(String query, UUID philosopherId, UUID sessionId) {
 
         Philosopher philosopher = philosopherRepository.findById(philosopherId)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_INPUT, "Triết gia này không tồn tại!"));
-        String persona = philosopher.getSystemPrompt() != null ? philosopher.getSystemPrompt() : "You are an expert academic professor.";
-
+        String persona = philosopher.getSystemPrompt() != null ? philosopher.getSystemPrompt()
+                : "You are an expert academic professor.";
 
         // Append the last 10 turns of conversation history (if any)
         StringBuilder historyBlock = new StringBuilder();
         if (sessionId != null) {
-            List<ChatHistory> history = chatHistoryService.getRecentHistoryBySession(sessionId, NUM_LAST_CONVERSATION_CHAT);
+            List<ChatHistory> history = chatHistoryService.getRecentHistoryBySession(sessionId,
+                    NUM_LAST_CONVERSATION_CHAT);
             if (!history.isEmpty()) {
                 historyBlock = new StringBuilder("\n\n### Conversation History:\n");
                 for (ChatHistory turn : history) {

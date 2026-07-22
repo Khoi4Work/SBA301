@@ -3,33 +3,22 @@ package com.philosophy.rag.features.ai.service.impl;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.features.ai.dto.TtsRequest;
-import com.philosophy.rag.features.ai.dto.ChatResponse;
-import com.philosophy.rag.features.ai.dto.RagAskResponse;
-import com.philosophy.rag.features.ai.service.RagService;
-import com.philosophy.rag.features.auth.dto.UserResponse;
-import com.philosophy.rag.features.auth.service.UserService;
 import com.philosophy.rag.features.ai.service.VoiceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import jakarta.annotation.PostConstruct;
 import reactor.core.publisher.Flux;
 
-import java.util.Base64;
-
 @Slf4j
-@Service
-@ConditionalOnProperty(name = "voice.provider", havingValue = "elevenlabs")
+@Service("elevenLabsVoiceService")
 public class ElevenLabsVoiceServiceImpl implements VoiceService {
     private final WebClient webClient;
 
-    @Value("${elevenlabs.api-key}")
+    @Value("${elevenlabs.api-key:}")
     private String apiKey;
 
     @Value("${elevenlabs.voice-id}")
@@ -47,7 +36,6 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
             log.info("ElevenLabs API Key loaded (length: {} characters)", apiKey.length());
         }
     }
-
 
     @Override
     public Flux<DataBuffer> textToSpeak(TtsRequest request) {
@@ -70,23 +58,13 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
                 .doOnComplete(() -> log.info("Stream ElevenLabs thành công!"))
                 .onErrorResume(e -> {
                     // Fallback
-//                    log.warn("Lỗi ElevenLabs API: {}. Fallback sang Edge-TTS...", e.getMessage());
                     throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Lỗi ElevenLabs API: " + e.getMessage());
-//                    return fallbackToEdgeTts(new TtsRequest(
-//                            request.text(), "vi-VN-HoaiMyNeural", request.philosopherId(), request.sessionId()
-//                    ));
                 });
     }
-
-//    private Flux<DataBuffer> fallbackToEdgeTts(TtsRequest request) {
-//        log.info("Bắt đầu xử lý Edge-TTS Fallback. Text length: {} ký tự, Voice: {}", request.text().length(), request.voice());
-//        return edgeTtsVoiceServiceImpl.textToSpeak(request);
-//    }
 
     private VoiceSettings getVoiceSettings() {
         return new VoiceSettings(0.5f, 0.75f, 0.0f);
     }
-
 
     // Inner classes for API requests
     private record ElevenLabsRequest(String model_id, String text, VoiceSettings voice_settings) {

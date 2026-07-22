@@ -4,7 +4,6 @@ import com.philosophy.rag.features.ai.dto.PageResponse;
 import com.philosophy.rag.features.ai.dto.PhilosopherRequest;
 import com.philosophy.rag.features.ai.dto.PhilosopherResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -15,10 +14,11 @@ public interface PhilosopherService {
 
     PhilosopherResponse findPhilosopherById(UUID id);
 
-    PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file, MultipartFile idleFile, MultipartFile talkingFile, MultipartFile thinkingFile);
+    PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file, MultipartFile idleFile,
+            MultipartFile talkingFile, MultipartFile thinkingFile);
 
-
-    PhilosopherResponse updatePhilosopher(UUID id, PhilosopherRequest request, MultipartFile file, MultipartFile idleFile, MultipartFile talkingFile, MultipartFile thinkingFile);
+    PhilosopherResponse updatePhilosopher(UUID id, PhilosopherRequest request, MultipartFile file,
+            MultipartFile idleFile, MultipartFile talkingFile, MultipartFile thinkingFile);
 
     void deleteAllPhilosophers();
 

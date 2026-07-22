@@ -137,7 +137,7 @@ function ReadingStage({ lesson, s3Key, onComplete }) {
         const loadPhilosophers = async () => {
             try {
                 const res = await apiClient.get('/philosophers/');
-                const list = res.data?.result || [];
+                const list = res.data?.result?.content || [];
                 setPhilosophers(list);
                 if (list.length > 0) {
                     setSelectedPhilosopherId(list[0].id);

@@ -1,6 +1,7 @@
 package com.philosophy.rag.utils.controller;
 
 import com.philosophy.rag.base.exception.ApiException;
+import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResult;
 import com.philosophy.rag.utils.dto.DocumentDistributionResponse;
 import com.philosophy.rag.utils.dto.DocumentUploadResponse;
@@ -59,6 +60,15 @@ public class DocumentController {
                         @RequestParam(value = "category", required = false) String category) throws ApiException {
 
                 log.info("Uploading file: {}, title: {}, category: {}", file.getOriginalFilename(), title, category);
+
+                if (file == null || file.isEmpty()) {
+                        throw new ApiException(ErrorCode.INVALID_INPUT, "File cannot be empty");
+                }
+
+                String documentTitle = (title != null && !title.isBlank()) ? title.trim() : file.getOriginalFilename();
+                if (documentTitle != null && documentRepository.existsByTitleIgnoreCase(documentTitle)) {
+                        throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Tài liệu với tiêu đề hoặc tên file '" + documentTitle + "' đã tồn tại trong hệ thống");
+                }
 
                 DocumentUploadResponse response = s3StorageService.uploadDocument(file, title, description, image, category);
 

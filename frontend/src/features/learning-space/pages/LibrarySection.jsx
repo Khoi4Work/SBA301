@@ -288,10 +288,10 @@ export default function LibrarySection() {
         });
     }, [curriculumDocs]);
 
-    // Tự động chọn chương đầu tiên khi giáo trình thay đổi hoặc danh sách chương thay đổi
+    // Tự động chọn 'Tất cả' chương khi giáo trình thay đổi hoặc danh sách chương thay đổi
     useEffect(() => {
         if (chapters.length > 0) {
-            setActiveChapter(chapters[0]);
+            setActiveChapter('Tất cả');
         } else {
             setActiveChapter('');
         }
@@ -302,7 +302,7 @@ export default function LibrarySection() {
         if (!activeChapter) return [];
         const set = new Set();
         curriculumDocs.forEach((doc) => {
-            if (doc.parsedChapter === activeChapter && doc.parsedSection) {
+            if ((activeChapter === 'Tất cả' || doc.parsedChapter === activeChapter) && doc.parsedSection) {
                 set.add(doc.parsedSection);
             }
         });
@@ -312,34 +312,41 @@ export default function LibrarySection() {
         });
     }, [curriculumDocs, activeChapter]);
 
-    // Tự động chọn mục La Mã đầu tiên khi đổi chương hoặc khi danh sách mục La Mã thay đổi
+    // Tự động chọn mục La Mã khi đổi chương hoặc khi danh sách mục La Mã thay đổi
     useEffect(() => {
         if (sections.length > 0) {
-            setActiveSection(sections[0]);
+            if (activeChapter === 'Tất cả') {
+                setActiveSection('Tất cả');
+            } else {
+                setActiveSection(sections[0]);
+            }
         } else {
             setActiveSection('Tất cả');
         }
-    }, [sections]);
+    }, [sections, activeChapter]);
 
     // 6. Lọc tài liệu theo activeChapter, activeSection và searchQuery
     const filteredDocs = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
+        if (q) {
+            return parsedDocs.filter((doc) => {
+                return (
+                    doc.title?.toLowerCase().includes(q) ||
+                    doc.fileName?.toLowerCase().includes(q) ||
+                    doc.description?.toLowerCase().includes(q)
+                );
+            });
+        }
         return curriculumDocs.filter((doc) => {
-            const matchesChapter = !activeChapter || doc.parsedChapter === activeChapter;
+            const matchesChapter = !activeChapter || activeChapter === 'Tất cả' || doc.parsedChapter === activeChapter;
             const matchesSection =
                 !activeSection ||
                 activeSection === 'Tất cả' ||
                 doc.parsedSection === activeSection;
 
-            const q = searchQuery.toLowerCase().trim();
-            const matchesSearch =
-                !q ||
-                doc.title?.toLowerCase().includes(q) ||
-                doc.fileName?.toLowerCase().includes(q) ||
-                doc.description?.toLowerCase().includes(q);
-
-            return matchesChapter && matchesSection && matchesSearch;
+            return matchesChapter && matchesSection;
         });
-    }, [curriculumDocs, activeChapter, activeSection, searchQuery]);
+    }, [parsedDocs, curriculumDocs, activeChapter, activeSection, searchQuery]);
 
     // 7. Nhóm tài liệu theo Phần số (parsedNumberSection) và sắp xếp theo Phần chữ (parsedLetterSection)
     const groupedDocs = useMemo(() => {
@@ -387,7 +394,7 @@ export default function LibrarySection() {
                     {/* Live counter */}
                     {!loading && !error && (
                         <span className="text-xs text-outline font-medium">
-                            {filteredDocs.length}/{curriculumDocs.length} tài liệu
+                            {searchQuery ? `${filteredDocs.length}/${parsedDocs.length}` : `${filteredDocs.length}/${curriculumDocs.length}`} tài liệu
                         </span>
                     )}
                     {/* Refresh button */}
@@ -418,6 +425,7 @@ export default function LibrarySection() {
                             setIsSectionOpen(false);
                         }}
                         className="w-full bg-surface-container-high px-4 py-3 border border-outline-variant/30 rounded text-sm font-semibold text-on-surface flex items-center justify-between hover:border-secondary/60 transition-all shadow-sm focus:outline-none cursor-pointer"
+                        title={selectedCurriculum}
                     >
                         <div className="flex items-center gap-2.5 truncate">
                             <BookOpen size={16} className="text-secondary shrink-0" />
@@ -445,6 +453,7 @@ export default function LibrarySection() {
                                                 ? 'bg-secondary/5 text-secondary font-bold' 
                                                 : 'text-on-surface-variant'
                                         }`}
+                                        title={cur}
                                     >
                                         <BookOpen size={14} className={selectedCurriculum === cur ? 'text-secondary' : 'text-outline'} />
                                         <span className="truncate">{cur}</span>
@@ -471,12 +480,15 @@ export default function LibrarySection() {
                         }}
                         disabled={chapters.length === 0}
                         className="w-full bg-surface-container-high px-4 py-3 border border-outline-variant/30 rounded text-sm font-semibold text-on-surface flex items-center justify-between hover:border-secondary/60 transition-all shadow-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        title={chapters.length > 0 
+                            ? (activeChapter ? (activeChapter === 'Tất cả' ? 'Tất cả' : getChapterDisplayName(activeChapter)) : 'Tất cả') 
+                            : 'Không có chương'}
                     >
                         <div className="flex items-center gap-2.5 truncate">
                             <BookOpen size={16} className="text-secondary shrink-0" />
                             <span className="truncate">
                                 {chapters.length > 0 
-                                    ? (activeChapter ? getChapterDisplayName(activeChapter) : 'Chọn chương') 
+                                    ? (activeChapter ? (activeChapter === 'Tất cả' ? 'Tất cả' : getChapterDisplayName(activeChapter)) : 'Tất cả') 
                                     : 'Không có chương'}
                             </span>
                         </div>
@@ -490,6 +502,22 @@ export default function LibrarySection() {
                                 onClick={() => setIsChapterOpen(false)}
                             />
                             <div className="absolute left-0 mt-2 w-full bg-surface-container-high border border-outline-variant/40 rounded-lg shadow-xl z-40 py-1.5 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+                                {/* Option Tất cả cho Chương */}
+                                <button
+                                    onClick={() => {
+                                        setActiveChapter('Tất cả');
+                                        setIsChapterOpen(false);
+                                    }}
+                                    className={`w-full px-4 py-3 text-left text-sm flex items-center gap-2 hover:bg-secondary/10 hover:text-secondary transition-all cursor-pointer ${
+                                        activeChapter === 'Tất cả' 
+                                            ? 'bg-secondary/5 text-secondary font-bold' 
+                                            : 'text-on-surface-variant'
+                                    }`}
+                                    title="Tất cả"
+                                >
+                                    <BookOpen size={14} className={activeChapter === 'Tất cả' ? 'text-secondary' : 'text-outline'} />
+                                    <span className="truncate">Tất cả</span>
+                                </button>
                                 {chapters.map((chap) => (
                                     <button
                                         key={chap}
@@ -502,6 +530,7 @@ export default function LibrarySection() {
                                                 ? 'bg-secondary/5 text-secondary font-bold' 
                                                 : 'text-on-surface-variant'
                                         }`}
+                                        title={getChapterDisplayName(chap)}
                                     >
                                         <BookOpen size={14} className={activeChapter === chap ? 'text-secondary' : 'text-outline'} />
                                         <span className="truncate">{getChapterDisplayName(chap)}</span>
@@ -528,6 +557,11 @@ export default function LibrarySection() {
                         }}
                         disabled={!activeChapter || sections.length === 0}
                         className="w-full bg-surface-container-high px-4 py-3 border border-outline-variant/30 rounded text-sm font-semibold text-on-surface flex items-center justify-between hover:border-secondary/60 transition-all shadow-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        title={!activeChapter 
+                            ? 'Chọn chương trước' 
+                            : (sections.length > 0 
+                                ? (activeSection === 'Tất cả' ? 'Tất cả' : getSectionDisplayName(activeChapter, activeSection)) 
+                                : 'Không có mục')}
                     >
                         <div className="flex items-center gap-2.5 truncate">
                             <FileText size={16} className="text-secondary shrink-0" />
@@ -560,6 +594,7 @@ export default function LibrarySection() {
                                             ? 'bg-secondary/5 text-secondary font-bold' 
                                             : 'text-on-surface-variant'
                                     }`}
+                                    title="Tất cả"
                                 >
                                     <FileText size={14} className={activeSection === 'Tất cả' ? 'text-secondary' : 'text-outline'} />
                                     <span className="truncate">Tất cả</span>
@@ -576,6 +611,7 @@ export default function LibrarySection() {
                                                 ? 'bg-secondary/5 text-secondary font-bold' 
                                                 : 'text-on-surface-variant'
                                         }`}
+                                        title={getSectionDisplayName(activeChapter, sec)}
                                     >
                                         <FileText size={14} className={activeSection === sec ? 'text-secondary' : 'text-outline'} />
                                         <span className="truncate">{getSectionDisplayName(activeChapter, sec)}</span>
