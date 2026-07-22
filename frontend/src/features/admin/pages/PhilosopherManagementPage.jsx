@@ -337,7 +337,6 @@ export default function PhilosopherManagementPage() {
                                                 value={form.name}
                                                 onChange={(event) => handleFormChange("name", event.target.value)}
                                                 className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
-                                                required
                                             />
                                         </EditRow>
 
@@ -346,7 +345,6 @@ export default function PhilosopherManagementPage() {
                                                 value={form.category}
                                                 onChange={(event) => handleFormChange("category", event.target.value)}
                                                 className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus:border-secondary"
-                                                required
                                             />
                                         </EditRow>
 

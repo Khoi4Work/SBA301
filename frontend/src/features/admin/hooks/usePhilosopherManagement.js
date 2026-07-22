@@ -101,8 +101,35 @@ export function usePhilosopherManagement() {
         }));
     };
 
+    const validateForm = () => {
+        if (!form.name || form.name.trim() === "") {
+            setModalError("Vui lòng nhập tên triết gia.");
+            return false;
+        }
+        if (!form.systemPrompt || form.systemPrompt.trim() === "") {
+            setModalError("Vui lòng nhập System Prompt (đây là hướng dẫn cho AI).");
+            return false;
+        }
+        if (!form.biography || form.biography.trim() === "") {
+            setModalError("Vui lòng nhập tiểu sử triết gia.");
+            return false;
+        }
+        if (form.name.length > 200) {
+            setModalError("Tên triết gia không được vượt quá 200 ký tự.");
+            return false;
+        }
+        if (form.systemPrompt.length > 5000) {
+            setModalError("System Prompt không được vượt quá 5000 ký tự.");
+            return false;
+        }
+
+        return true;
+    };
+
     const handleCreate = async (event) => {
         event.preventDefault();
+
+        if (!validateForm()) return;
 
         try {
             setSaving(true);
@@ -128,6 +155,7 @@ export function usePhilosopherManagement() {
         event.preventDefault();
 
         if (!selectedPhilosopher?.id) return;
+        if (!validateForm()) return;
 
         try {
             setSaving(true);

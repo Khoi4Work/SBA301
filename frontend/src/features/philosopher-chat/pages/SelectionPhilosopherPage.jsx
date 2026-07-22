@@ -121,6 +121,16 @@ export function SelectionPhilosopherPage({ onSelect }) {
               <PhilosopherSkeleton />
               <PhilosopherSkeleton />
             </>
+          ) : philosophers.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="col-span-full text-center py-20"
+            >
+              <p className="text-on-surface-variant italic text-lg">
+                Hiện chưa có triết gia nào khả dụng để đàm đạo...
+              </p>
+            </motion.div>
           ) : (
             philosophers.map((phil) => (
               <motion.div

@@ -12,6 +12,7 @@ export function AISidebar({ isOpen = true, onClose = null }) {
     const [editingSessionId, setEditingSessionId] = useState(null);
     const [editTitle, setEditTitle] = useState("");
     const [processingSessionId, setProcessingSessionId] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchSessions = async () => {
@@ -20,6 +21,8 @@ export function AISidebar({ isOpen = true, onClose = null }) {
                 setSessions(data);
             } catch (error) {
                 console.error("Lỗi tải lịch sử hội thoại:", error);
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchSessions();
@@ -111,7 +114,11 @@ export function AISidebar({ isOpen = true, onClose = null }) {
                         Lịch sử luận đàm
                     </p>
                     <div className="space-y-1">
-                        {sessions.length === 0 ? (
+                        {isLoading ? (
+                            <div className="flex justify-center py-4">
+                                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                            </div>
+                        ) : sessions.length === 0 ? (
                             <p className="text-xs italic text-on-surface-variant/40 px-4 py-2">
                                 Chưa có phiên đàm đạo nào...
                             </p>

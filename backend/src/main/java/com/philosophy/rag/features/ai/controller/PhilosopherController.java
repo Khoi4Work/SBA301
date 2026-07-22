@@ -34,7 +34,7 @@ public class PhilosopherController {
     @GetMapping("/")
     public ResponseEntity<ApiResult<PageResponse<PhilosopherResponse>>> getAllPhilosophers(
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "2") int size) {
+            @RequestParam(value = "size", defaultValue = "20") int size) {
         log.info("Request to get philosophers list: page={}, size={}", page, size);
         PageResponse<PhilosopherResponse> response = philosopherService.findAllPhilosophers(PageRequest.of(page, size));
         return ResponseEntity.ok(ApiResult.success(response, "Successfully retrieved philosopher list"));
