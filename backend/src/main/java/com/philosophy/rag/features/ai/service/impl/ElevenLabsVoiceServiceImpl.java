@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import jakarta.annotation.PostConstruct;
 import reactor.core.publisher.Flux;
 
 import java.util.Base64;
@@ -36,6 +37,15 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
 
     public ElevenLabsVoiceServiceImpl(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.baseUrl("https://api.elevenlabs.io").build();
+    }
+
+    @PostConstruct
+    public void checkConfig() {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.error("CRITICAL: ElevenLabs API Key is missing! Please check your properties file.");
+        } else {
+            log.info("ElevenLabs API Key loaded (length: {} characters)", apiKey.length());
+        }
     }
 
 
@@ -60,7 +70,7 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
                 .doOnComplete(() -> log.info("Stream ElevenLabs thành công!"))
                 .onErrorResume(e -> {
                     // Fallback
-                    log.warn("Lỗi ElevenLabs API: {}. Fallback sang Edge-TTS...", e.getMessage());
+//                    log.warn("Lỗi ElevenLabs API: {}. Fallback sang Edge-TTS...", e.getMessage());
                     throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Lỗi ElevenLabs API: " + e.getMessage());
 //                    return fallbackToEdgeTts(new TtsRequest(
 //                            request.text(), "vi-VN-HoaiMyNeural", request.philosopherId(), request.sessionId()
