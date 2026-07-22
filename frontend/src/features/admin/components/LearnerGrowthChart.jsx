@@ -82,12 +82,12 @@ export default function LearnerGrowthChart() {
                 <div>
                     <h3 className="font-display text-2xl font-semibold text-on-surface">Tăng trưởng Học giả</h3>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        {!loading && data && (
-                            <>
-                                <GrowthRateBadge value={data.growthRateWeek}  label="so tuần trước" />
-                                <GrowthRateBadge value={data.growthRateMonth} label="so tháng trước" />
-                            </>
-                        )}
+                        {/*{!loading && data && (*/}
+                        {/*    <>*/}
+                        {/*        <GrowthRateBadge value={data.growthRateWeek}  label="so tuần trước" />*/}
+                        {/*        <GrowthRateBadge value={data.growthRateMonth} label="so tháng trước" />*/}
+                        {/*    </>*/}
+                        {/*)}*/}
                     </div>
                 </div>
 

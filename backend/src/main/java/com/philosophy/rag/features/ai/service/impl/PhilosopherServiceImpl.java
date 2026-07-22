@@ -40,12 +40,7 @@ public class PhilosopherServiceImpl implements PhilosopherService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
 
-        return new PageResponse<>(
-                content,
-                page.getNumber(),
-                page.getTotalPages(),
-                page.getTotalElements()
-        );
+        return PageResponse.from(page, content);
     }
 
     @Override

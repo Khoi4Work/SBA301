@@ -1,5 +1,9 @@
 import React from "react";
 import { usePhilosopherManagement } from "@/features/admin/hooks/usePhilosopherManagement.js";
+import Toast from "@/features/admin/components/Toast.jsx";
+import ConfirmModal from "@/features/admin/components/ConfirmModal.jsx";
+import { useRagManagement } from "@/features/admin/hooks/useRagManagement.js";
+import DocumentPreviewModal from "@/features/admin/components/DocumentPreviewModal.jsx";
 
 export default function PhilosopherManagementPage() {
     const {
@@ -15,6 +19,9 @@ export default function PhilosopherManagementPage() {
         saving,
         modalMessage,
         modalError,
+        deleteTarget,
+        toast,
+        closeToast,
         setFile,
         setIdleFile,
         setTalkingFile,
@@ -26,7 +33,39 @@ export default function PhilosopherManagementPage() {
         handleCreate,
         handleUpdate,
         handleDelete,
+        confirmDelete,
+        closeDeleteModal,
     } = usePhilosopherManagement();
+
+    const {
+        documents,
+        loadingDocuments,
+        documentsError,
+        selectedFile,
+        setSelectedFile,
+        uploading,
+        uploadMessage,
+        uploadError,
+        handleUpload,
+        resetting,
+        resetMessage,
+        resetError,
+        handleReset,
+        currentPage,
+        totalPages,
+        totalElements,
+        hasNext,
+        hasPrevious,
+        goNext,
+        goPrev,
+        previewDoc,
+        openPreview,
+        closePreview,
+        deletingSource,
+        deleteMessage,
+        deleteError,
+        handleDeleteDocument,
+    } = useRagManagement();
 
     const handleSubmit = (event) => {
         if (modalMode === "create") {
@@ -476,7 +515,325 @@ export default function PhilosopherManagementPage() {
                 )}
             </div>
 
+            {/* ══════════════════════════════════════════════════
+                RAG KNOWLEDGE BASE MANAGEMENT
+                ══════════════════════════════════════════════════ */}
+            <div className="mt-24">
+                {/* Section header */}
+                <div className="mb-8">
+                    <span className="font-semibold text-sm text-secondary block mb-1 uppercase tracking-widest">
+                        Cơ sở Kiến thức AI
+                    </span>
+                    <h3 className="font-display text-3xl font-semibold text-on-surface">
+                        Quản lý Tài liệu RAG
+                    </h3>
+                    <p className="text-sm text-on-surface-variant mt-2 max-w-2xl opacity-80">
+                        Tải lên tài liệu để mở rộng bộ nhớ cho các triết gia AI. Dữ liệu sẽ được
+                        vector hóa và sử dụng trong quá trình tạo câu trả lời.
+                    </p>
+                </div>
+
+                <div className="greek-divider mb-10"></div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    {/* ── Upload Section ──────────────────────── */}
+                    <div className="folio-card p-8 bg-surface-container-low border border-secondary/10 lg:col-span-1">
+                        <p className="text-secondary/80 text-[11px] uppercase tracking-widest font-semibold mb-4">
+                            Tải lên tài liệu mới
+                        </p>
+
+                        {/* File selector */}
+                        <label className="w-full bg-surface border border-secondary/20 px-4 py-3 text-on-surface text-sm outline-none focus-within:border-secondary cursor-pointer flex items-center justify-between mb-4">
+                            <span className="truncate text-on-surface-variant">
+                                {selectedFile ? selectedFile.name : "Chọn tệp..."}
+                            </span>
+                            <span className="material-symbols-outlined text-secondary text-[18px] shrink-0 ml-2">
+                                attach_file
+                            </span>
+                            <input
+                                type="file"
+                                className="hidden"
+                                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                disabled={uploading}
+                            />
+                        </label>
+
+                        {/* Upload button */}
+                        <button
+                            type="button"
+                            onClick={handleUpload}
+                            disabled={uploading || !selectedFile}
+                            className="w-full px-5 py-2.5 border border-secondary bg-secondary/10 text-secondary hover:bg-secondary hover:text-on-secondary transition-all text-xs uppercase tracking-widest font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {uploading ? (
+                                <>
+                                    <div className="w-3.5 h-3.5 rounded-full border-2 border-secondary/30 border-t-secondary animate-spin"></div>
+                                    <span>Đang tải lên...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined text-[16px]">upload</span>
+                                    <span>Tải lên</span>
+                                </>
+                            )}
+                        </button>
+
+                        {/* Upload feedback */}
+                        {uploadMessage && (
+                            <p className="mt-3 text-sm text-emerald-400 font-medium">
+                                {uploadMessage}
+                            </p>
+                        )}
+                        {uploadError && (
+                            <p className="mt-3 text-sm text-error font-medium">
+                                {uploadError}
+                            </p>
+                        )}
+
+                        {/* Divider */}
+                        <div className="my-6 border-t border-outline/20"></div>
+
+                        {/* Reset Knowledge Base */}
+                        <p className="text-secondary/80 text-[11px] uppercase tracking-widest font-semibold mb-4">
+                            Đặt lại cơ sở kiến thức
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={handleReset}
+                            disabled={resetting}
+                            className="w-full px-5 py-2.5 border border-error/40 bg-error/5 text-error hover:bg-error/20 transition-all text-xs uppercase tracking-widest font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {resetting ? (
+                                <>
+                                    <div className="w-3.5 h-3.5 rounded-full border-2 border-error/30 border-t-error animate-spin"></div>
+                                    <span>Đang xóa...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                                    <span>Đặt lại Knowledge Base</span>
+                                </>
+                            )}
+                        </button>
+
+                        {/* Reset feedback */}
+                        {resetMessage && (
+                            <p className="mt-3 text-sm text-emerald-400 font-medium">
+                                {resetMessage}
+                            </p>
+                        )}
+                        {resetError && (
+                            <p className="mt-3 text-sm text-error font-medium">
+                                {resetError}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* ── Document List ────────────────────────── */}
+                    <div className="folio-card bg-surface-container-lowest border border-secondary/10 lg:col-span-2 overflow-hidden">
+                        <div className="px-6 py-5 border-b border-secondary/10 bg-surface-container-high/20 flex items-center justify-between">
+                            <p className="text-secondary/80 text-[11px] uppercase tracking-widest font-semibold">
+                                Danh sách tài liệu
+                            </p>
+                            <span className="text-xs text-on-surface-variant opacity-60 font-semibold">
+                                {loadingDocuments
+                                    ? "Đang tải..."
+                                    : `${totalElements} tài liệu`}
+                            </span>
+                        </div>
+
+                        {/* Loading state */}
+                        {loadingDocuments && (
+                            <div className="flex items-center justify-center py-16">
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="relative w-10 h-10">
+                                        <div className="absolute inset-0 rounded-full border-[3px] border-secondary/20"></div>
+                                        <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-secondary border-r-secondary animate-spin"></div>
+                                    </div>
+                                    <p className="text-sm text-on-surface-variant">Đang tải danh sách tài liệu...</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Error state */}
+                        {!loadingDocuments && documentsError && (
+                            <div className="px-6 py-10 text-center">
+                                <span className="material-symbols-outlined text-error text-[36px] mb-3 block">error_outline</span>
+                                <p className="text-sm text-error font-medium">{documentsError}</p>
+                            </div>
+                        )}
+
+                        {/* Empty state */}
+                        {!loadingDocuments && !documentsError && documents.length === 0 && (
+                            <div className="px-6 py-16 text-center">
+                                <span className="material-symbols-outlined text-on-surface-variant text-[48px] mb-4 block opacity-30">
+                                    folder_open
+                                </span>
+                                <p className="text-on-surface-variant opacity-60 text-sm">
+                                    Chưa có tài liệu nào. Hãy tải lên tài liệu đầu tiên.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Document table */}
+                        {!loadingDocuments && !documentsError && documents.length > 0 && (
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse text-left">
+                                    <thead>
+                                        <tr className="border-b border-secondary/20">
+                                            <th className="py-3 px-6 font-semibold text-on-surface-variant uppercase tracking-wider text-[11px] w-12">
+                                                #
+                                            </th>
+                                            <th className="py-3 px-6 font-semibold text-on-surface-variant uppercase tracking-wider text-[11px]">
+                                                Tên tệp
+                                            </th>
+                                            <th className="py-3 px-6 font-semibold text-on-surface-variant uppercase tracking-wider text-[11px]">
+                                                Thời gian tải lên
+                                            </th>
+                                            <th className="py-3 px-6 font-semibold text-on-surface-variant uppercase tracking-wider text-[11px] w-20">
+                                                
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-secondary/10">
+                                        {documents.map((doc, indexOnPage) => {
+                                            // currentPage is 0-based from the backend
+                                            const absoluteIndex = currentPage * 10 + indexOnPage;
+                                            return (
+                                                <tr
+                                                    key={doc.id ?? absoluteIndex}
+                                                    className="hover:bg-secondary/5 transition-colors cursor-pointer group"
+                                                    onClick={() => openPreview(doc)}
+                                                >
+                                                    <td className="py-4 px-6 text-xs text-on-surface-variant opacity-60 font-semibold">
+                                                        {absoluteIndex + 1}
+                                                    </td>
+                                                    <td className="py-4 px-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="material-symbols-outlined text-secondary text-[18px] shrink-0">
+                                                                description
+                                                            </span>
+                                                            <span className="text-sm text-on-surface font-medium break-all">
+                                                                {doc.fileName || doc.source || "—"}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-6 text-sm text-on-surface-variant">
+                                                        {(doc.uploadedAt || doc.uploadDate)
+                                                            ? new Date(doc.uploadedAt || doc.uploadDate).toLocaleString("vi-VN", {
+                                                                  year: "numeric",
+                                                                  month: "short",
+                                                                  day: "numeric",
+                                                                  hour: "2-digit",
+                                                                  minute: "2-digit",
+                                                              })
+                                                            : "—"}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); openPreview(doc); }}
+                                                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/10 text-secondary"
+                                                                title="Xem chi tiết"
+                                                            >
+                                                                <span className="material-symbols-outlined text-[15px] leading-none">open_in_new</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (window.confirm(`Bạn có chắc chắn muốn xóa tài liệu ${doc.fileName || doc.source}?`)) {
+                                                                        handleDeleteDocument(doc.fileName || doc.source);
+                                                                    }
+                                                                }}
+                                                                disabled={deletingSource === (doc.fileName || doc.source)}
+                                                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 border border-error/20 hover:border-error/60 hover:bg-error/10 text-error disabled:opacity-30"
+                                                                title="Xóa tài liệu"
+                                                            >
+                                                                {deletingSource === (doc.fileName || doc.source) ? (
+                                                                    <div className="w-[15px] h-[15px] rounded-full border-2 border-error/30 border-t-error animate-spin inline-block"></div>
+                                                                ) : (
+                                                                    <span className="material-symbols-outlined text-[15px] leading-none">delete</span>
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+
+                                {(deleteMessage || deleteError) && (
+                                    <div className="px-6 py-3 border-t border-secondary/10 flex justify-between items-center text-sm">
+                                        {deleteMessage && <span className="text-emerald-400 font-medium">{deleteMessage}</span>}
+                                        {deleteError && <span className="text-error font-medium">{deleteError}</span>}
+                                    </div>
+                                )}
+
+                                {/* Pagination bar – always visible when there is data */}
+                                <div className="px-6 py-4 border-t border-secondary/10 flex items-center justify-between">
+                                    <span className="text-xs text-on-surface-variant opacity-60 font-semibold">
+                                        Trang {currentPage + 1} / {Math.max(totalPages, 1)}
+                                        &nbsp;&middot;&nbsp;
+                                        {totalElements} tài liệu
+                                    </span>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={goPrev}
+                                            disabled={!hasPrevious}
+                                            className="p-1.5 border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/10 text-secondary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                            title="Trang trước"
+                                        >
+                                            <span className="material-symbols-outlined text-[16px] leading-none">
+                                                chevron_left
+                                            </span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={goNext}
+                                            disabled={!hasNext}
+                                            className="p-1.5 border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/10 text-secondary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                            title="Trang sau"
+                                        >
+                                            <span className="material-symbols-outlined text-[16px] leading-none">
+                                                chevron_right
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {/* Footer Meta */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                onClose={closeToast}
+                visible={toast.visible}
+            />
+
+            <ConfirmModal
+                isOpen={!!deleteTarget}
+                title="Xác nhận xóa"
+                message={`Bạn có chắc chắn muốn xóa triết gia "${deleteTarget?.name}" khỏi hệ thống không? Hành động này không thể hoàn tác.`}
+                onConfirm={confirmDelete}
+                onCancel={closeDeleteModal}
+            />
+
+            <DocumentPreviewModal
+                doc={previewDoc}
+                onClose={closePreview}
+            />
         </div>
     );
 }

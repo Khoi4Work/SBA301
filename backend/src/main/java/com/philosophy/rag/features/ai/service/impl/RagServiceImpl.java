@@ -1,8 +1,8 @@
 package com.philosophy.rag.features.ai.service.impl;
 
-import com.cloudinary.Api;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
+import com.philosophy.rag.features.ai.dto.PageResponse;
 import com.philosophy.rag.features.ai.persistence.Prompt;
 import com.philosophy.rag.features.ai.entity.ChatHistory;
 import com.philosophy.rag.features.ai.entity.Philosopher;
@@ -20,8 +20,10 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,9 +34,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 @Service
 @Slf4j
 public class RagServiceImpl implements RagService {
@@ -264,6 +263,18 @@ public class RagServiceImpl implements RagService {
     }
 
     @Override
+    public PageResponse<DocumentContent> listDocumentsPaged(Pageable pageable) {
+        int offset = (int) pageable.getOffset();
+        int size   = pageable.getPageSize();
+
+        List<DocumentContent> content     = vectorStoreRepository.getDocumentContentPaged(offset, size);
+        long                  totalElements = vectorStoreRepository.countDistinctDocuments();
+
+        Page<DocumentContent> page = new PageImpl<>(content, pageable, totalElements);
+        return PageResponse.from(page);
+    }
+
+    @Override
     public void resetVectorStore() {
         try {
             log.warn("[RAG] Resetting vector store...");
@@ -272,6 +283,27 @@ public class RagServiceImpl implements RagService {
             log.error("[RAG] Failed to reset vector store: {}", e.getMessage());
             throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Could not reset vector store");
         }
+    }
+
+    @Override
+    public void deleteDocumentBySource(String source) {
+        log.warn("Document deletion requested for source: {}", source);
+        vectorStoreRepository.deleteBySource(source);
+        log.info("Document deleted successfully: {}", source);
+    }
+
+    @Override
+    public PageResponse<com.philosophy.rag.features.ai.dto.DocumentChunk> getDocumentChunksPaged(String source, Pageable pageable) {
+        int offset = (int) pageable.getOffset();
+        int size = pageable.getPageSize();
+
+        List<com.philosophy.rag.features.ai.dto.DocumentChunk> chunks = vectorStoreRepository.getChunksBySourcePaged(source, offset, size);
+        long totalElements = vectorStoreRepository.countChunksBySource(source);
+
+        org.springframework.data.domain.Page<com.philosophy.rag.features.ai.dto.DocumentChunk> page = 
+            new org.springframework.data.domain.PageImpl<>(chunks, pageable, totalElements);
+
+        return PageResponse.from(page);
     }
 
     @Override
