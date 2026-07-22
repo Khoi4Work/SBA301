@@ -113,10 +113,14 @@ export function Dashboard() {
             {/*</button>*/}
           </div>
           <div className="bg-surface-container-low rounded-xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden">
-            {sessions.length === 0 ? (
+            {loading ? (
               <div className="flex items-center justify-center p-8 text-center text-on-surface-variant opacity-50 italic ">
                   <Loader2 className="animate-spin text-primary" />
                   <p className="text-on-surface-variant italic ml-2">Đang tải cuộc đàm đạo...</p>
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="flex items-center justify-center p-8 text-center text-on-surface-variant opacity-50 italic ">
+                  <p className="text-on-surface-variant italic">Đang không có cuộc đàm thoại nào đang diễn ra</p>
               </div>
             ) : (
               sessions.slice(0, 3).map((session, index) => {
