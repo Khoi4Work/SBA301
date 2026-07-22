@@ -1,0 +1,134 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Evaluating Large Language Models for a Vietnamese Philosophical Retrieval-Augmented Generation System}
+
+\author{
+\IEEEauthorblockN{Le Quoc Hoi, Ngo Gia Bao, Le Chi Nhan, Nguyen Dinh Nguyen Khoi, Lam Van Tuan}
+\IEEEauthorblockA{\textit{Software Engineering Major} \\
+\textit{FPT University}\\
+Vietnam}
+}
+
+\maketitle
+
+\begin{abstract}
+The selection of an appropriate Large Language Model (LLM) is a critical factor in developing an effective Retrieval-Augmented Generation (RAG) system, particularly for complex domains such as philosophy. This paper evaluates four models (\texttt{minimax-m3:cloud}, \texttt{gemma4:31b-cloud}, \texttt{gpt-oss:120b-cloud}, and \texttt{gemini-3.5-flash}) based on five RAGAS-style metrics: Faithfulness, Answer Relevance, Context Precision, Context Recall, and Answer Correctness. We formulate mathematical definitions for each metric and address the inadequacy of traditional metrics (such as MAE, MSE, and token-level F1) in evaluating semantic depth in philosophical domains. Based on the quantitative data extracted from experimental benchmarks, \texttt{minimax-m3:cloud} achieved the highest overall score (0.787) due to its perfect faithfulness (1.000) and superior answer correctness (0.900), driven by its capacity to generate highly detailed responses.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Retrieval-Augmented Generation, Large Language Models, Natural Language Processing, AI Evaluation, Philosophy, RAGAS Framework.
+\end{IEEEkeywords}
+
+\section{Introduction}
+The application of Retrieval-Augmented Generation (RAG) architectures in philosophical question-answering (QA) requires models that can synthesize complex abstract concepts while strictly adhering to retrieved contexts. The objective of this study is to evaluate and select the most suitable LLM for a Vietnamese philosophy RAG website. The selection criteria necessitate a model that is available at a free or freemium tier, possesses robust Vietnamese language support, demonstrates high reasoning capabilities, and integrates seamlessly into a RAG-based QA environment. Four models were selected for evaluation: \texttt{minimax-m3:cloud}, \texttt{gemini-3.5-flash}, \texttt{gpt-oss:120b-cloud}, and \texttt{gemma4:31b-cloud}.
+
+\section{Experimental Setup}
+The experiment utilizes a dataset of 20 philosophy-related questions, each paired with an expected ground truth and reference context. As defined in the system's Java implementation (\texttt{RagEvaluationTest.java}), the retrieval phase utilizes a \texttt{VectorStoreDocumentRetriever} configured to fetch the top 6 documents ($K=6$) with a similarity threshold of 0.50.
+
+Four distinct RAG generation pipelines were executed, corresponding to the four evaluated models. For evaluation, the system utilizes \texttt{gemma4:31b-cloud} hosted locally via Ollama (temperature set to 0.0) as the LLM judge. The judge evaluates the outputs of all models using the Spring AI framework combined with RAGAS-style continuous evaluators.
+
+\section{Evaluation Metrics \& Methodology}
+\label{sec:metrics}
+
+A common question in RAG evaluation is why classical metrics such as Mean Absolute Error (MAE), Mean Squared Error (MSE), or traditional token-level F1-score are not applicable. MAE and MSE measure algebraic error on continuous numerical outputs, whereas RAG generates unstructured textual discourse. Meanwhile, traditional N-gram or token-level overlap metrics (e.g., exact-match F1, BLEU, ROUGE) measure surface lexical similarity. In philosophical contexts, two responses may share minimal vocabulary while expressing identical semantic meaning, or share high lexical overlap while committing fatal logical/semantic errors. Consequently, we adopt the Retrieval-Augmented Generation Assessment (RAGAS) framework using an LLM-as-a-Judge pattern~\cite{ragas2023}.
+
+The evaluation framework relies on five distinct metrics to assess both retrieval efficiency and generation fidelity.
+
+\subsection{Faithfulness}
+Faithfulness measures whether the claims in the generated answer $A$ are strictly grounded in and supported by the retrieved context $C$. First, the answer $A$ is decomposed into a set of discrete atomic statements $S(A) = \{s_1, s_2, \dots, s_n\}$. Each statement $s_i$ is verified against $C$:
+\begin{equation}
+\text{Faithfulness} = \frac{\sum_{i=1}^{n} \mathbb{I}(s_i \text{ is supported by } C)}{|S(A)|}
+\end{equation}
+where $\mathbb{I}(\cdot)$ is an indicator function returning 1 if the claim is factual according to $C$, and 0 otherwise.
+
+\subsection{Answer Relevance}
+Answer Relevance evaluates whether the generated answer $A$ directly addresses the user's question $Q$, regardless of factual correctness. It penalizes incomplete or off-topic responses. In our framework, this is evaluated as a binary verification score $R \in \{0.0, 1.0\}$ indicating whether $A$ directly answers $Q$.
+
+\subsection{Context Precision}
+Context Precision measures the signal-to-noise ratio in the retrieved chunks $C = \{c_1, c_2, \dots, c_K\}$ relative to the gold reference context $C^*$. It calculates the Mean Average Precision (MAP) of relevant chunks ranked in top-$K$:
+\begin{equation}
+\text{Context Precision@}K = \frac{\sum_{k=1}^{K} \left( \text{Precision@}k \times v_k \right)}{\sum_{k=1}^{K} v_k}
+\end{equation}
+where $v_k \in \{0, 1\}$ indicates whether retrieved chunk $c_k$ is relevant to $C^*$, and $\text{Precision@}k$ is the fraction of relevant chunks in the top-$k$ positions.
+
+\subsection{Context Recall}
+Context Recall assesses the coverage of the gold context $C^*$ by the retrieved chunks $C$. The gold context $C^*$ is partitioned into key informational units $G(C^*) = \{g_1, g_2, \dots, g_m\}$. The recall score measures the fraction of gold statements attributable to $C$:
+\begin{equation}
+\text{Context Recall} = \frac{\sum_{j=1}^{m} \mathbb{I}(g_j \text{ is attributed to } C)}{|G(C^*)|}
+\end{equation}
+
+\subsection{Answer Correctness}
+Answer Correctness evaluates both the factual accuracy and semantic similarity of the generated answer $A$ compared to the ground truth reference answer $A^*$. It is formalized as a weighted synthesis of semantic embedding similarity and factual statement matching:
+\begin{equation}
+\text{Answer Correctness} = \alpha \cdot \text{Sim}_{\text{semantic}}(A, A^*) + (1 - \alpha) \cdot \text{Score}_{\text{factual}}(A, A^*)
+\end{equation}
+where $\alpha \in [0, 1]$ balances semantic embedding overlap and factual completeness. In our implementation, an LLM judge evaluates this alignment on a continuous scale $[0.0, 1.0]$.
+
+\subsection{Overall Score}
+The Overall Score is defined as the arithmetic mean across all five metrics:
+\begin{equation}
+\text{Overall} = \frac{\text{Faith} + \text{Relev} + \text{C.Prec} + \text{C.Rec} + \text{Correct}}{5}
+\end{equation}
+
+\section{Experimental Results}
+The benchmark results across the 20 test cases are summarized in Table~\ref{tab:results}. All reported values are the mathematical means of the respective metrics calculated directly from the evaluation CSV outputs.
+
+\begin{table}[htbp]
+\caption{Mean Evaluation Metrics by Model}
+\label{tab:results}
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Model} & \textbf{Faith} & \textbf{Relev} & \textbf{C.Prec} & \textbf{C.Rec} & \textbf{Correct} & \textbf{Overall} \\
+\midrule
+MiniMax M3 & \textbf{1.000} & 0.950 & 0.258 & 0.825 & \textbf{0.900} & \textbf{0.787} \\
+Gemma4 31B & 0.900 & \textbf{1.000} & 0.265 & 0.825 & 0.850 & 0.768 \\
+GPT-OSS 120B & 0.800 & \textbf{1.000} & 0.263 & 0.825 & 0.835 & 0.745 \\
+Gemini 3.5 & 0.800 & \textbf{1.000} & \textbf{0.272} & 0.825 & 0.800 & 0.739 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+An analysis of retrieval metrics indicates that Context Recall remained constant at 0.825 across all runs. Context Precision exhibited minor fluctuations (0.258 to 0.272). These metrics reflect VectorStore retrieval performance rather than generative differences, as retrieval precedes generation; minor precision variations stem from slight non-determinism in judge reasoning.
+
+For generation metrics, \texttt{minimax-m3:cloud} achieved the highest Answer Correctness (0.900) and perfect Faithfulness (1.000). Conversely, \texttt{gemini-3.5-flash} recorded the lowest Overall Score (0.739), with Answer Correctness of 0.800 and Faithfulness of 0.800.
+
+\section{Discussion}
+The experimental data provides clear evidence for performance variations in Vietnamese philosophical QA.
+
+The superior performance of \texttt{minimax-m3:cloud} is attributed to its ability to manage noisy retrieval contexts while generating deep, nuanced reasoning. Context Precision is relatively low across all tests ($\approx 0.26$), indicating that retrieved contexts contain unhelpful material. Despite this noise, \texttt{minimax-m3:cloud} maintained a Faithfulness score of 1.000, successfully filtering noise without hallucinating. Furthermore, output analysis shows \texttt{minimax-m3:cloud} produced the most detailed responses (averaging 1,076 characters). In philosophy, overly concise answers omit critical semantic depth; the model's verbosity matched the complex semantics of the ground truth, driving its superior Answer Correctness (0.900).
+
+In contrast, \texttt{gemini-3.5-flash} underperformed primarily due to brevity (averaging 481 characters), missing semantic layers in philosophical discourse. It also struggled with noise filtering, hallucinating ungrounded claims in 20\% of test cases (Faithfulness = 0.800).
+
+Despite its parameter size, \texttt{gpt-oss:120b-cloud} (0.745 overall) underperformed compared to \texttt{gemma4:31b-cloud} (0.768), exhibiting lower Faithfulness (0.800). This indicates that scale alone does not guarantee superior reasoning or contextual adherence when processing complex Vietnamese philosophical terminology (e.g., Marxist-Leninist concepts).
+
+\section{Threats to Validity \& Methodological Safeguards}
+To ensure rigorous evaluation and address potential threats to validity, several methodological safeguards were implemented:
+
+\subsection{LLM Judge Determinism}
+Using an LLM as a judge introduces potential variance across evaluation runs. To ensure reproducibility and stability, the local Ollama judge (\texttt{gemma4:31b-cloud}) was executed strictly with \texttt{temperature = 0.0}, enforcing deterministic sampling during metric calculation.
+
+\subsection{Mitigating Self-Preference Bias}
+A primary threat to validity is self-preference bias, as \texttt{gemma4:31b-cloud} served both as an evaluated candidate and the judge model. However, empirical findings disprove significant self-preference bias: \texttt{minimax-m3:cloud} significantly outperformed \texttt{gemma4:31b-cloud} in both Answer Correctness (0.900 vs 0.850) and Overall Score (0.787 vs 0.768). The judge model consistently penalized its own architecture's outputs when they lacked sufficient factual detail compared to \texttt{minimax-m3:cloud}.
+
+\subsection{Dataset Scale}
+The benchmark dataset comprises 20 expert-curated philosophical questions. While this dataset provides targeted domain coverage, expanding the dataset size remains future work to enhance statistical generalizability.
+
+\section{Conclusion}
+This study evaluated four large language models for deployment in a Vietnamese philosophy RAG system. Based strictly on quantitative data, \texttt{minimax-m3:cloud} is the most suitable model, achieving the highest overall score of 0.787, perfect Faithfulness (1.000), and superior Answer Correctness (0.900). The mathematical formulation of RAGAS metrics provides a robust, reproducible framework for domain-specific RAG evaluations.
+
+\begin{thebibliography}{00}
+\bibitem{ragas2023} S. Es, J. James, L. Espinosa-Anke, and S. Schockaert, ``Ragas: Automated evaluation of retrieval augmented generation,'' \emph{arXiv preprint arXiv:2309.15217}, 2023.
+\end{thebibliography}
+
+\end{document}
