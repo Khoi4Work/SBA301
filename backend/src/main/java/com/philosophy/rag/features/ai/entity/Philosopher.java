@@ -35,23 +35,23 @@ public class Philosopher extends BaseEntity {
         }
     }
 
-    @Column(name = "name", nullable = false, length = 200)
+    @Column(name = "name", nullable = false, length = 200, unique = true)
     private String name;
 
     /**
      * Ảnh đại diện (AvatarUrl).
      * Đường dẫn ảnh 2D hoặc 3D hiển thị trong phòng chat và thẻ bài.
      */
-    @Column(name = "avatar_url", length = 500)
+    @Column(name = "avatar_url", length = 500, unique = true)
     private String avatarUrl;
 
-    @Column(name = "idle_model_url", length = 500)
+    @Column(name = "idle_model_url", length = 500, unique = true)
     private String idleModelUrl;
 
-    @Column(name = "talking_model_url", length = 500)
+    @Column(name = "talking_model_url", length = 500, unique = true)
     private String talkingModelUrl;
 
-    @Column(name = "thinking_model_url", length = 500)
+    @Column(name = "thinking_model_url", length = 500, unique = true)
     private String thinkingModelUrl;
 
     /**
@@ -68,7 +68,7 @@ public class Philosopher extends BaseEntity {
     private String core;
 
     /** Tiểu sử tóm tắt */
-    @Column(name = "biography", columnDefinition = "TEXT")
+    @Column(name = "biography", columnDefinition = "TEXT", nullable = false)
     private String biography;
 
     /**

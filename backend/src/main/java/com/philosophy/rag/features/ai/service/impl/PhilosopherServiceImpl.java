@@ -58,24 +58,40 @@ public class PhilosopherServiceImpl implements PhilosopherService {
     @Override
     @Transactional
     public PhilosopherResponse createPhilosopher(PhilosopherRequest request, MultipartFile file, MultipartFile idleFile, MultipartFile talkingFile, MultipartFile thinkingFile) {
+        if (philosopherRepository.existsByName(request.name())) {
+            throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Tên triết gia này đã tồn tại.");
+        }
+
         String avatarUrl = null;
         if (file != null && !file.isEmpty()) {
             avatarUrl = cloudinaryService.uploadImage(file, "philosophy/avatars").getSecureUrl();
+            if (philosopherRepository.existsByAvatarUrl(avatarUrl)) {
+                throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Ảnh đại diện này đã được sử dụng.");
+            }
         }
 
         String idleUrl = null;
         if (idleFile != null && !idleFile.isEmpty()) {
             idleUrl = cloudinaryService.uploadModel(idleFile, "philosophy/models").getSecureUrl();
+            if (philosopherRepository.existsByIdleModelUrl(idleUrl)) {
+                throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Model idle này đã được sử dụng.");
+            }
         }
 
         String talkingUrl = null;
         if (talkingFile != null && !talkingFile.isEmpty()) {
             talkingUrl = cloudinaryService.uploadModel(talkingFile, "philosophy/models").getSecureUrl();
+            if (philosopherRepository.existsByTalkingModelUrl(talkingUrl)) {
+                throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Model talking này đã được sử dụng.");
+            }
         }
 
         String thinkingUrl = null;
         if (thinkingFile != null && !thinkingFile.isEmpty()) {
             thinkingUrl = cloudinaryService.uploadModel(thinkingFile, "philosophy/models").getSecureUrl();
+            if (philosopherRepository.existsByThinkingModelUrl(thinkingUrl)) {
+                throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Model thinking này đã được sử dụng.");
+            }
         }
 
         Philosopher philosopher = Philosopher.builder()
@@ -107,19 +123,49 @@ public class PhilosopherServiceImpl implements PhilosopherService {
         Philosopher philosopher = philosopherRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND));
 
+        // Check name uniqueness
+        philosopherRepository.findByName(request.name()).ifPresent(p -> {
+            if (!p.getPhilosopherId().equals(id)) {
+                throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Tên triết gia này đã tồn tại.");
+            }
+        });
+
         String avatarUrl = philosopher.getAvatarUrl();
         if (file != null && !file.isEmpty()) {
             avatarUrl = cloudinaryService.uploadImage(file, "philosophy/avatars").getSecureUrl();
+            philosopherRepository.findByAvatarUrl(avatarUrl).ifPresent(p -> {
+                if (!p.getPhilosopherId().equals(id)) {
+                    throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Ảnh đại diện này đã được sử dụng.");
+                }
+            });
         }
 
         if (idleFile != null && !idleFile.isEmpty()) {
-            philosopher.setIdleModelUrl(cloudinaryService.uploadModel(idleFile, "philosophy/models").getSecureUrl());
+            String idleUrl = cloudinaryService.uploadModel(idleFile, "philosophy/models").getSecureUrl();
+            philosopherRepository.findByIdleModelUrl(idleUrl).ifPresent(p -> {
+                if (!p.getPhilosopherId().equals(id)) {
+                    throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Model idle này đã được sử dụng.");
+                }
+            });
+            philosopher.setIdleModelUrl(idleUrl);
         }
         if (talkingFile != null && !talkingFile.isEmpty()) {
-            philosopher.setTalkingModelUrl(cloudinaryService.uploadModel(talkingFile, "philosophy/models").getSecureUrl());
+            String talkingUrl = cloudinaryService.uploadModel(talkingFile, "philosophy/models").getSecureUrl();
+            philosopherRepository.findByTalkingModelUrl(talkingUrl).ifPresent(p -> {
+                if (!p.getPhilosopherId().equals(id)) {
+                    throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Model talking này đã được sử dụng.");
+                }
+            });
+            philosopher.setTalkingModelUrl(talkingUrl);
         }
         if (thinkingFile != null && !thinkingFile.isEmpty()) {
-            philosopher.setThinkingModelUrl(cloudinaryService.uploadModel(thinkingFile, "philosophy/models").getSecureUrl());
+            String thinkingUrl = cloudinaryService.uploadModel(thinkingFile, "philosophy/models").getSecureUrl();
+            philosopherRepository.findByThinkingModelUrl(thinkingUrl).ifPresent(p -> {
+                if (!p.getPhilosopherId().equals(id)) {
+                    throw new ApiException(ErrorCode.DUPLICATE_RESOURCE, "Model thinking này đã được sử dụng.");
+                }
+            });
+            philosopher.setThinkingModelUrl(thinkingUrl);
         }
 
         philosopher.setName(request.name());
