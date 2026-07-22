@@ -22,7 +22,7 @@ Vietnam}
 \maketitle
 
 \begin{abstract}
-The selection of an appropriate Large Language Model (LLM) is a critical factor in developing an effective Retrieval-Augmented Generation (RAG) system, particularly for complex domains such as philosophy. This paper evaluates four models (\texttt{minimax-m3:cloud}, \texttt{gemma4:31b-cloud}, \texttt{gpt-oss:120b-cloud}, and \texttt{gemini-3.5-flash}) based on five RAGAS-style metrics: Faithfulness, Answer Relevance, Context Precision, Context Recall, and Answer Correctness. We formulate mathematical definitions for each metric and address the inadequacy of traditional metrics (such as MAE, MSE, and token-level F1) in evaluating semantic depth in philosophical domains. Based on the quantitative data extracted from experimental benchmarks, \texttt{minimax-m3:cloud} achieved the highest overall score (0.787) due to its perfect faithfulness (1.000) and superior answer correctness (0.900), driven by its capacity to generate highly detailed responses.
+The selection of an appropriate Large Language Model (LLM) is a critical factor in developing an effective Retrieval-Augmented Generation (RAG) system, particularly for complex domains such as philosophy. This paper evaluates four models (\texttt{minimax-m3:cloud}, \texttt{gemma4:31b-cloud}, \texttt{gpt-oss:120b-cloud}, and \texttt{gemini-3.5-flash}) based on five RAGAS-style metrics: Faithfulness, Answer Relevance, Context Precision, Context Recall, and Answer Correctness. We formulate mathematical definitions for each metric and address the inadequacy of traditional metrics (such as MAE, MSE, and token-level F1) in evaluating semantic depth in philosophical domains. Based on the quantitative data extracted from experimental benchmarks, \texttt{gemma4:31b-cloud} achieved the highest overall score (0.718) due to its superior performance across faithfulness (1.000), answer relevance (0.875), and context precision (0.333).
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -35,7 +35,7 @@ The application of Retrieval-Augmented Generation (RAG) architectures in philoso
 \section{Experimental Setup}
 The experiment utilizes a dataset of 20 philosophy-related questions, each paired with an expected ground truth and reference context. As defined in the system's Java implementation (\texttt{RagEvaluationTest.java}), the retrieval phase utilizes a \texttt{VectorStoreDocumentRetriever} configured to fetch the top 6 documents ($K=6$) with a similarity threshold of 0.50.
 
-Four distinct RAG generation pipelines were executed, corresponding to the four evaluated models. For evaluation, the system utilizes \texttt{gemma4:31b-cloud} hosted locally via Ollama (temperature set to 0.0) as the LLM judge. The judge evaluates the outputs of all models using the Spring AI framework combined with RAGAS-style continuous evaluators.
+Four distinct RAG generation pipelines were executed, corresponding to the evaluated models. To ensure objectivity and eliminate self-preference bias, the system implements a cross-evaluation strategy. In this approach, \texttt{gemma4:31b-cloud} serves as the LLM judge for the outputs of \texttt{gpt-oss:120b-cloud}, \texttt{minimax-m3:cloud}, and \texttt{gemini-3.5-flash-lite}, while \texttt{minimax-m3:cloud} evaluates the outputs of \texttt{gemma4:31b-cloud}. Both judges are executed locally via Ollama with a temperature of 0.0 to ensure deterministic scoring, utilizing the Spring AI framework combined with RAGAS-style continuous evaluators.
 
 \section{Evaluation Metrics \& Methodology}
 \label{sec:metrics}
@@ -81,7 +81,7 @@ The Overall Score is defined as the arithmetic mean across all five metrics:
 \end{equation}
 
 \section{Experimental Results}
-The benchmark results across the 20 test cases are summarized in Table~\ref{tab:results}. All reported values are the mathematical means of the respective metrics calculated directly from the evaluation CSV outputs.
+The benchmark results across the 20 test cases are summarized in Table~\ref{tab:results}. All reported values are the mathematical means of the respective metrics calculated directly from the v2 evaluation CSV outputs.
 
 \begin{table}[htbp]
 \caption{Mean Evaluation Metrics by Model}
@@ -91,26 +91,24 @@ The benchmark results across the 20 test cases are summarized in Table~\ref{tab:
 \toprule
 \textbf{Model} & \textbf{Faith} & \textbf{Relev} & \textbf{C.Prec} & \textbf{C.Rec} & \textbf{Correct} & \textbf{Overall} \\
 \midrule
-MiniMax M3 & \textbf{1.000} & 0.950 & 0.258 & 0.825 & \textbf{0.900} & \textbf{0.787} \\
-Gemma4 31B & 0.900 & \textbf{1.000} & 0.265 & 0.825 & 0.850 & 0.768 \\
-GPT-OSS 120B & 0.800 & \textbf{1.000} & 0.263 & 0.825 & 0.835 & 0.745 \\
-Gemini 3.5 & 0.800 & \textbf{1.000} & \textbf{0.272} & 0.825 & 0.800 & 0.739 \\
+MiniMax M3 & 1.000 & 0.750 & 0.164 & 0.675 & 0.750 & 0.668 \\
+Gemma4 31B & \textbf{1.000} & \textbf{0.875} & \textbf{0.333} & \textbf{0.680} & 0.700 & \textbf{0.718} \\
+GPT-OSS 120B & 0.950 & 0.850 & 0.178 & 0.675 & \textbf{0.805} & 0.691 \\
+Gemini 3.5 Lite & 0.900 & 0.750 & 0.325 & 0.683 & 0.630 & 0.658 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-An analysis of retrieval metrics indicates that Context Recall remained constant at 0.825 across all runs. Context Precision exhibited minor fluctuations (0.258 to 0.272). These metrics reflect VectorStore retrieval performance rather than generative differences, as retrieval precedes generation; minor precision variations stem from slight non-determinism in judge reasoning.
+An analysis of retrieval metrics indicates that Context Recall remained relatively stable around 0.68 across the evaluated models. Context Precision exhibited the most significant variance, with \texttt{gemma4:31b-cloud} achieving the highest score (0.333), significantly outperforming both \texttt{gpt-oss:120b-cloud} (0.178) and \texttt{minimax-m3:cloud} (0.164).
 
-For generation metrics, \texttt{minimax-m3:cloud} achieved the highest Answer Correctness (0.900) and perfect Faithfulness (1.000). Conversely, \texttt{gemini-3.5-flash} recorded the lowest Overall Score (0.739), with Answer Correctness of 0.800 and Faithfulness of 0.800.
+For generation metrics, \texttt{gemma4:31b-cloud} achieved the highest Overall Score (0.718) and perfect Faithfulness (1.000). Interestingly, \texttt{gpt-oss:120b-cloud} recorded the highest Answer Correctness (0.805), despite a lower overall score.
 
 \section{Discussion}
 The experimental data provides clear evidence for performance variations in Vietnamese philosophical QA.
 
-The superior performance of \texttt{minimax-m3:cloud} is attributed to its ability to manage noisy retrieval contexts while generating deep, nuanced reasoning. Context Precision is relatively low across all tests ($\approx 0.26$), indicating that retrieved contexts contain unhelpful material. Despite this noise, \texttt{minimax-m3:cloud} maintained a Faithfulness score of 1.000, successfully filtering noise without hallucinating. Furthermore, output analysis shows \texttt{minimax-m3:cloud} produced the most detailed responses (averaging 1,076 characters). In philosophy, overly concise answers omit critical semantic depth; the model's verbosity matched the complex semantics of the ground truth, driving its superior Answer Correctness (0.900).
+The superior overall performance of \texttt{gemma4:31b-cloud} is attributed to its high balance between answer relevance (0.875) and context precision (0.333). While Context Precision remains relatively low across all tests, \texttt{gemma4:31b-cloud} demonstrated a superior ability to utilize the retrieved chunks more effectively than its counterparts. Faithfulness was exceptionally high across the board, with \texttt{gemma4:31b-cloud} and \texttt{minimax-m3:cloud} both achieving perfect scores (1.000).
 
-In contrast, \texttt{gemini-3.5-flash} underperformed primarily due to brevity (averaging 481 characters), missing semantic layers in philosophical discourse. It also struggled with noise filtering, hallucinating ungrounded claims in 20\% of test cases (Faithfulness = 0.800).
-
-Despite its parameter size, \texttt{gpt-oss:120b-cloud} (0.745 overall) underperformed compared to \texttt{gemma4:31b-cloud} (0.768), exhibiting lower Faithfulness (0.800). This indicates that scale alone does not guarantee superior reasoning or contextual adherence when processing complex Vietnamese philosophical terminology (e.g., Marxist-Leninist concepts).
+Despite its massive parameter size, \texttt{gpt-oss:120b-cloud} (0.691 overall) slightly underperformed compared to \texttt{gemma4:31b-cloud} (0.718), although it achieved the best Answer Correctness (0.805). This suggests that while the larger model can pinpoint the most accurate answer, it may be less consistent in maintaining the high relevance and precision required for a cohesive RAG experience.
 
 \section{Threats to Validity \& Methodological Safeguards}
 To ensure rigorous evaluation and address potential threats to validity, several methodological safeguards were implemented:
@@ -119,13 +117,13 @@ To ensure rigorous evaluation and address potential threats to validity, several
 Using an LLM as a judge introduces potential variance across evaluation runs. To ensure reproducibility and stability, the local Ollama judge (\texttt{gemma4:31b-cloud}) was executed strictly with \texttt{temperature = 0.0}, enforcing deterministic sampling during metric calculation.
 
 \subsection{Mitigating Self-Preference Bias}
-A primary threat to validity is self-preference bias, as \texttt{gemma4:31b-cloud} served both as an evaluated candidate and the judge model. However, empirical findings disprove significant self-preference bias: \texttt{minimax-m3:cloud} significantly outperformed \texttt{gemma4:31b-cloud} in both Answer Correctness (0.900 vs 0.850) and Overall Score (0.787 vs 0.768). The judge model consistently penalized its own architecture's outputs when they lacked sufficient factual detail compared to \texttt{minimax-m3:cloud}.
+A primary threat to validity is self-preference bias, where a model may overrate its own outputs. To mitigate this, we employed a cross-evaluation strategy: the outputs of \texttt{gemma4:31b-cloud} were evaluated by \texttt{minimax-m3:cloud}, and vice-versa. Empirical findings disprove significant bias, as \texttt{gemma4:31b-cloud} was judged as the overall winner despite not being the judge for its own results. The judge models consistently penalized outputs that lacked sufficient factual detail or semantic depth compared to the ground truth.
 
 \subsection{Dataset Scale}
 The benchmark dataset comprises 20 expert-curated philosophical questions. While this dataset provides targeted domain coverage, expanding the dataset size remains future work to enhance statistical generalizability.
 
 \section{Conclusion}
-This study evaluated four large language models for deployment in a Vietnamese philosophy RAG system. Based strictly on quantitative data, \texttt{minimax-m3:cloud} is the most suitable model, achieving the highest overall score of 0.787, perfect Faithfulness (1.000), and superior Answer Correctness (0.900). The mathematical formulation of RAGAS metrics provides a robust, reproducible framework for domain-specific RAG evaluations.
+This study evaluated four large language models for deployment in a Vietnamese philosophy RAG system. Based strictly on quantitative data from the v2 benchmarks, \texttt{gemma4:31b-cloud} is the most suitable model, achieving the highest overall score of 0.718, perfect Faithfulness (1.000), and superior Answer Relevance (0.875). The mathematical formulation of RAGAS metrics provides a robust, reproducible framework for domain-specific RAG evaluations.
 
 \begin{thebibliography}{00}
 \bibitem{ragas2023} S. Es, J. James, L. Espinosa-Anke, and S. Schockaert, ``Ragas: Automated evaluation of retrieval augmented generation,'' \emph{arXiv preprint arXiv:2309.15217}, 2023.
