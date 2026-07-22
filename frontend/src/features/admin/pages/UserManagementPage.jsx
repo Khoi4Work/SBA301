@@ -22,6 +22,29 @@ export default function UserManagementPage() {
         goToPage,
     } = useUserManagement();
 
+    if (loading) {
+        return (
+            <div className="animate-fade-in w-full min-h-[70vh] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-6">
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-full border-4 border-secondary/20"></div>
+                        <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-t-secondary animate-spin"></div>
+                    </div>
+
+                    <div className="text-center">
+                        <p className="font-display text-xl text-on-surface">
+                            Đang tải danh sách người dùng...
+                        </p>
+
+                        <p className="text-sm text-on-surface-variant mt-2 tracking-wide">
+                            Vui lòng chờ trong giây lát
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="animate-fade-in pb-12 w-full">
             {/* Header Section */}
@@ -62,32 +85,6 @@ export default function UserManagementPage() {
                         Dữ liệu từ hệ thống
                     </div>
                 </div>
-
-                {/*<div className="bg-surface-container-low border border-secondary/10 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors">*/}
-                {/*  <p className="text-on-surface-variant text-xs uppercase tracking-widest font-semibold group-hover:text-secondary transition-colors">Hiền Triết (Sage)</p>*/}
-                {/*  <p className="font-display text-4xl font-semibold text-secondary">142</p>*/}
-                {/*  <div className="text-xs text-on-surface-variant opacity-80">Hội đồng tối cao</div>*/}
-                {/*</div>*/}
-
-                {/*<div*/}
-                {/*    className="bg-surface-container-low border border-secondary/10 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors">*/}
-                {/*    <p className="text-on-surface-variant text-xs uppercase tracking-widest font-semibold group-hover:text-secondary transition-colors">Đang*/}
-                {/*        Hoạt Động</p>*/}
-                {/*    <p className="font-display text-4xl font-semibold text-primary">1,104</p>*/}
-                {/*    <div className="flex gap-1 h-1.5 mt-3">*/}
-                {/*        <div className="h-full bg-primary w-2/3 rounded-full"></div>*/}
-                {/*        <div className="h-full bg-secondary/20 w-1/3 rounded-full"></div>*/}
-                {/*    </div>*/}
-                {/*</div>*/}
-
-                {/*<div className="bg-surface-container-low border border-error/20 p-6 space-y-3 folio-border group hover:bg-surface-container transition-colors relative overflow-hidden">*/}
-                {/*  <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">*/}
-                {/*    <span className="material-symbols-outlined text-6xl text-error">warning</span>*/}
-                {/*  </div>*/}
-                {/*  <p className="text-error text-xs uppercase tracking-widest font-semibold">Yêu Cầu Mới</p>*/}
-                {/*  <p className="font-display text-4xl font-semibold text-error">24</p>*/}
-                {/*  <p className="text-xs text-error/80 italic font-medium">Chờ phê duyệt</p>*/}
-                {/*</div>*/}
             </div>
 
             {/* Main Table Section */}
@@ -145,12 +142,6 @@ export default function UserManagementPage() {
                                     {user.email || "-"}
                                 </td>
 
-                                {/*<td className="px-6 py-5">*/}
-                                {/*  <span className="px-2 py-1 bg-surface-container border border-outline/30 text-on-surface-variant text-[10px] uppercase font-bold tracking-widest shadow-sm">*/}
-                                {/*    {user.role || "User"}*/}
-                                {/*  </span>*/}
-                                {/*</td>*/}
-
                                 <td className="px-6 py-5 text-on-surface-variant text-sm">
                                     {user.createdAt
                                         ? new Date(user.createdAt).toLocaleDateString("vi-VN")
@@ -161,17 +152,6 @@ export default function UserManagementPage() {
 
                                 <td className="px-6 py-5 text-right space-x-3 text-on-surface-variant">
                                     <div className="flex justify-end items-center gap-3">
-                                    {/*<button*/}
-                                    {/*    type="button"*/}
-                                    {/*    className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"*/}
-                                    {/*    title="Xem hồ sơ"*/}
-                                    {/*    onClick={() => console.log("View user:", user)}*/}
-                                    {/*>*/}
-                                    {/*<span className="material-symbols-outlined text-[20px]">*/}
-                                    {/*  visibility*/}
-                                    {/*</span>*/}
-                                    {/*</button>*/}
-
                                         <button
                                             type="button"
                                             className="p-1 hover:text-secondary hover:bg-secondary/10 rounded transition-all"

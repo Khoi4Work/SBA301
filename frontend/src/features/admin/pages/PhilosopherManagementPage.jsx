@@ -36,6 +36,32 @@ export default function PhilosopherManagementPage() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="animate-fade-in w-full min-h-[70vh] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-6">
+                    <div className="relative w-16 h-16">
+                        <div className="absolute inset-0 rounded-full bg-secondary/20 blur-xl animate-pulse"></div>
+
+                        <div className="absolute inset-0 rounded-full border-[3px] border-secondary/20"></div>
+
+                        <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-secondary border-r-secondary animate-spin"></div>
+                    </div>
+
+                    <div className="text-center">
+                        <p className="font-display text-xl text-on-surface">
+                            Đang tải danh sách triết gia...
+                        </p>
+
+                        <p className="text-sm text-on-surface-variant mt-2 tracking-wide">
+                            Vui lòng chờ trong giây lát
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="animate-fade-in pb-12 w-full">
             {/* Section Header */}
@@ -139,13 +165,6 @@ export default function PhilosopherManagementPage() {
                                     {philosopher.core || "-"}
                                 </span>
                             </div>
-
-                            {/*<div className="flex justify-between text-xs font-semibold">*/}
-                            {/*    <span className="text-on-surface-variant opacity-60 uppercase">*/}
-                            {/*        Độ tin cậy AI*/}
-                            {/*    </span>*/}
-                            {/*    <span className="text-secondary text-base">Ready</span>*/}
-                            {/*</div>*/}
                         </div>
                     </div>
                 ))}

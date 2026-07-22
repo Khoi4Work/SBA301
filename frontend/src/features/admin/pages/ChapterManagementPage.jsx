@@ -431,9 +431,31 @@ export default function ChapterManagementPage() {
       {/* Additional Detail Section */}
       <div className="mt-16 border-t border-secondary/20 pt-8 flex gap-12 flex-wrap md:flex-nowrap">
         <div className="flex-1">
-          <h5 className="font-display text-2xl text-on-surface mb-4">Ghi chú Quản lý</h5>
-          <div className="p-6 bg-surface-container border-l-[3px] border-secondary italic text-on-surface-variant text-sm leading-relaxed">
-            Mọi tài liệu khi tải lên sẽ tự động được trích xuất văn bản thô đầy đủ (FullText) thông qua công cụ đọc PDF/MD của hệ thống RAG và lưu trữ trong cơ sở dữ liệu học tập. Việc xóa tài liệu học sẽ kéo theo việc tự động hủy bỏ các tiến trình học tập của học viên và các bộ đề trắc nghiệm thông minh sinh ra từ tài liệu đó.
+          <h5 className="font-display text-2xl text-error mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined">warning</span>
+            Chú ý
+          </h5>
+
+          <div className="p-6 bg-error/10 border-l-4 border-error text-error text-sm leading-relaxed font-medium">
+            <p className="mb-2 font-semibold uppercase tracking-wider">
+              Cảnh báo
+            </p>
+
+            <p>
+              Mọi tài liệu khi tải lên sẽ tự động được trích xuất toàn bộ nội dung
+              (FullText) để phục vụ hệ thống RAG và được lưu trữ trong cơ sở dữ liệu.
+            </p>
+
+            <p className="mt-4">
+              <strong>Việc xóa một tài liệu sẽ đồng thời:</strong>
+            </p>
+
+            <ul className="list-disc pl-6 mt-2 space-y-1">
+              <li>Xóa toàn bộ dữ liệu học tập liên quan của học viên.</li>
+              <li>Xóa các bộ câu hỏi trắc nghiệm AI được sinh từ tài liệu.</li>
+              <li>Gỡ tài liệu khỏi hệ thống truy xuất tri thức (RAG).</li>
+              <li>Không thể hoàn tác sau khi xác nhận.</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -676,44 +698,84 @@ export default function ChapterManagementPage() {
             )}
 
             {modalMode === "delete" && (
-              <form onSubmit={handleDeleteSubmit} className="space-y-6">
-                <div>
-                  <h4 className="font-display text-2xl font-semibold text-error mb-2">Xác Nhận Xóa Tài Liệu</h4>
-                  <p className="text-xs text-on-surface-variant/70">Hành động này không thể hoàn tác. Vui lòng kiểm tra kỹ trước khi đồng ý.</p>
-                </div>
-
-                {modalError && (
-                  <div className="p-3 bg-error/10 border border-error/20 text-error text-xs font-semibold">
-                    {modalError}
+                <form onSubmit={handleDeleteSubmit} className="space-y-6">
+                  <div>
+                    <h4 className="font-display text-2xl font-semibold text-on-surface mb-2">
+                      Xác Nhận Xóa Tài Liệu
+                    </h4>
+                    <p className="text-xs text-on-surface-variant/70">
+                      Hành động này không thể hoàn tác. Vui lòng kiểm tra kỹ trước khi xác nhận.
+                    </p>
                   </div>
-                )}
 
-                <div className="p-4 bg-error/5 border border-error/20 text-sm text-on-surface space-y-2">
-                  <p>Bạn sắp xóa vĩnh viễn tài liệu học:</p>
-                  <p className="font-bold text-base text-secondary">{selectedDoc?.title}</p>
-                  <p className="text-xs text-on-surface-variant/80">Tên file: <span className="font-mono">{selectedDoc?.fileName}</span></p>
-                  <p className="text-xs text-error/90 font-semibold mt-4 block">
-                    * CẢNH BÁO: Xóa học liệu này sẽ tự động xóa sạch các tiến trình học tập của toàn bộ học viên và các bộ đề trắc nghiệm trích xuất từ tài liệu này khỏi hệ thống database.
-                  </p>
-                </div>
+                  {modalError && (
+                      <div className="p-3 bg-surface-container-low border border-error/30 rounded-sm">
+                        <p className="text-error text-xs font-semibold">
+                          {modalError}
+                        </p>
+                      </div>
+                  )}
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-secondary/10">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors"
-                  >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="bg-error text-white px-6 py-2 text-xs font-bold uppercase tracking-wider border border-error hover:bg-transparent hover:text-error disabled:opacity-40 transition-all duration-300"
-                  >
-                    {saving ? "Đang xóa..." : "Đồng ý xóa"}
-                  </button>
-                </div>
-              </form>
+                  <div className="p-5 bg-surface-container-low border border-secondary/20 rounded-sm space-y-4">
+                    <div>
+                      <p className="text-sm text-on-surface mb-2">
+                        Bạn sắp xóa vĩnh viễn tài liệu sau:
+                      </p>
+
+                      <h5 className="font-display text-xl font-semibold text-on-surface break-words">
+                        {selectedDoc?.title}
+                      </h5>
+                    </div>
+
+                    <div className="border-t border-secondary/10 pt-4 space-y-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] uppercase tracking-widest font-semibold text-secondary">Tên file</span>
+                        <span className="font-mono text-xs text-on-surface-variant break-all">{selectedDoc?.fileName}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                    <div className="border-t border-secondary/10 pt-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-error text-lg">warning</span>
+                        <span className="text-error font-semibold uppercase tracking-wider text-sm">Cảnh báo</span>
+                      </div>
+
+                      <ul className="list-disc pl-5 space-y-2 text-sm text-on-surface">
+                        <li>
+                          <span className="text-error font-medium">Xóa vĩnh viễn tài liệu khỏi hệ thống.</span>
+                        </li>
+                        <li>
+                          <span className="text-error font-medium">Toàn bộ dữ liệu học tập liên quan của học viên sẽ bị xóa.</span>
+                        </li>
+                        <li>
+                          <span className="text-error font-medium">Các bộ câu hỏi AI sinh từ tài liệu sẽ bị xóa.</span>
+                        </li>
+                        <li>
+                          <span className="text-error font-medium">Tài liệu sẽ bị gỡ khỏi hệ thống truy xuất tri thức (RAG).</span>
+                        </li>
+                        <li className="text-error font-semibold">Hành động này không thể hoàn tác.</li>
+                      </ul>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-secondary/10">
+                    <button
+                        type="button"
+                        onClick={closeModal}
+                        className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors"
+                    >
+                      Hủy bỏ
+                    </button>
+
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className="bg-error text-on-error px-6 py-2 text-xs font-bold uppercase tracking-wider border border-error hover:bg-error/90 hover:text-on-error disabled:opacity-40 transition-all duration-300"
+                    >
+                      {saving ? "Đang xóa..." : "Đồng ý xóa"}
+                    </button>
+                  </div>
+                </form>
             )}
           </div>
         </div>
