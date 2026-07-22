@@ -3,6 +3,7 @@ import { usePhilosopherManagement } from "@/features/admin/hooks/usePhilosopherM
 import Toast from "@/features/admin/components/Toast.jsx";
 import ConfirmModal from "@/features/admin/components/ConfirmModal.jsx";
 import { useRagManagement } from "@/features/admin/hooks/useRagManagement.js";
+import DocumentPreviewModal from "@/features/admin/components/DocumentPreviewModal.jsx";
 
 export default function PhilosopherManagementPage() {
     const {
@@ -50,6 +51,20 @@ export default function PhilosopherManagementPage() {
         resetMessage,
         resetError,
         handleReset,
+        currentPage,
+        totalPages,
+        totalElements,
+        hasNext,
+        hasPrevious,
+        goNext,
+        goPrev,
+        previewDoc,
+        openPreview,
+        closePreview,
+        deletingSource,
+        deleteMessage,
+        deleteError,
+        handleDeleteDocument,
     } = useRagManagement();
 
     const handleSubmit = (event) => {
@@ -625,7 +640,7 @@ export default function PhilosopherManagementPage() {
                             <span className="text-xs text-on-surface-variant opacity-60 font-semibold">
                                 {loadingDocuments
                                     ? "Đang tải..."
-                                    : `${documents.length} tài liệu`}
+                                    : `${totalElements} tài liệu`}
                             </span>
                         </div>
 
@@ -677,42 +692,122 @@ export default function PhilosopherManagementPage() {
                                             <th className="py-3 px-6 font-semibold text-on-surface-variant uppercase tracking-wider text-[11px]">
                                                 Thời gian tải lên
                                             </th>
+                                            <th className="py-3 px-6 font-semibold text-on-surface-variant uppercase tracking-wider text-[11px] w-20">
+                                                
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-secondary/10">
-                                        {documents.map((doc, index) => (
-                                            <tr
-                                                key={doc.id ?? index}
-                                                className="hover:bg-secondary/5 transition-colors"
-                                            >
-                                                <td className="py-4 px-6 text-xs text-on-surface-variant opacity-60 font-semibold">
-                                                    {index + 1}
-                                                </td>
-                                                <td className="py-4 px-6">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="material-symbols-outlined text-secondary text-[18px] shrink-0">
-                                                            description
-                                                        </span>
-                                                        <span className="text-sm text-on-surface font-medium break-all">
-                                                            {doc.fileName || "—"}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-6 text-sm text-on-surface-variant">
-                                                    {doc.uploadedAt
-                                                        ? new Date(doc.uploadedAt).toLocaleString("vi-VN", {
-                                                              year: "numeric",
-                                                              month: "short",
-                                                              day: "numeric",
-                                                              hour: "2-digit",
-                                                              minute: "2-digit",
-                                                          })
-                                                        : "—"}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {documents.map((doc, indexOnPage) => {
+                                            // currentPage is 0-based from the backend
+                                            const absoluteIndex = currentPage * 10 + indexOnPage;
+                                            return (
+                                                <tr
+                                                    key={doc.id ?? absoluteIndex}
+                                                    className="hover:bg-secondary/5 transition-colors cursor-pointer group"
+                                                    onClick={() => openPreview(doc)}
+                                                >
+                                                    <td className="py-4 px-6 text-xs text-on-surface-variant opacity-60 font-semibold">
+                                                        {absoluteIndex + 1}
+                                                    </td>
+                                                    <td className="py-4 px-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="material-symbols-outlined text-secondary text-[18px] shrink-0">
+                                                                description
+                                                            </span>
+                                                            <span className="text-sm text-on-surface font-medium break-all">
+                                                                {doc.fileName || doc.source || "—"}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-6 text-sm text-on-surface-variant">
+                                                        {(doc.uploadedAt || doc.uploadDate)
+                                                            ? new Date(doc.uploadedAt || doc.uploadDate).toLocaleString("vi-VN", {
+                                                                  year: "numeric",
+                                                                  month: "short",
+                                                                  day: "numeric",
+                                                                  hour: "2-digit",
+                                                                  minute: "2-digit",
+                                                              })
+                                                            : "—"}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); openPreview(doc); }}
+                                                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/10 text-secondary"
+                                                                title="Xem chi tiết"
+                                                            >
+                                                                <span className="material-symbols-outlined text-[15px] leading-none">open_in_new</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (window.confirm(`Bạn có chắc chắn muốn xóa tài liệu ${doc.fileName || doc.source}?`)) {
+                                                                        handleDeleteDocument(doc.fileName || doc.source);
+                                                                    }
+                                                                }}
+                                                                disabled={deletingSource === (doc.fileName || doc.source)}
+                                                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 border border-error/20 hover:border-error/60 hover:bg-error/10 text-error disabled:opacity-30"
+                                                                title="Xóa tài liệu"
+                                                            >
+                                                                {deletingSource === (doc.fileName || doc.source) ? (
+                                                                    <div className="w-[15px] h-[15px] rounded-full border-2 border-error/30 border-t-error animate-spin inline-block"></div>
+                                                                ) : (
+                                                                    <span className="material-symbols-outlined text-[15px] leading-none">delete</span>
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
+
+                                {(deleteMessage || deleteError) && (
+                                    <div className="px-6 py-3 border-t border-secondary/10 flex justify-between items-center text-sm">
+                                        {deleteMessage && <span className="text-emerald-400 font-medium">{deleteMessage}</span>}
+                                        {deleteError && <span className="text-error font-medium">{deleteError}</span>}
+                                    </div>
+                                )}
+
+                                {/* Pagination bar – always visible when there is data */}
+                                <div className="px-6 py-4 border-t border-secondary/10 flex items-center justify-between">
+                                    <span className="text-xs text-on-surface-variant opacity-60 font-semibold">
+                                        Trang {currentPage + 1} / {Math.max(totalPages, 1)}
+                                        &nbsp;&middot;&nbsp;
+                                        {totalElements} tài liệu
+                                    </span>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={goPrev}
+                                            disabled={!hasPrevious}
+                                            className="p-1.5 border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/10 text-secondary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                            title="Trang trước"
+                                        >
+                                            <span className="material-symbols-outlined text-[16px] leading-none">
+                                                chevron_left
+                                            </span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={goNext}
+                                            disabled={!hasNext}
+                                            className="p-1.5 border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/10 text-secondary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                            title="Trang sau"
+                                        >
+                                            <span className="material-symbols-outlined text-[16px] leading-none">
+                                                chevron_right
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -733,6 +828,11 @@ export default function PhilosopherManagementPage() {
                 message={`Bạn có chắc chắn muốn xóa triết gia "${deleteTarget?.name}" khỏi hệ thống không? Hành động này không thể hoàn tác.`}
                 onConfirm={confirmDelete}
                 onCancel={closeDeleteModal}
+            />
+
+            <DocumentPreviewModal
+                doc={previewDoc}
+                onClose={closePreview}
             />
         </div>
     );

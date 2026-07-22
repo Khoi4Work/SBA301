@@ -24,20 +24,47 @@ export async function uploadDocument(file) {
 }
 
 /**
- * Fetch the list of documents currently stored in the knowledge base.
+ * Fetch a paginated page of documents from the knowledge base.
  *
- * GET /api/rag/documents
+ * GET /api/rag/documents?page=&size=
  *
- * @returns {Promise<Array<{ id: number, fileName: string, uploadedAt: string }>>}
+ * @param {number} [page=0]  - Zero-based page index
+ * @param {number} [size=10] - Items per page
+ * @returns {Promise<{
+ *   content: Array,
+ *   page: number,
+ *   size: number,
+ *   totalElements: number,
+ *   totalPages: number,
+ *   first: boolean,
+ *   last: boolean,
+ *   hasNext: boolean,
+ *   hasPrevious: boolean
+ * }>}
  */
-export async function getDocuments() {
-    const response = await apiRag.getDocuments();
+export async function getDocuments(page = 0, size = 10) {
+    const response = await apiRag.getDocuments(page, size);
     const data = unwrap(response);
-    // The endpoint may return a bare array or a wrapped array.
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.documents)) return data.documents;
-    return [];
+
+    // Backend returns a PageResponse envelope with a `content` array.
+    // Guard against old array-only responses during migration.
+    if (Array.isArray(data)) {
+        return {
+            content: data,
+            page: 0,
+            size: data.length,
+            totalElements: data.length,
+            totalPages: 1,
+            first: true,
+            last: true,
+            hasNext: false,
+            hasPrevious: false,
+        };
+    }
+
+    return data;
 }
+
 
 /**
  * Delete all documents and reset the RAG vector index.
@@ -48,5 +75,33 @@ export async function getDocuments() {
  */
 export async function resetKnowledgeBase() {
     const response = await apiRag.resetKnowledgeBase();
+    return unwrap(response);
+}
+
+/**
+ * Delete a specific document by its source name.
+ *
+ * DELETE /api/rag/documents?source=...
+ *
+ * @param {string} source
+ * @returns {Promise<{ success: boolean, message: string }>}
+ */
+export async function deleteDocument(source) {
+    const response = await apiRag.deleteDocument(source);
+    return unwrap(response);
+}
+
+/**
+ * Fetch a paginated page of chunks for a specific document.
+ *
+ * GET /api/rag/documents/chunks?source=...&page=&size=
+ *
+ * @param {string} source
+ * @param {number} [page=0]
+ * @param {number} [size=1]
+ * @returns {Promise<any>}
+ */
+export async function getDocumentChunks(source, page = 0, size = 1) {
+    const response = await apiRag.getDocumentChunks(source, page, size);
     return unwrap(response);
 }

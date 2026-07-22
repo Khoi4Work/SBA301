@@ -3,7 +3,10 @@ import {
     uploadDocument,
     getDocuments,
     resetKnowledgeBase,
+    deleteDocument,
 } from "@/features/admin/services/ragService.js";
+
+const PAGE_SIZE = 10;
 
 /**
  * Derive a user-friendly error message from an Axios error or plain Error.
@@ -24,12 +27,21 @@ function extractError(err, fallback) {
 /**
  * Encapsulates all state and async logic for the RAG Knowledge Base
  * management section inside PhilosopherManagementPage.
+ *
+ * Pagination is server-side: each page navigation triggers a new GET request.
  */
 export function useRagManagement() {
     // ── Document list ───────────────────────────────────────────
     const [documents, setDocuments] = useState([]);
     const [loadingDocuments, setLoadingDocuments] = useState(false);
     const [documentsError, setDocumentsError] = useState("");
+
+    // ── Server-side pagination ──────────────────────────────────
+    const [currentPage, setCurrentPage] = useState(0);   // 0-based (backend convention)
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
+    const [hasNext, setHasNext] = useState(false);
+    const [hasPrevious, setHasPrevious] = useState(false);
 
     // ── Upload ──────────────────────────────────────────────────
     const [selectedFile, setSelectedFile] = useState(null);
@@ -42,13 +54,25 @@ export function useRagManagement() {
     const [resetMessage, setResetMessage] = useState("");
     const [resetError, setResetError] = useState("");
 
-    // ── Fetch documents ─────────────────────────────────────────
-    const fetchDocuments = useCallback(async () => {
+    // ── Document preview modal ────────────────────────────
+    const [previewDoc, setPreviewDoc] = useState(null);
+    const openPreview  = useCallback((doc) => setPreviewDoc(doc), []);
+    const closePreview = useCallback(() => setPreviewDoc(null), []);
+
+    // ── Fetch documents (server-side page) ──────────────────────
+    const fetchDocuments = useCallback(async (page = 0) => {
         try {
             setLoadingDocuments(true);
             setDocumentsError("");
-            const data = await getDocuments();
-            setDocuments(data);
+
+            const data = await getDocuments(page, PAGE_SIZE);
+
+            setDocuments(data.content ?? []);
+            setCurrentPage(data.page ?? page);
+            setTotalPages(data.totalPages ?? 1);
+            setTotalElements(data.totalElements ?? 0);
+            setHasNext(data.hasNext ?? false);
+            setHasPrevious(data.hasPrevious ?? false);
         } catch (err) {
             console.error("[RAG] fetchDocuments:", err);
             setDocumentsError(
@@ -60,8 +84,21 @@ export function useRagManagement() {
     }, []);
 
     useEffect(() => {
-        fetchDocuments();
+        fetchDocuments(0);
     }, [fetchDocuments]);
+
+    // ── Navigation helpers ──────────────────────────────────────
+    const goNext = useCallback(() => {
+        if (hasNext) fetchDocuments(currentPage + 1);
+    }, [hasNext, currentPage, fetchDocuments]);
+
+    const goPrev = useCallback(() => {
+        if (hasPrevious) fetchDocuments(currentPage - 1);
+    }, [hasPrevious, currentPage, fetchDocuments]);
+
+    const goToPage = useCallback((page) => {
+        if (page >= 0 && page < totalPages) fetchDocuments(page);
+    }, [totalPages, fetchDocuments]);
 
     // ── Upload handler ──────────────────────────────────────────
     const handleUpload = useCallback(async () => {
@@ -79,11 +116,11 @@ export function useRagManagement() {
 
             setUploadMessage("Tải lên tài liệu thành công.");
             setSelectedFile(null);
-            await fetchDocuments();
+            // Refresh current page so the new file appears
+            await fetchDocuments(currentPage);
         } catch (err) {
             console.error("[RAG] handleUpload:", err);
 
-            // Distinguish common network / timeout errors for better UX
             if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
                 setUploadError(
                     "Yêu cầu tải lên đã hết thời gian. Vui lòng thử lại."
@@ -100,7 +137,7 @@ export function useRagManagement() {
         } finally {
             setUploading(false);
         }
-    }, [selectedFile, fetchDocuments]);
+    }, [selectedFile, currentPage, fetchDocuments]);
 
     // ── Reset knowledge base handler ────────────────────────────
     const handleReset = useCallback(async () => {
@@ -117,7 +154,7 @@ export function useRagManagement() {
             await resetKnowledgeBase();
 
             setResetMessage("Đã xóa toàn bộ tài liệu thành công.");
-            await fetchDocuments();
+            await fetchDocuments(0);
         } catch (err) {
             console.error("[RAG] handleReset:", err);
             setResetError(
@@ -125,6 +162,34 @@ export function useRagManagement() {
             );
         } finally {
             setResetting(false);
+        }
+    }, [fetchDocuments]);
+
+    // ── Delete specific document handler ────────────────────────
+    const [deletingSource, setDeletingSource] = useState(null);
+    const [deleteMessage, setDeleteMessage] = useState("");
+    const [deleteError, setDeleteError] = useState("");
+
+    const handleDeleteDocument = useCallback(async (source) => {
+        if (!source) return;
+        
+        try {
+            setDeletingSource(source);
+            setDeleteMessage("");
+            setDeleteError("");
+
+            await deleteDocument(source);
+
+            setDeleteMessage(`Đã xóa tài liệu: ${source}`);
+            // Refresh list
+            await fetchDocuments(0); 
+        } catch (err) {
+            console.error("[RAG] handleDeleteDocument:", err);
+            setDeleteError(
+                extractError(err, "Xóa tài liệu thất bại.")
+            );
+        } finally {
+            setDeletingSource(null);
         }
     }, [fetchDocuments]);
 
@@ -140,11 +205,26 @@ export function useRagManagement() {
     }, []);
 
     return {
-        // Document list
+        // Document list (current page content only)
         documents,
         loadingDocuments,
         documentsError,
         fetchDocuments,
+
+        // Server-side pagination
+        currentPage,       // 0-based
+        totalPages,
+        totalElements,
+        hasNext,
+        hasPrevious,
+        goNext,
+        goPrev,
+        goToPage,
+
+        // Document preview
+        previewDoc,
+        openPreview,
+        closePreview,
 
         // Upload
         selectedFile,
@@ -161,5 +241,10 @@ export function useRagManagement() {
         resetError,
         handleReset,
         clearResetMessages,
+        
+        deletingSource,
+        deleteMessage,
+        deleteError,
+        handleDeleteDocument,
     };
 }
