@@ -18,7 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -56,8 +55,10 @@ public class PhilosopherController {
             @RequestParam(value = "idleFile", required = false) MultipartFile idleFile,
             @RequestParam(value = "talkingFile", required = false) MultipartFile talkingFile,
             @RequestParam(value = "thinkingFile", required = false) MultipartFile thinkingFile) {
-        PhilosopherResponse response = philosopherService.createPhilosopher(request, file, idleFile, talkingFile, thinkingFile);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResult.success(response, "Successfully added philosopher"));
+        PhilosopherResponse response = philosopherService.createPhilosopher(request, file, idleFile, talkingFile,
+                thinkingFile);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResult.success(response, "Successfully added philosopher"));
     }
 
     @Operation(summary = "Update philosopher (Requires ADMIN, STAFF or INSTRUCTOR)")
@@ -70,7 +71,8 @@ public class PhilosopherController {
             @RequestParam(value = "idleFile", required = false) MultipartFile idleFile,
             @RequestParam(value = "talkingFile", required = false) MultipartFile talkingFile,
             @RequestParam(value = "thinkingFile", required = false) MultipartFile thinkingFile) {
-        PhilosopherResponse response = philosopherService.updatePhilosopher(id, request, file, idleFile, talkingFile, thinkingFile);
+        PhilosopherResponse response = philosopherService.updatePhilosopher(id, request, file, idleFile, talkingFile,
+                thinkingFile);
         return ResponseEntity.ok(ApiResult.success(response, "Successfully updated philosopher"));
     }
 
@@ -91,7 +93,6 @@ public class PhilosopherController {
         philosopherService.deletePhilosopherById(id);
 
         return ResponseEntity.ok(
-                ApiResult.success(null, "Successfully deleted philosopher")
-        );
+                ApiResult.success(null, "Successfully deleted philosopher"));
     }
 }

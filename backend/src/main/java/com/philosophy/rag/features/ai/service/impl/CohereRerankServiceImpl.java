@@ -1,6 +1,5 @@
 package com.philosophy.rag.features.ai.service.impl;
 
-import com.philosophy.rag.features.ai.common.DocumentMetadataUtils;
 import com.philosophy.rag.features.ai.service.CohereRerankService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -73,8 +72,7 @@ public class CohereRerankServiceImpl implements CohereRerankService {
                     model,
                     query,
                     documentsForRerank,
-                    safeTopK
-            );
+                    safeTopK);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -85,8 +83,7 @@ public class CohereRerankServiceImpl implements CohereRerankService {
             ResponseEntity<CohereRerankResponse> response = restTemplate.postForEntity(
                     "https://api.cohere.ai/v1/rerank",
                     entity,
-                    CohereRerankResponse.class
-            );
+                    CohereRerankResponse.class);
 
             if (response.getBody() == null || response.getBody().results() == null) {
                 log.warn("[Cohere Rerank] Empty response from Cohere API.");
@@ -99,8 +96,7 @@ public class CohereRerankServiceImpl implements CohereRerankService {
                     .filter(result -> result.index() >= 0 && result.index() < safeCandidates.size())
                     .map(result -> addRerankScore(
                             safeCandidates.get(result.index()),
-                            result.relevance_score()
-                    ))
+                            result.relevance_score()))
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
@@ -114,16 +110,15 @@ public class CohereRerankServiceImpl implements CohereRerankService {
             String model,
             String query,
             List<String> documents,
-            int top_n
-    ) {}
+            int top_n) {
+    }
 
     private record CohereRerankResponse(
-            List<RerankResult> results
-    ) {
+            List<RerankResult> results) {
         public record RerankResult(
                 int index,
-                float relevance_score
-        ) {}
+                float relevance_score) {
+        }
     }
 
     private String toRerankText(Document document) {
@@ -140,7 +135,8 @@ public class CohereRerankServiceImpl implements CohereRerankService {
             text = text.substring(0, maxDocumentChars);
         }
 
-        String heading = getMetadataValue(metadata, "heading", null);;
+        String heading = getMetadataValue(metadata, "heading", null);
+        ;
         String readerType = getMetadataValue(metadata, "reader_type", null);
 
         StringBuilder sb = new StringBuilder();
@@ -160,8 +156,6 @@ public class CohereRerankServiceImpl implements CohereRerankService {
 
         return sb.toString();
     }
-
-
 
     private List<Document> fallbackTopK(List<Document> candidates) {
         return candidates.stream()

@@ -1,6 +1,5 @@
 package com.philosophy.rag.features.auth.controller;
 
-
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResult;
@@ -24,7 +23,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -52,8 +50,7 @@ public class UserController {
         UserResponse response = userService.getUser(id);
 
         return ResponseEntity.ok(
-                ApiResult.success(response, "User retrieved successfully")
-        );
+                ApiResult.success(response, "User retrieved successfully"));
     }
 
     @Operation(summary = "Get all users with pagination (Requires ADMIN or STAFF)")
@@ -67,8 +64,7 @@ public class UserController {
         Page<UserResponse> response = userService.getAllUsers(page, size);
 
         return ResponseEntity.ok(
-                ApiResult.success(response, "Users retrieved successfully")
-        );
+                ApiResult.success(response, "Users retrieved successfully"));
     }
 
     @Operation(summary = "Get learner growth statistics (Requires ADMIN or STAFF)")
@@ -77,8 +73,7 @@ public class UserController {
     public ResponseEntity<ApiResult<UserGrowthStatsResponse>> getGrowthStats() {
         log.info("Received request to get user growth stats");
         return ResponseEntity.ok(
-                ApiResult.success(userService.getGrowthStats(), "Growth stats retrieved successfully")
-        );
+                ApiResult.success(userService.getGrowthStats(), "Growth stats retrieved successfully"));
     }
 
     @Operation(summary = "Update user (Requires authentication - Self or Admin/Staff)")
@@ -100,8 +95,7 @@ public class UserController {
         UserResponse response = userService.updateUser(id, request);
 
         return ResponseEntity.ok(
-                ApiResult.success(response, "User updated successfully")
-        );
+                ApiResult.success(response, "User updated successfully"));
     }
 
     @Operation(summary = "Delete user (Requires ADMIN)")
@@ -113,8 +107,7 @@ public class UserController {
         userService.deleteUser(id);
 
         return ResponseEntity.ok(
-                ApiResult.success(null, "User deleted successfully")
-        );
+                ApiResult.success(null, "User deleted successfully"));
     }
 
     @Operation(summary = "Upload user avatar (Requires authentication - Self or Admin/Staff)")
@@ -137,8 +130,7 @@ public class UserController {
         UserResponse response = userService.uploadAvatar(id, file);
 
         return ResponseEntity.ok(
-                ApiResult.success(response, "Avatar uploaded successfully")
-        );
+                ApiResult.success(response, "Avatar uploaded successfully"));
     }
 
     @Operation(summary = "Test Admin Endpoint (Requires ADMIN)")
@@ -152,29 +144,29 @@ public class UserController {
     @GetMapping("/dashboard-stats")
     public ResponseEntity<ApiResult<UserDashboardResponse>> getDashboardStats() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
             throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");
         }
         String username = authentication.getName();
         log.info("Received request to get dashboard stats for user: {}", username);
         UserDashboardResponse response = userService.getDashboardStats(username);
         return ResponseEntity.ok(
-                ApiResult.success(response, "Dashboard stats retrieved successfully")
-        );
+                ApiResult.success(response, "Dashboard stats retrieved successfully"));
     }
 
     @Operation(summary = "Complete a study file")
     @PostMapping("/complete-file")
     public ResponseEntity<ApiResult<Void>> completeFile(@Valid @RequestBody CompleteFileRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
             throw new ApiException(ErrorCode.UNAUTHENTICATED, "Bạn chưa đăng nhập");
         }
         String username = authentication.getName();
         log.info("Received request to complete file for user: {}, key: {}", username, request.getKey());
         userService.completeFile(username, request.getKey());
         return ResponseEntity.ok(
-                ApiResult.success(null, "File marked as completed and streak updated")
-        );
+                ApiResult.success(null, "File marked as completed and streak updated"));
     }
 }

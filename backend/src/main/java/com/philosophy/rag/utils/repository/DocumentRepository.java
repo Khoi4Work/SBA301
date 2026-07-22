@@ -9,4 +9,5 @@ import java.util.UUID;
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
     Optional<Document> findByS3Key(String s3Key);
+    boolean existsByTitleIgnoreCase(String title);
 }
