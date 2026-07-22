@@ -10,6 +10,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import jakarta.annotation.PostConstruct;
 import reactor.core.publisher.Flux;
 
 @Slf4j
@@ -25,6 +26,15 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
 
     public ElevenLabsVoiceServiceImpl(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.baseUrl("https://api.elevenlabs.io").build();
+    }
+
+    @PostConstruct
+    public void checkConfig() {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.error("CRITICAL: ElevenLabs API Key is missing! Please check your properties file.");
+        } else {
+            log.info("ElevenLabs API Key loaded (length: {} characters)", apiKey.length());
+        }
     }
 
     @Override
@@ -48,20 +58,9 @@ public class ElevenLabsVoiceServiceImpl implements VoiceService {
                 .doOnComplete(() -> log.info("Stream ElevenLabs thành công!"))
                 .onErrorResume(e -> {
                     // Fallback
-                    log.warn("Lỗi ElevenLabs API: {}. Fallback sang Edge-TTS...", e.getMessage());
                     throw new ApiException(ErrorCode.RAG_SERVICE_ERROR, "Lỗi ElevenLabs API: " + e.getMessage());
-                    // return fallbackToEdgeTts(new TtsRequest(
-                    // request.text(), "vi-VN-HoaiMyNeural", request.philosopherId(),
-                    // request.sessionId()
-                    // ));
                 });
     }
-
-    // private Flux<DataBuffer> fallbackToEdgeTts(TtsRequest request) {
-    // log.info("Bắt đầu xử lý Edge-TTS Fallback. Text length: {} ký tự, Voice: {}",
-    // request.text().length(), request.voice());
-    // return edgeTtsVoiceServiceImpl.textToSpeak(request);
-    // }
 
     private VoiceSettings getVoiceSettings() {
         return new VoiceSettings(0.5f, 0.75f, 0.0f);

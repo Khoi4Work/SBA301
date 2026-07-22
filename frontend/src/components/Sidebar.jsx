@@ -28,7 +28,7 @@ export function Sidebar({ isOpen = true }) {
             : "flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface rounded-lg transition-colors";
     };
 
-    const fallbackSidebarAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuC-oK0dsp_C3vIjE4vXMXguDKTcYSJV_GbLTg1U8QdDvz0BE_MMpaa-IRRRpZQj-cMH4shRhuPcvsiGKI_D1MPkHDpcffkI0yix7TWuk5iLRSHX0WcTx0EB60i9zGNDWQKSecrxLOlkjFTAg6wt-xEUUnMbxKeLUhti-qJ6fNYL79V29FsTcWGuTEenzTrwLTZON1_8bC4KaG-0Son1-gGnKRMAVVt4drFWfozCx82870IJgk2NEnFzJBWOwpQYcK6VOriIiBmgAJw";
+    const fallbackSidebarAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuAPr_HnWKcvijj_O608atbbSwJ3WOe9UJG0OkAbvJhu31B0ugnn1U-cWrVH_-DP120u6Cl_abBaazaG9S8JMa0rqpRsHLnPd6omXNoQ4QNu6SDVe8x5_q7FuAR8eoqn2JjY_wEgKn9e4eX4lalHYp9S6t7F2DxJrWk_nErx26Iz5BuWzQ0JZQV1j629aW99M__r-UDZ07gI-ZrLHQ7dssSng1RaKBAGBZoec6G_S5_3tsVloFtCW44qLmYvL-zgzO3aa1USAY0ARmA";
 
     const sidebarAvatarSrc = user?.avatarUrl
         ? user.avatarUrl.startsWith("blob:")

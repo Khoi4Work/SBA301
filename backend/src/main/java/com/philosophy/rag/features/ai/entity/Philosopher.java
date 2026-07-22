@@ -35,7 +35,7 @@ public class Philosopher extends BaseEntity {
         }
     }
 
-    @Column(name = "name", nullable = false, length = 200)
+    @Column(name = "name", nullable = false, length = 200, unique = true)
     private String name;
 
     /**
@@ -68,7 +68,7 @@ public class Philosopher extends BaseEntity {
     private String core;
 
     /** Tiểu sử tóm tắt */
-    @Column(name = "biography", columnDefinition = "TEXT")
+    @Column(name = "biography", columnDefinition = "TEXT", nullable = false)
     private String biography;
 
     /**

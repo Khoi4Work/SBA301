@@ -3,12 +3,14 @@ package com.philosophy.rag.features.ai.controller;
 import com.philosophy.rag.base.exception.ApiException;
 import com.philosophy.rag.base.exception.ErrorCode;
 import com.philosophy.rag.base.response.ApiResult;
+import com.philosophy.rag.features.ai.dto.PageResponse;
 import com.philosophy.rag.features.ai.dto.RagAskRequest;
 import com.philosophy.rag.features.ai.dto.RagAskResponse;
 import com.philosophy.rag.features.ai.service.RagService;
 import com.philosophy.rag.utils.dto.DocumentContent;
 import com.philosophy.rag.features.auth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +18,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -101,16 +106,46 @@ public class RagController {
         return ResponseEntity.ok(ApiResult.success(response));
     }
 
-    @Operation(summary = "List all indexed documents", description = "Retrieves a list of all documents currently stored in the vector database.")
+    @Operation(
+            summary = "List indexed documents (paginated)",
+            description = "Returns a paginated list of distinct documents stored in the vector database. "
+                    + "Each entry represents one uploaded source file with aggregated chunk metadata. "
+                    + "Use 'page' (0-based), 'size', and 'sort' query parameters to control pagination."
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Document list retrieved successfully"),
+            @ApiResponse(responseCode = "200", description = "Document page retrieved successfully"),
             @ApiResponse(responseCode = "500", description = "Error occurred while fetching documents")
     })
     @GetMapping("/documents")
-    public ResponseEntity<ApiResult<List<DocumentContent>>> listDocuments() {
-        log.info("Fetching document list");
-        List<DocumentContent> result = ragService.listDocuments();
+    public ResponseEntity<ApiResult<PageResponse<DocumentContent>>> listDocuments(
+            @PageableDefault(size = 10, sort = "upload_date", direction = Sort.Direction.DESC)
+            @Parameter(hidden = true) Pageable pageable) {
 
+        log.info("Fetching document list – page={}, size={}",
+                pageable.getPageNumber(), pageable.getPageSize());
+
+        PageResponse<DocumentContent> result = ragService.listDocumentsPaged(pageable);
+        return ResponseEntity.ok(ApiResult.success(result));
+    }
+
+    @Operation(
+            summary = "Get chunks of a specific document (paginated)",
+            description = "Returns a paginated list of vector chunks for a specific document source."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Chunks retrieved successfully"),
+            @ApiResponse(responseCode = "500", description = "Error occurred while fetching chunks")
+    })
+    @GetMapping("/documents/chunks")
+    public ResponseEntity<ApiResult<PageResponse<com.philosophy.rag.features.ai.dto.DocumentChunk>>> getDocumentChunks(
+            @RequestParam("source") @NotBlank(message = "Source cannot be blank") String source,
+            @PageableDefault(size = 1, sort = "chunk_index", direction = Sort.Direction.ASC)
+            @Parameter(hidden = true) Pageable pageable) {
+
+        log.info("Fetching document chunks for source={} – page={}, size={}",
+                source, pageable.getPageNumber(), pageable.getPageSize());
+
+        PageResponse<com.philosophy.rag.features.ai.dto.DocumentChunk> result = ragService.getDocumentChunksPaged(source, pageable);
         return ResponseEntity.ok(ApiResult.success(result));
     }
 
@@ -127,5 +162,18 @@ public class RagController {
 
         return ResponseEntity
                 .ok(ApiResult.success("Vector store has been reset successfully!"));
+    }
+
+    @Operation(summary = "Delete a specific document (Requires ADMIN)", description = "Deletes all vector chunks associated with a specific file source.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Document deleted successfully"),
+            @ApiResponse(responseCode = "500", description = "Failed to delete the document")
+    })
+    @DeleteMapping("/documents")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResult<String>> deleteDocument(@RequestParam("source") @NotBlank(message = "Source cannot be blank") String source) {
+        log.warn("Triggered document deletion for source: {}", source);
+        ragService.deleteDocumentBySource(source);
+        return ResponseEntity.ok(ApiResult.success("Tài liệu '" + source + "' đã được xóa thành công!"));
     }
 }
