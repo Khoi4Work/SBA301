@@ -1,11 +1,8 @@
 import React from "react";
 import { usePhilosopherManagement } from "@/features/admin/hooks/usePhilosopherManagement.js";
-<<<<<<< Updated upstream
 import Toast from "@/features/admin/components/Toast.jsx";
 import ConfirmModal from "@/features/admin/components/ConfirmModal.jsx";
-=======
 import { useRagManagement } from "@/features/admin/hooks/useRagManagement.js";
->>>>>>> Stashed changes
 
 export default function PhilosopherManagementPage() {
     const {
