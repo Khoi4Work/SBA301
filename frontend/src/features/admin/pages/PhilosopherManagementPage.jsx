@@ -1,5 +1,7 @@
 import React from "react";
 import { usePhilosopherManagement } from "@/features/admin/hooks/usePhilosopherManagement.js";
+import Toast from "@/features/admin/components/Toast.jsx";
+import ConfirmModal from "@/features/admin/components/ConfirmModal.jsx";
 
 export default function PhilosopherManagementPage() {
     const {
@@ -15,6 +17,9 @@ export default function PhilosopherManagementPage() {
         saving,
         modalMessage,
         modalError,
+        deleteTarget,
+        toast,
+        closeToast,
         setFile,
         setIdleFile,
         setTalkingFile,
@@ -26,6 +31,8 @@ export default function PhilosopherManagementPage() {
         handleCreate,
         handleUpdate,
         handleDelete,
+        confirmDelete,
+        closeDeleteModal,
     } = usePhilosopherManagement();
 
     const handleSubmit = (event) => {
@@ -477,6 +484,20 @@ export default function PhilosopherManagementPage() {
             </div>
 
             {/* Footer Meta */}
+            <Toast
+                message={toast.message}
+                type={toast.type}
+                onClose={closeToast}
+                visible={toast.visible}
+            />
+
+            <ConfirmModal
+                isOpen={!!deleteTarget}
+                title="Xác nhận xóa"
+                message={`Bạn có chắc chắn muốn xóa triết gia "${deleteTarget?.name}" khỏi hệ thống không? Hành động này không thể hoàn tác.`}
+                onConfirm={confirmDelete}
+                onCancel={closeDeleteModal}
+            />
         </div>
     );
 }

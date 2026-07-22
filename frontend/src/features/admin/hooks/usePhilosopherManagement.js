@@ -26,6 +26,8 @@ export function usePhilosopherManagement() {
     const [saving, setSaving] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
     const [modalError, setModalError] = useState("");
+    const [toast, setToast] = useState({ visible: false, message: "", type: "success" });
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
     const fetchPhilosophers = useCallback(async () => {
         try {
@@ -138,6 +140,8 @@ export function usePhilosopherManagement() {
 
             await philosopherService.create(form, file, idleFile, talkingFile, thinkingFile);
             setModalMessage("Thêm triết gia thành công.");
+            setToast({ visible: true, message: "Thêm triết gia thành công!", type: "success" });
+            closeModal();
 
             await fetchPhilosophers();
         } catch (err) {
@@ -146,6 +150,7 @@ export function usePhilosopherManagement() {
                 err.response?.data?.message ||
                 "Lưu triết gia thất bại. Check dữ liệu hoặc quyền tài khoản."
             );
+            setToast({ visible: true, message: err.response?.data?.message || "Có lỗi xảy ra!", type: "error" });
         } finally {
             setSaving(false);
         }
@@ -164,6 +169,8 @@ export function usePhilosopherManagement() {
 
             await philosopherService.update(selectedPhilosopher.id, form, file, idleFile, talkingFile, thinkingFile);
             setModalMessage("Cập nhật triết gia thành công.");
+            setToast({ visible: true, message: "Cập nhật triết gia thành công!", type: "success" });
+            closeModal();
 
             await fetchPhilosophers();
         } catch (err) {
@@ -172,30 +179,39 @@ export function usePhilosopherManagement() {
                 err.response?.data?.message ||
                 "Lưu triết gia thất bại. Check dữ liệu hoặc quyền tài khoản."
             );
+            setToast({ visible: true, message: err.response?.data?.message || "Có lỗi xảy ra!", type: "error" });
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async (philosopher) => {
-        const ok = window.confirm(
-            `Xóa triết gia "${philosopher.name}" thật hả?`
-        );
+        setDeleteTarget(philosopher);
+    };
 
-        if (!ok) return;
+    const closeDeleteModal = () => {
+        setDeleteTarget(null);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
 
         try {
-            await philosopherService.deleteById(philosopher.id);
+            await philosopherService.deleteById(deleteTarget.id);
             await fetchPhilosophers();
-            alert("Xóa triết gia thành công.");
+            setToast({ visible: true, message: `Đã xóa triết gia ${deleteTarget.name}!`, type: "error" });
+            closeDeleteModal();
         } catch (err) {
             console.error(err);
-            alert(
-                err.response?.data?.message ||
-                "Xóa triết gia thất bại. Check quyền ADMIN hoặc API delete by id."
-            );
+            setToast({
+                visible: true,
+                message: err.response?.data?.message || "Xóa triết gia thất bại!",
+                type: "error"
+            });
         }
     };
+
+    const closeToast = () => setToast({ visible: false, message: "", type: "success" });
 
     return {
         // Data
@@ -215,6 +231,13 @@ export function usePhilosopherManagement() {
         modalMessage,
         modalError,
 
+        // Delete state
+        deleteTarget,
+
+        // Toast state
+        toast,
+        closeToast,
+
         // File setters (used directly in JSX onChange)
         setFile,
         setIdleFile,
@@ -230,5 +253,8 @@ export function usePhilosopherManagement() {
         handleCreate,
         handleUpdate,
         handleDelete,
+        confirmDelete,
+        closeDeleteModal,
     };
+
 }

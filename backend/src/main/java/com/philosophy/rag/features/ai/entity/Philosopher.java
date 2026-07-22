@@ -42,16 +42,16 @@ public class Philosopher extends BaseEntity {
      * Ảnh đại diện (AvatarUrl).
      * Đường dẫn ảnh 2D hoặc 3D hiển thị trong phòng chat và thẻ bài.
      */
-    @Column(name = "avatar_url", length = 500, unique = true)
+    @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
-    @Column(name = "idle_model_url", length = 500, unique = true)
+    @Column(name = "idle_model_url", length = 500)
     private String idleModelUrl;
 
-    @Column(name = "talking_model_url", length = 500, unique = true)
+    @Column(name = "talking_model_url", length = 500)
     private String talkingModelUrl;
 
-    @Column(name = "thinking_model_url", length = 500, unique = true)
+    @Column(name = "thinking_model_url", length = 500)
     private String thinkingModelUrl;
 
     /**
